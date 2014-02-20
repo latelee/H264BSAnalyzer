@@ -39,6 +39,21 @@
     <ClInclude Include="Resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="bs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="h264_avcc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="h264_sei.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="h264_stream.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="NalParse.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="H264BSAnalyzer.cpp">
@@ -48,6 +63,21 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="stdafx.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="h264_analyze.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="h264_avcc.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="h264_stream.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="h264_sei.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NalParse.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
