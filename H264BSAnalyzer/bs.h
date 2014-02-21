@@ -33,10 +33,10 @@ extern "C" {
 
 typedef struct
 {
-	uint8_t* start;
-	uint8_t* p;
-	uint8_t* end;
-	int bits_left;
+    uint8_t* start;
+    uint8_t* p;
+    uint8_t* end;
+    int bits_left;
 } bs_t;
 
 #define _OPTIMIZE_BS_ 1

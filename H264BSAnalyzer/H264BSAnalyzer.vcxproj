@@ -94,6 +94,7 @@
     </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <None Include="my_log.txt" />
     <None Include="ReadMe.txt" />
     <None Include="res\H264BSAnalyzer.ico" />
     <None Include="res\H264BSAnalyzer.rc2" />

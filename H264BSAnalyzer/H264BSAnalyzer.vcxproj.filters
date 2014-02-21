@@ -22,6 +22,7 @@
     <None Include="res\H264BSAnalyzer.ico">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="my_log.txt" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="H264BSAnalyzer.h">
