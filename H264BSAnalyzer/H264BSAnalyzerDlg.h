@@ -27,7 +27,7 @@ public:
     // our own...
 public:
     void SystemClear();
-    int AppendNLInfo(int nal_reference_idc,int nal_unit_type,int len,int data_lenth,int data_offset, int startcode);
+    int AppendNLInfo(int data_offset, int nal_lenth, int startcode, int nal_unit_type, int nal_reference_idc);
 // Implementation
 protected:
     HICON m_hIcon;
@@ -59,4 +59,6 @@ public:
     afx_msg void OnDropFiles(HDROP hDropInfo);
     afx_msg void OnLvnItemActivateH264Nallist(NMHDR *pNMHDR, LRESULT *pResult);
     afx_msg void OnNMCustomdrawH264Nallist(NMHDR *pNMHDR, LRESULT *pResult);
+    afx_msg void OnFileOpen();
+    afx_msg void OnHelpAbout();
 };

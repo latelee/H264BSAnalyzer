@@ -25,10 +25,6 @@ public:
 
     protected:
     virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
-
-// Implementation
-protected:
-    DECLARE_MESSAGE_MAP()
 };
 
 CAboutDlg::CAboutDlg() : CDialogEx(CAboutDlg::IDD)
@@ -39,9 +35,6 @@ void CAboutDlg::DoDataExchange(CDataExchange* pDX)
 {
     CDialogEx::DoDataExchange(pDX);
 }
-
-BEGIN_MESSAGE_MAP(CAboutDlg, CDialogEx)
-END_MESSAGE_MAP()
 
 
 // CH264BSAnalyzerDlg dialog
@@ -71,6 +64,8 @@ BEGIN_MESSAGE_MAP(CH264BSAnalyzerDlg, CDialogEx)
     ON_WM_DROPFILES()
     ON_NOTIFY(LVN_ITEMACTIVATE, IDC_H264_NALLIST, &CH264BSAnalyzerDlg::OnLvnItemActivateH264Nallist)
     ON_NOTIFY(NM_CUSTOMDRAW, IDC_H264_NALLIST, &CH264BSAnalyzerDlg::OnNMCustomdrawH264Nallist)
+    ON_COMMAND(ID_FILE_OPEN32771, &CH264BSAnalyzerDlg::OnFileOpen)
+    ON_COMMAND(ID_HELP_ABOUT, &CH264BSAnalyzerDlg::OnHelpAbout)
 END_MESSAGE_MAP()
 
 
@@ -78,14 +73,13 @@ void CH264BSAnalyzerDlg::SystemClear()
 {
     m_vNalInfoVector.clear();
     m_h264NalList.DeleteAllItems();
-    m_nNalIndex = 0;
+    m_nNalIndex = 1;
 }
 
 //添加一条记录
 //每个字段的含义：类型，数据大小，时间戳，streamid，data的第一个字节
-//data_lenth是包含起始码的NAL长度
-//len是不包含起始码的NAL长度
-int CH264BSAnalyzerDlg::AppendNLInfo(int nal_reference_idc,int nal_unit_type,int len,int data_lenth,int data_offset, int startcode)
+//nal_lenth是包含起始码的NAL长度
+int CH264BSAnalyzerDlg::AppendNLInfo(int data_offset, int nal_lenth, int startcode, int nal_unit_type, int nal_reference_idc)
 {
     //如果选择了“最多输出5000条”，判断是否超过5000条
     //if(m_vh264nallistmaxnum.GetCheck()==1&&nl_index>5000){
@@ -99,9 +93,8 @@ int CH264BSAnalyzerDlg::AppendNLInfo(int nal_reference_idc,int nal_unit_type,int
     CString strNalUnitType;
     CString strNalInfo;
     CString strNalRefIdc;
-
-
     int nIndex=0;
+
     // NAL单元类型
     switch(nal_unit_type){
     case 0:
@@ -109,7 +102,7 @@ int CH264BSAnalyzerDlg::AppendNLInfo(int nal_reference_idc,int nal_unit_type,int
         break;
     case 1:
         strNalUnitType.Format("Coded slice of a non-IDR picture");
-        strNalInfo.Format("todo");
+        strNalInfo.Format("");  // todo
         break;
     case 2:
         strNalUnitType.Format("DPA");
@@ -122,7 +115,7 @@ int CH264BSAnalyzerDlg::AppendNLInfo(int nal_reference_idc,int nal_unit_type,int
         break;
     case 5:
         strNalUnitType.Format("Coded slice of an IDR picture");
-        strNalInfo.Format("IDR_SLICE");
+        strNalInfo.Format("IDR");
         break;
     case 6:
         strNalUnitType.Format("SEI");
@@ -163,7 +156,7 @@ int CH264BSAnalyzerDlg::AppendNLInfo(int nal_reference_idc,int nal_unit_type,int
     // 格式化
     strTempIndex.Format("%d",m_nNalIndex);
     strOffset.Format("%08x", data_offset);
-    strNalLen.Format("%d",len);
+    strNalLen.Format("%d",nal_lenth);
     strStartCode.Format("%08x", startcode);
     strNalRefIdc.Format("%d",nal_reference_idc);
 
@@ -183,7 +176,7 @@ int CH264BSAnalyzerDlg::AppendNLInfo(int nal_reference_idc,int nal_unit_type,int
     //我们要存储包含起始码的长度
     //起始码原本不是NAL的一部分
     NALInfo nalinfo;
-    nalinfo.data_lenth=data_lenth;
+    nalinfo.data_lenth=nal_lenth;
     nalinfo.data_offset=data_offset;
     m_vNalInfoVector.push_back(nalinfo);
 
@@ -244,12 +237,12 @@ BOOL CH264BSAnalyzerDlg::OnInitDialog()
     m_h264NalList.InsertColumn(1,"Offset",LVCFMT_LEFT,70,0);
     m_h264NalList.InsertColumn(2,"Length",LVCFMT_LEFT,70,0);
     m_h264NalList.InsertColumn(3,"Start Code",LVCFMT_LEFT,70,0);
-    m_h264NalList.InsertColumn(4,"NAL Type",LVCFMT_LEFT,200,0);
-    m_h264NalList.InsertColumn(5,"Info",LVCFMT_LEFT,70,0);
+    m_h264NalList.InsertColumn(4,"NAL Type",LVCFMT_LEFT,170,0);
+    m_h264NalList.InsertColumn(5,"Info",LVCFMT_LEFT,50,0);
     m_h264NalList.InsertColumn(6,"nal_ref_idc",LVCFMT_LEFT,100,0);
     //---------------------
     //m_h264NalListmaxnum.SetCheck(1);
-    m_nNalIndex = 0;
+    m_nNalIndex = 1;
     //------------
     m_h264InputUrl.EnableFileBrowseButton(NULL,
             "H.264 Files (*.264,*.h264)|*.264;*.h264|All Files (*.*)|*.*||");
@@ -430,4 +423,19 @@ void CH264BSAnalyzerDlg::OnNMCustomdrawH264Nallist(NMHDR *pNMHDR, LRESULT *pResu
         *pResult = CDRF_DODEFAULT;
 
     }
+}
+
+
+void CH264BSAnalyzerDlg::OnFileOpen()
+{
+    // TODO: Add your command handler code here
+    AfxMessageBox("解析NAL时出错");
+}
+
+
+void CH264BSAnalyzerDlg::OnHelpAbout()
+{
+    // TODO: Add your command handler code here
+    CAboutDlg dlg;
+    dlg.DoModal();
 }
