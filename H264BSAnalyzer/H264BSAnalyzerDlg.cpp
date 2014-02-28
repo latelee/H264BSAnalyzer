@@ -25,6 +25,13 @@ public:
 
     protected:
     virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
+
+    RECT m_pRectLink;
+public:
+    virtual BOOL OnInitDialog();
+    DECLARE_MESSAGE_MAP()
+    afx_msg void OnMouseMove(UINT nFlags, CPoint point);
+    afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
 };
 
 CAboutDlg::CAboutDlg() : CDialogEx(CAboutDlg::IDD)
@@ -364,6 +371,7 @@ BOOL CH264BSAnalyzerDlg::OnInitDialog()
 
     m_strFileUrl.Empty();
 
+    
 #if 0
     CFont myfont1;
     myfont1.CreateFont( 
@@ -601,6 +609,7 @@ void CH264BSAnalyzerDlg::OnHelpAbout()
 {
     // TODO: Add your command handler code here
     CAboutDlg dlg;
+    //dlg.GetDlgItem(IDC_STATIC_URL)->SetWindowText("http://blog.csdn.net/leixiaohua1020/article/details/17933821");
     dlg.DoModal();
 }
 
@@ -615,4 +624,55 @@ void CH264BSAnalyzerDlg::OnHowtoUsage()
         "3、双击某一项NAL，即可得到详细信息\r\n"
         "限制：本程序仅能分析H264码流文件，其它文件无法分析\r\n";
     AfxMessageBox(help);
+}
+
+
+BOOL CAboutDlg::OnInitDialog()
+{
+    CDialogEx::OnInitDialog();
+
+    // TODO:  Add extra initialization here
+    GetDlgItem(IDC_STATIC_URL)->GetWindowRect(&m_pRectLink);
+    ScreenToClient(&m_pRectLink);
+    return TRUE;  // return TRUE unless you set the focus to a control
+    // EXCEPTION: OCX Property Pages should return FALSE
+}
+BEGIN_MESSAGE_MAP(CAboutDlg, CDialogEx)
+    ON_WM_MOUSEMOVE()
+    ON_WM_LBUTTONDOWN()
+END_MESSAGE_MAP()
+
+
+void CAboutDlg::OnMouseMove(UINT nFlags, CPoint point)
+{
+    // TODO: Add your message handler code here and/or call default
+    if (point.x > m_pRectLink.left && point.x < m_pRectLink.right && point.y < m_pRectLink.bottom && point.y > m_pRectLink.top)
+    {
+        //变成手形
+        HCURSOR hCursor;
+        hCursor = ::LoadCursor (NULL, IDC_HAND);
+        ::SetCursor(hCursor);
+    }
+    CDialogEx::OnMouseMove(nFlags, point);
+}
+
+
+void CAboutDlg::OnLButtonDown(UINT nFlags, CPoint point)
+{
+    // TODO: Add your message handler code here and/or call default
+    CString strLink;
+
+    if (point.x > m_pRectLink.left && point.x < m_pRectLink.right && point.y < m_pRectLink.bottom && point.y > m_pRectLink.top)
+    {
+        if (nFlags == MK_LBUTTON)
+        {
+            GetDlgItem(IDC_STATIC_URL)->GetWindowText(strLink);
+            ShellExecute(NULL, NULL, strLink, NULL, NULL, SW_NORMAL);
+        }
+    }
+    else
+    {
+
+    }
+    CDialogEx::OnLButtonDown(nFlags, point);
 }
