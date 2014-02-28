@@ -4,6 +4,8 @@
 #include "resource.h"
 #include "stdafx.h"
 
+#include "NalParse.h"
+
 #include <vector>
 using std::vector;
 
@@ -28,6 +30,7 @@ public:
 public:
     void SystemClear();
     int AppendNLInfo(int data_offset, int nal_lenth, int startcode, int nal_unit_type, int nal_reference_idc);
+    int ShowNLInfo(NALU_t* nalu);
 // Implementation
 protected:
     HICON m_hIcon;
@@ -39,15 +42,18 @@ protected:
     afx_msg HCURSOR OnQueryDragIcon();
     DECLARE_MESSAGE_MAP()
 public:
-    CMFCEditBrowseCtrl m_h264InputUrl;
+    //CMFCEditBrowseCtrl m_h264InputUrl;  // 保留用
     CEdit m_h264NalInfo;
     CListCtrl m_h264NalList;
+    CEdit m_edFileUrl;
+
     afx_msg void OnBnClickedH264InputurlOpen();
 
     // our own
 private:
     int m_nNalIndex;
-    char m_strFileUrl[MAX_URL_LENGTH];
+    CString m_strFileUrl;
+    char str_szFileUrl[MAX_URL_LENGTH];
       //一条Packet记录
     typedef struct NALInfo{
         int data_offset;
@@ -61,4 +67,5 @@ public:
     afx_msg void OnNMCustomdrawH264Nallist(NMHDR *pNMHDR, LRESULT *pResult);
     afx_msg void OnFileOpen();
     afx_msg void OnHelpAbout();
+    afx_msg void OnHowtoUsage();
 };

@@ -186,6 +186,7 @@ int GetAnnexbNALU (NALU_t *nalu)
 }
 
 // 获取NAL
+// 不能写死空间
 int h264_nal_parse(LPVOID lparam,char *fileurl)
 {
     CH264BSAnalyzerDlg *dlg;
@@ -221,7 +222,42 @@ int h264_nal_parse(LPVOID lparam,char *fileurl)
     return 0;
 }
 
+int h264_nal_parse_1(char *fileurl, handle_nalu_info p)
+{
+    NALU_t *n;
+    char* nalu_payload;  
+    char sendbuf[1500];
+    
+    unsigned short seq_num =0;
+    int    bytes=0;
+    int nal_num=0;
+    int data_offset=0;
+
+    OpenBitstreamFile(fileurl);
+    n = AllocNALU(8000000);//为结构体nalu_t及其成员buf分配空间。返回值为指向nalu_t存储空间的指针
+
+    while(!feof(g_fpBitStream)) 
+    {
+        int data_lenth;
+        data_lenth=GetAnnexbNALU(n);//每执行一次，文件的指针指向本次找到的NALU的末尾，下一个位置即为下个NALU的起始码0x000001
+        n->data_offset=data_offset;
+        data_offset=data_offset+data_lenth;
+        n->total_len = n->len+n->startcodeprefix_len;
+        //输出NALU长度和TYPE
+        if (p)
+            p(n);
+        //判断是否选择了“只分析5000条”，如果选择了就不再分析了
+        //if(dlg->m_h264Nallistmaxnum.GetCheck()==1&&nal_num>5000){
+        //    break;
+        //}
+        nal_num++;
+    }
+    FreeNALU(n);
+    return 0;
+}
+
 static void debug_nal(h264_stream_t* h, nal_t* nal);
+void dump_hex(const char *buffer, int offset, int len);
 
 // todo
 //存放解析出来的字符串
@@ -229,8 +265,15 @@ char tempstr[1000]={0};
 //char* outputstr=(char *)malloc(100000);
 char outputstr[100000]={'\0'};
 
+//存放解析出来的字符串对比的十六进制
+char tempstr_hex[1000]={0};
+//char* outputstr=(char *)malloc(100000);
+char outputstr_hex[100000]={'\0'};
+
+
 //自己写的，解析NAL数据的函数
-int probe_nal_unit(char* filename,int data_offset,int data_lenth,LPVOID lparam){
+int probe_nal_unit(char* filename,int data_offset,int data_lenth,LPVOID lparam)
+{
     //清空字符串-----------------
     memset(outputstr,'\0',100000);
     //句柄
@@ -253,8 +296,13 @@ int probe_nal_unit(char* filename,int data_offset,int data_lenth,LPVOID lparam){
     h264_stream_t* h = h264_new();
     find_nal_unit(nal_temp, data_lenth, &nal_start, &nal_end);
     read_nal_unit(h, &nal_temp[nal_start], nal_end - nal_start);
-    debug_nal(h,h->nal);    // 打印
-    dlg->m_h264NalInfo.SetWindowText(outputstr);
+
+    debug_nal(h,h->nal);    // 打印到outputstr中
+    dlg->m_h264NalInfo.SetWindowText(outputstr);    // 显示到界面上
+
+    dump_hex((char*)nal_temp, data_offset, data_lenth);
+    dlg->GetDlgItem(IDC_EDIT_HEX)->SetWindowText(outputstr_hex);
+
     free(nal_temp);
     fclose(fp);
     return 0;
@@ -604,4 +652,71 @@ static void debug_bytes(uint8_t* buf, int len)
         if ((i+1) % 16 == 0) { my_printf ("\n"); }
     }
     my_printf("\n");
+}
+
+#define my_printf_hex(...)  \
+        sprintf( tempstr_hex, __VA_ARGS__);\
+        strcat(outputstr_hex, tempstr);
+
+#define my_printf_hex_cr(...)  \
+        sprintf(tempstr_hex, __VA_ARGS__);\
+        strcat(outputstr_hex, "\r\n");
+
+void dump_hex(const char *buffer, int offset, int len)
+{
+    int i, j, n;
+    int line = 16;
+    char c;
+    unsigned char* buf = (unsigned char *)buffer;    // 必须是unsigned char类型
+    char* buf_hex = outputstr_hex;
+    int ret = 0;
+
+    n = len / line;
+    if (len % line)
+        n++;
+
+    for (i=0; i<n; i++)
+    {
+        //printf("0x%08x: ", (unsigned int)(buf+i*line)); // linux ok
+        //printf("0x%8p: ", buf+i*line); // windows ok
+        ret = sprintf(buf_hex, "0x%8p: ", (unsigned int)(offset+i*line)); // windows ok
+        buf_hex += ret;
+        
+        for (j=0; j<line; j++)
+        {
+            if ((i*line+j) < len)
+            {
+                ret = sprintf(buf_hex, "%02x ", buf[i*line+j]);
+                buf_hex += ret;
+            }
+            else
+            {
+                ret = sprintf(buf_hex, "   ");
+                buf_hex += ret;
+            }
+        }
+
+        ret = sprintf(buf_hex, " ");
+        buf_hex += ret;
+        for (j=0; j<line && (i*line+j)<len; j++)
+        {
+            if ((i*line+j) < len)
+            {
+                c = buf[i*line+j];
+                ret = sprintf(buf_hex, "%c", c >= ' ' && c < '~' ? c : '.');
+                buf_hex += ret;
+            }
+            else
+            {
+                ret = sprintf(buf_hex, "   ");
+                buf_hex += ret;
+            }
+        }
+
+        //printf("\n");
+        //strcat(outputstr_hex, "\r\n");
+        ret = sprintf(buf_hex, "\r\n");
+        buf_hex += ret;
+
+    }
 }
