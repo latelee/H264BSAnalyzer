@@ -5,6 +5,7 @@
 #include "stdafx.h"
 
 #include "NalParse.h"
+#include "hexeditctrl.h"
 
 #include <vector>
 using std::vector;
@@ -29,7 +30,7 @@ public:
     // our own...
 public:
     void SystemClear();
-    int AppendNLInfo(int data_offset, int nal_lenth, int startcode, int nal_unit_type, int nal_reference_idc);
+    int AppendNLInfo(int data_offset, int nal_lenth, char* startcode, int nal_unit_type, int nal_reference_idc);
     int ShowNLInfo(NALU_t* nalu);
 // Implementation
 protected:
@@ -46,6 +47,7 @@ public:
     CEdit m_h264NalInfo;
     CListCtrl m_h264NalList;
     CEdit m_edFileUrl;
+    CHexEdit m_edHexInfo;
 
     afx_msg void OnBnClickedH264InputurlOpen();
 
@@ -68,4 +70,5 @@ public:
     afx_msg void OnFileOpen();
     afx_msg void OnHelpAbout();
     afx_msg void OnHowtoUsage();
+    
 };

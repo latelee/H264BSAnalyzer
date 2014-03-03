@@ -17,6 +17,7 @@ typedef struct
   int data_offset;
   int startcode;
   int total_len;                // 含起始码的总的长度
+  char startcode_buf[16];
 } NALU_t;
 
 typedef int handle_nalu_info(NALU_t* nalu);

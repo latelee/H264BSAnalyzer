@@ -62,6 +62,7 @@ void CH264BSAnalyzerDlg::DoDataExchange(CDataExchange* pDX)
     DDX_Control(pDX, IDC_H264_NALINFO, m_h264NalInfo);
     DDX_Control(pDX, IDC_H264_NALLIST, m_h264NalList);
     DDX_Control(pDX, IDC_EDIT_FILE, m_edFileUrl);
+    DDX_Control(pDX, IDC_EDIT_HEX, m_edHexInfo);
 }
 
 BEGIN_MESSAGE_MAP(CH264BSAnalyzerDlg, CDialogEx)
@@ -88,7 +89,7 @@ void CH264BSAnalyzerDlg::SystemClear()
 //添加一条记录
 //每个字段的含义：类型，数据大小，时间戳，streamid，data的第一个字节
 //nal_lenth是包含起始码的NAL长度
-int CH264BSAnalyzerDlg::AppendNLInfo(int data_offset, int nal_lenth, int startcode, int nal_unit_type, int nal_reference_idc)
+int CH264BSAnalyzerDlg::AppendNLInfo(int data_offset, int nal_lenth, char* startcode, int nal_unit_type, int nal_reference_idc)
 {
     //如果选择了“最多输出5000条”，判断是否超过5000条
     //if(m_vh264nallistmaxnum.GetCheck()==1&&nl_index>5000){
@@ -166,7 +167,8 @@ int CH264BSAnalyzerDlg::AppendNLInfo(int data_offset, int nal_lenth, int startco
     strTempIndex.Format(_T("%d"),m_nNalIndex);
     strOffset.Format(_T("%08x"), data_offset);
     strNalLen.Format(_T("%d"),nal_lenth);
-    strStartCode.Format(_T("%08x"), startcode);
+    //strStartCode.Format(_T("%08x"), startcode);
+    strStartCode.Format(_T("%s"), startcode);
     strNalRefIdc.Format(_T("%d"),nal_reference_idc);
 
     //获取当前记录条数
@@ -280,7 +282,8 @@ int CH264BSAnalyzerDlg::ShowNLInfo(NALU_t* nalu)
     strTempIndex.Format(_T("%d"), m_nNalIndex);
     strOffset.Format(_T("%08x"), nalu->data_offset);
     strNalLen.Format(_T("%d"), nalu->total_len);
-    strStartCode.Format(_T("%08x"), nalu->startcode);
+    //strStartCode.Format(_T("%08x"), nalu->startcode);
+    strStartCode.Format(_T("%s"), nalu->startcode_buf);
     strNalRefIdc.Format(_T("%d"),nalu->nal_reference_idc);
 
     //获取当前记录条数
@@ -357,11 +360,12 @@ BOOL CH264BSAnalyzerDlg::OnInitDialog()
     // 左对齐
     m_h264NalList.InsertColumn(0,_T("No."),LVCFMT_LEFT,40,0);
     m_h264NalList.InsertColumn(1,_T("Offset"),LVCFMT_LEFT,70,0);
-    m_h264NalList.InsertColumn(2,_T("Length"),LVCFMT_LEFT,70,0);
-    m_h264NalList.InsertColumn(3,_T("Start Code"),LVCFMT_LEFT,70,0);
+    m_h264NalList.InsertColumn(2,_T("Length"),LVCFMT_LEFT,60,0);
+    m_h264NalList.InsertColumn(3,_T("Start Code"),LVCFMT_LEFT,80,0);
     m_h264NalList.InsertColumn(4,_T("NAL Type"),LVCFMT_LEFT,170,0);
     m_h264NalList.InsertColumn(5,_T("Info"),LVCFMT_LEFT,50,0);
     m_h264NalList.InsertColumn(6,_T("nal_ref_idc"),LVCFMT_LEFT,100,0);
+
     //---------------------
     //m_h264NalListmaxnum.SetCheck(1);
     m_nNalIndex = 1;
@@ -371,7 +375,9 @@ BOOL CH264BSAnalyzerDlg::OnInitDialog()
 
     m_strFileUrl.Empty();
 
-    
+    m_edHexInfo.SetOptions(1, 1, 1, 1);
+    m_edHexInfo.SetBPR(16); // 16字节
+
 #if 0
     CFont myfont1;
     myfont1.CreateFont( 
@@ -443,7 +449,6 @@ HCURSOR CH264BSAnalyzerDlg::OnQueryDragIcon()
     return static_cast<HCURSOR>(m_hIcon);
 }
 
-
 // 打开H264码流文件
 void CH264BSAnalyzerDlg::OnBnClickedH264InputurlOpen()
 {
@@ -451,16 +456,28 @@ void CH264BSAnalyzerDlg::OnBnClickedH264InputurlOpen()
     SystemClear();
     UpdateData();
 
+        ////////////////
+    // 测试用
+#if 0
+    //char a[16]={0};
+    char pszBuffer[1000] = "hello world 1234567 you go to hell hahahahahah";
+    m_edHexInfo.SetOptions(1, 1, 1, 1);
+    m_edHexInfo.SetBPR(16);
+    m_edHexInfo.SetData((LPBYTE)pszBuffer, 100, strlen(pszBuffer));
+    m_edHexInfo.SetFocus();
+    return;
+#endif
+
     CString strFilePath;
     m_edFileUrl.GetWindowText(m_strFileUrl);
     if(m_strFileUrl.IsEmpty()==TRUE)
     {
-        AfxMessageBox(_T("*"));
+        AfxMessageBox(_T("文件路径为空，请打开文件！！"));
         return;
     }
 
     strcpy(str_szFileUrl,m_strFileUrl.GetBuffer());
-    
+
     h264_nal_parse(this,str_szFileUrl);
     //h264_nal_parse_1(str_szFileUrl, ShowNLInfo);
 }
@@ -595,7 +612,6 @@ void CH264BSAnalyzerDlg::OnFileOpen()
     fileDlg.GetOFN().lpstrTitle = _T("选择H.264码流文件");   // 标题
     if (fileDlg.DoModal() != IDOK)
     {
-        //AfxMessageBox("xxxxxxxxxx");
         return;
     }
 
@@ -609,7 +625,6 @@ void CH264BSAnalyzerDlg::OnHelpAbout()
 {
     // TODO: Add your command handler code here
     CAboutDlg dlg;
-    //dlg.GetDlgItem(IDC_STATIC_URL)->SetWindowText("http://blog.csdn.net/leixiaohua1020/article/details/17933821");
     dlg.DoModal();
 }
 
@@ -622,11 +637,12 @@ void CH264BSAnalyzerDlg::OnHowtoUsage()
         "1)使用file菜单打开；2)将文件拖到本界面；3)在文件编辑框输入文件绝对路径\r\n"
         "2、点击start，开始分析NAL\r\n"
         "3、双击某一项NAL，即可得到详细信息\r\n"
-        "限制：本程序仅能分析H264码流文件，其它文件无法分析\r\n";
+        "限制：本程序仅能分析H264码流文件，其它文件无法分析\r\n"
+        "本程序不能分析大型文件，勿怪\r\n";
     AfxMessageBox(help);
 }
 
-
+// about对话框的东东
 BOOL CAboutDlg::OnInitDialog()
 {
     CDialogEx::OnInitDialog();

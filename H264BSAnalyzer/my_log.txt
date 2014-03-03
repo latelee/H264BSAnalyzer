@@ -4,7 +4,12 @@ todo:
 
 显示startcode。
 -->使用可显示字符串作缓冲区，而不是一个int类型
+
 显示总体信息(宽高等)
+文件：
+分辨率：Picture Size
+Encoding Type
+
 针对大文件作处理
 
 
@@ -15,6 +20,16 @@ SPS获取大小不正确。
 
 log：
 使用菜单方式打开文件，主界面简洁很多。
+
+3.3
+找到一个专用显示十六进制的chexedit类，使用之。编辑框去掉“垂直滚动”属性。
+网址：http://www.codeguru.com/cpp/controls/editctrl/article.php/c539/Hex-edit-control.htm#more
+参考：http://blog.csdn.net/jiadelin/article/details/2900794
+右键菜单不知如何解决，暂时注释，当前也没怎么用到
+新加：自定义偏移
+
+遗留：
+控件焦点问题。
 
 思路：
 使用开源库h264bitstream来分析。

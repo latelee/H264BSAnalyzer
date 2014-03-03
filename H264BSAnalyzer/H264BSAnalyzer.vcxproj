@@ -106,6 +106,7 @@
     <ClInclude Include="h264_avcc.h" />
     <ClInclude Include="h264_sei.h" />
     <ClInclude Include="h264_stream.h" />
+    <ClInclude Include="hexeditctrl.h" />
     <ClInclude Include="NalParse.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="stdafx.h" />
@@ -118,6 +119,7 @@
     <ClCompile Include="h264_avcc.cpp" />
     <ClCompile Include="h264_sei.cpp" />
     <ClCompile Include="h264_stream.cpp" />
+    <ClCompile Include="hexeditctrl.cpp" />
     <ClCompile Include="NalParse.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>

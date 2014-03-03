@@ -100,6 +100,9 @@ int GetAnnexbNALU (NALU_t *nalu)
     p[1] = Buf[3];
     p[0] = Buf[4];
     nalu->startcode = temp;
+
+    sprintf(nalu->startcode_buf, "%02x%02x%02x%02x%02x", Buf[0], Buf[1], Buf[2], Buf[3], Buf[4]);
+
     fseek (g_fpBitStream, -5, SEEK_CUR);
 
 
@@ -186,7 +189,7 @@ int GetAnnexbNALU (NALU_t *nalu)
 }
 
 // 获取NAL
-// 不能写死空间
+// todo 不能写死空间
 int h264_nal_parse(LPVOID lparam,char *fileurl)
 {
     CH264BSAnalyzerDlg *dlg;
@@ -211,7 +214,9 @@ int h264_nal_parse(LPVOID lparam,char *fileurl)
         n->data_offset=data_offset;
         data_offset=data_offset+data_lenth;
         //输出NALU长度和TYPE
-        dlg->AppendNLInfo(n->data_offset, n->len+n->startcodeprefix_len, n->startcode, n->nal_unit_type, n->nal_reference_idc);
+        dlg->AppendNLInfo(n->data_offset, n->len+n->startcodeprefix_len, n->startcode_buf, n->nal_unit_type, n->nal_reference_idc);
+        // 简洁的方式
+        //dlg->ShowNLInfo(n);
         //判断是否选择了“只分析5000条”，如果选择了就不再分析了
         //if(dlg->m_h264Nallistmaxnum.GetCheck()==1&&nal_num>5000){
         //    break;
@@ -300,8 +305,10 @@ int probe_nal_unit(char* filename,int data_offset,int data_lenth,LPVOID lparam)
     debug_nal(h,h->nal);    // 打印到outputstr中
     dlg->m_h264NalInfo.SetWindowText(outputstr);    // 显示到界面上
 
-    dump_hex((char*)nal_temp, data_offset, data_lenth);
-    dlg->GetDlgItem(IDC_EDIT_HEX)->SetWindowText(outputstr_hex);
+    //dump_hex((char*)nal_temp, data_offset, data_lenth);
+    //dlg->GetDlgItem(IDC_EDIT_HEX)->SetWindowText(outputstr_hex);
+    dlg->m_edHexInfo.SetData((LPBYTE)nal_temp, data_offset, data_lenth);
+    dlg->m_edHexInfo.SetFocus();
 
     free(nal_temp);
     fclose(fp);
@@ -686,7 +693,7 @@ void dump_hex(const char *buffer, int offset, int len)
         {
             if ((i*line+j) < len)
             {
-                ret = sprintf(buf_hex, "%02x ", buf[i*line+j]);
+                ret = sprintf(buf_hex, "%02X ", buf[i*line+j]);
                 buf_hex += ret;
             }
             else

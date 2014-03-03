@@ -55,6 +55,9 @@
     <ClInclude Include="NalParse.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="hexeditctrl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="H264BSAnalyzer.cpp">
@@ -79,6 +82,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="NalParse.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hexeditctrl.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
