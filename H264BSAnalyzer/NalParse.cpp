@@ -270,12 +270,6 @@ char tempstr[1000]={0};
 //char* outputstr=(char *)malloc(100000);
 char outputstr[100000]={'\0'};
 
-//存放解析出来的字符串对比的十六进制
-char tempstr_hex[1000]={0};
-//char* outputstr=(char *)malloc(100000);
-char outputstr_hex[100000]={'\0'};
-
-
 //自己写的，解析NAL数据的函数
 int probe_nal_unit(char* filename,int data_offset,int data_lenth,LPVOID lparam)
 {
@@ -306,9 +300,13 @@ int probe_nal_unit(char* filename,int data_offset,int data_lenth,LPVOID lparam)
     dlg->m_h264NalInfo.SetWindowText(outputstr);    // 显示到界面上
 
     //dump_hex((char*)nal_temp, data_offset, data_lenth);
-    //dlg->GetDlgItem(IDC_EDIT_HEX)->SetWindowText(outputstr_hex);
+
+    // 使用新的十六进制显示控件
     dlg->m_edHexInfo.SetData((LPBYTE)nal_temp, data_offset, data_lenth);
-    dlg->m_edHexInfo.SetFocus();
+
+    // 不要控件焦点
+    ::SendMessage(dlg->GetDlgItem(IDC_EDIT_HEX)-> m_hWnd,WM_KILLFOCUS,-1,0);
+    //dlg->m_edHexInfo.SetFocus();
 
     free(nal_temp);
     fclose(fp);
@@ -659,71 +657,4 @@ static void debug_bytes(uint8_t* buf, int len)
         if ((i+1) % 16 == 0) { my_printf ("\n"); }
     }
     my_printf("\n");
-}
-
-#define my_printf_hex(...)  \
-        sprintf( tempstr_hex, __VA_ARGS__);\
-        strcat(outputstr_hex, tempstr);
-
-#define my_printf_hex_cr(...)  \
-        sprintf(tempstr_hex, __VA_ARGS__);\
-        strcat(outputstr_hex, "\r\n");
-
-void dump_hex(const char *buffer, int offset, int len)
-{
-    int i, j, n;
-    int line = 16;
-    char c;
-    unsigned char* buf = (unsigned char *)buffer;    // 必须是unsigned char类型
-    char* buf_hex = outputstr_hex;
-    int ret = 0;
-
-    n = len / line;
-    if (len % line)
-        n++;
-
-    for (i=0; i<n; i++)
-    {
-        //printf("0x%08x: ", (unsigned int)(buf+i*line)); // linux ok
-        //printf("0x%8p: ", buf+i*line); // windows ok
-        ret = sprintf(buf_hex, "0x%8p: ", (unsigned int)(offset+i*line)); // windows ok
-        buf_hex += ret;
-        
-        for (j=0; j<line; j++)
-        {
-            if ((i*line+j) < len)
-            {
-                ret = sprintf(buf_hex, "%02X ", buf[i*line+j]);
-                buf_hex += ret;
-            }
-            else
-            {
-                ret = sprintf(buf_hex, "   ");
-                buf_hex += ret;
-            }
-        }
-
-        ret = sprintf(buf_hex, " ");
-        buf_hex += ret;
-        for (j=0; j<line && (i*line+j)<len; j++)
-        {
-            if ((i*line+j) < len)
-            {
-                c = buf[i*line+j];
-                ret = sprintf(buf_hex, "%c", c >= ' ' && c < '~' ? c : '.');
-                buf_hex += ret;
-            }
-            else
-            {
-                ret = sprintf(buf_hex, "   ");
-                buf_hex += ret;
-            }
-        }
-
-        //printf("\n");
-        //strcat(outputstr_hex, "\r\n");
-        ret = sprintf(buf_hex, "\r\n");
-        buf_hex += ret;
-
-    }
 }

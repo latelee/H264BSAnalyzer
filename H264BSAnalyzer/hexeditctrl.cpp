@@ -129,7 +129,6 @@ void CHexEdit::OnPaint()
 	
 	if(m_pData)
 	{
-//				MessageBox("dsjf");
 		//
 		// get char dimensions
 		//
@@ -141,7 +140,7 @@ void CHexEdit::OnPaint()
 			
             // 每一种类型的间隔
 			m_offHex	= m_bShowAddress ? (m_bAddressIsWide ? m_nullWidth * 10 : m_nullWidth * 5) : 0;
-			m_offAscii	= m_bShowAddress ? (m_bAddressIsWide ? m_nullWidth * 13 : m_nullWidth * 5) : 0;
+			m_offAscii	= m_bShowAddress ? (m_bAddressIsWide ? m_nullWidth * 12 : m_nullWidth * 5) : 0;
 			m_offAscii += m_bShowHex	 ? (m_bpr * 3 * m_nullWidth) : 0;
 			
 			m_lpp = rc.Height() / m_lineHeight;
@@ -172,7 +171,7 @@ void CHexEdit::OnPaint()
 			y = 0;
 			CRect rcd = rc;
 			rcd.TopLeft().x = m_offAddress;
-            // 使用用户自定义偏移
+            // 使用用户自定义偏移--在分析定位文件内容时有作用
             int tmp = m_myoffset;
 			for(int	 i = m_topindex; (i < m_length) && (rcd.TopLeft().y < height); i+= m_bpr)
 			{

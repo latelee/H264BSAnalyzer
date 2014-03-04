@@ -1,4 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////
+// from: http://www.codeguru.com/cpp/controls/editctrl/article.php/c539/Hex-edit-control.htm
+// modified by Late Lee 2014.3.3
 // CHexEdit window
 
 class CHexEdit : public CEdit
@@ -62,6 +64,7 @@ public:
 	int GetSelLength();
 	int GetData(LPBYTE p, int len);
 	void SetData(LPBYTE p, int len);
+    // add by latelee
     void SetData(LPBYTE p, int offset, int len);
 	CSize GetSel(void);
 	void SetSel(int s, int e);

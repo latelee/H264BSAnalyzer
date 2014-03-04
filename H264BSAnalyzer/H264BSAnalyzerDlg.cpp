@@ -378,6 +378,8 @@ BOOL CH264BSAnalyzerDlg::OnInitDialog()
     m_edHexInfo.SetOptions(1, 1, 1, 1);
     m_edHexInfo.SetBPR(16); // 16×Ö½Ú
 
+    // todo
+    GetDlgItem(IDC_EDIT_SIMINFO)->SetWindowTextA("todo hehe");
 #if 0
     CFont myfont1;
     myfont1.CreateFont( 
