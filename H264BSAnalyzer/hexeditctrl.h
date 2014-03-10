@@ -64,7 +64,7 @@ public:
 	int GetSelLength();
 	int GetData(LPBYTE p, int len);
 	void SetData(LPBYTE p, int len);
-    // add by latelee
+    // add by latelee fixme
     void SetData(LPBYTE p, int offset, int len);
 	CSize GetSel(void);
 	void SetSel(int s, int e);

@@ -79,6 +79,7 @@ void OpenBitstreamFile (char *fn)
 }
 //这个函数输入为一个NAL结构体，主要功能为得到一个完整的NALU并保存在NALU_t的buf中，获取他的长度，填充F,IDC,TYPE位。
 //并且返回两个开始字符之间间隔的字节数，即包含有前缀的NALU的长度
+// todo:每次读一个字节，较慢，有无好的方法？
 int GetAnnexbNALU (NALU_t *nalu)
 {
     int pos = 0;
@@ -93,15 +94,9 @@ int GetAnnexbNALU (NALU_t *nalu)
     // 读取startcode，假设是4个字节，假设最开始的一定是0，舍弃
     fread(Buf, 1, 5, g_fpBitStream);
     Buf[5] = '\0';
-    int temp = 0;
-    char* p = (char*)&temp;
-    p[3] = Buf[1];
-    p[2] = Buf[2];
-    p[1] = Buf[3];
-    p[0] = Buf[4];
-    nalu->startcode = temp;
-
     sprintf(nalu->startcode_buf, "%02x%02x%02x%02x%02x", Buf[0], Buf[1], Buf[2], Buf[3], Buf[4]);
+
+    nalu->is_b_slice = Buf[4];
 
     fseek (g_fpBitStream, -5, SEEK_CUR);
 
@@ -189,7 +184,7 @@ int GetAnnexbNALU (NALU_t *nalu)
 }
 
 // 获取NAL
-// todo 不能写死空间
+// todo: 不能写死空间
 int h264_nal_parse(LPVOID lparam,char *fileurl)
 {
     CH264BSAnalyzerDlg *dlg;
@@ -213,10 +208,11 @@ int h264_nal_parse(LPVOID lparam,char *fileurl)
         data_lenth=GetAnnexbNALU(n);//每执行一次，文件的指针指向本次找到的NALU的末尾，下一个位置即为下个NALU的起始码0x000001
         n->data_offset=data_offset;
         data_offset=data_offset+data_lenth;
+        n->total_len = n->len+n->startcodeprefix_len;
         //输出NALU长度和TYPE
-        dlg->AppendNLInfo(n->data_offset, n->len+n->startcodeprefix_len, n->startcode_buf, n->nal_unit_type, n->nal_reference_idc);
+        //dlg->AppendNLInfo(n->data_offset, n->len+n->startcodeprefix_len, n->startcode_buf, n->nal_unit_type, n->nal_reference_idc);
         // 简洁的方式
-        //dlg->ShowNLInfo(n);
+        dlg->ShowNLInfo(n);
         //判断是否选择了“只分析5000条”，如果选择了就不再分析了
         //if(dlg->m_h264Nallistmaxnum.GetCheck()==1&&nal_num>5000){
         //    break;
@@ -264,7 +260,7 @@ int h264_nal_parse_1(char *fileurl, handle_nalu_info p)
 static void debug_nal(h264_stream_t* h, nal_t* nal);
 void dump_hex(const char *buffer, int offset, int len);
 
-// todo
+// todo：不使用这种写死空间的做法
 //存放解析出来的字符串
 char tempstr[1000]={0};
 //char* outputstr=(char *)malloc(100000);
@@ -302,7 +298,7 @@ int probe_nal_unit(char* filename,int data_offset,int data_lenth,LPVOID lparam)
     //dump_hex((char*)nal_temp, data_offset, data_lenth);
 
     // 使用新的十六进制显示控件
-    dlg->m_edHexInfo.SetData((LPBYTE)nal_temp, data_offset, data_lenth);
+    dlg->m_edHexInfo.SetData((LPBYTE)nal_temp, data_lenth);
 
     // 不要控件焦点
     ::SendMessage(dlg->GetDlgItem(IDC_EDIT_HEX)-> m_hWnd,WM_KILLFOCUS,-1,0);

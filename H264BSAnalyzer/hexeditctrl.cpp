@@ -172,6 +172,7 @@ void CHexEdit::OnPaint()
 			CRect rcd = rc;
 			rcd.TopLeft().x = m_offAddress;
             // 使用用户自定义偏移--在分析定位文件内容时有作用
+            // todo：存在bug，滚动时，偏移量不会变化。-->临时不使用
             int tmp = m_myoffset;
 			for(int	 i = m_topindex; (i < m_length) && (rcd.TopLeft().y < height); i+= m_bpr)
 			{

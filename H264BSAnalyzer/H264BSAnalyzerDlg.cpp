@@ -163,14 +163,20 @@ int CH264BSAnalyzerDlg::AppendNLInfo(int data_offset, int nal_lenth, char* start
         break;
     }
 
-    // 格式化
+    // 序号
     strTempIndex.Format(_T("%d"),m_nNalIndex);
+    // 数据偏移
     strOffset.Format(_T("%08x"), data_offset);
+    // 长度
     strNalLen.Format(_T("%d"),nal_lenth);
     //strStartCode.Format(_T("%08x"), startcode);
+    // 起始码
     strStartCode.Format(_T("%s"), startcode);
+
+    // idc
     strNalRefIdc.Format(_T("%d"),nal_reference_idc);
 
+    //is_b_slice
     //获取当前记录条数
     nIndex=m_h264NalList.GetItemCount();
     //“行”数据结构
@@ -227,7 +233,8 @@ int CH264BSAnalyzerDlg::ShowNLInfo(NALU_t* nalu)
         break;
     case 1:
         strNalUnitType.Format(_T("Coded slice of a non-IDR picture"));
-        strNalInfo.Format(_T(""));  // todo
+        if (nalu->is_b_slice == 0x1)
+        strNalInfo.Format(_T("B Slice"));  // todo
         break;
     case 2:
         strNalUnitType.Format(_T("DPA"));
@@ -278,12 +285,16 @@ int CH264BSAnalyzerDlg::ShowNLInfo(NALU_t* nalu)
         break;
     }
 
-    // 格式化
-    strTempIndex.Format(_T("%d"), m_nNalIndex);
+    // 序号
+    strTempIndex.Format(_T("%d"),m_nNalIndex);
+    // 数据偏移
     strOffset.Format(_T("%08x"), nalu->data_offset);
-    strNalLen.Format(_T("%d"), nalu->total_len);
-    //strStartCode.Format(_T("%08x"), nalu->startcode);
+    // 长度
+    strNalLen.Format(_T("%d"),nalu->total_len);
+    //strStartCode.Format(_T("%08x"), startcode);
+    // 起始码
     strStartCode.Format(_T("%s"), nalu->startcode_buf);
+    // idc
     strNalRefIdc.Format(_T("%d"),nalu->nal_reference_idc);
 
     //获取当前记录条数
@@ -379,26 +390,20 @@ BOOL CH264BSAnalyzerDlg::OnInitDialog()
     m_edHexInfo.SetBPR(16); // 16字节
 
     // todo
-    GetDlgItem(IDC_EDIT_SIMINFO)->SetWindowTextA("todo hehe");
-#if 0
-    CFont myfont1;
-    myfont1.CreateFont( 
-		14, 
-		0, 
-		0, 
-		0, 
-		FW_NORMAL, 
-		FALSE, 
-		FALSE, 
-		FALSE, 
-		ANSI_CHARSET, 
-		OUT_DEFAULT_PRECIS, 
-		CLIP_DEFAULT_PRECIS, 
-		DEFAULT_QUALITY, 
-		DEFAULT_PITCH | FF_SWISS, 
-		_T("宋体")); 
-    GetDlgItem(IDC_EDIT_HEX)->SetFont(&myfont1);
-#endif
+    CString strSimpleInfo;
+    strSimpleInfo.Format("todo  \r\n"
+        "File name: hell.h264 \r\n"
+        "Picture Size: xxx\r\n"
+        " - Cropping Left       : xx\r\n"
+        " - Cropping Right      : xx\r\n"
+        " - Cropping Top        : xx\r\n"
+        " - Cropping Bottom	    : xx\r\n"
+        "Stream Type: High Profile @ Level xxx\r\n"
+        "Video Type: xxx\r\n"
+        "Encoding Type: xxx\r\n"
+        );
+    GetDlgItem(IDC_EDIT_SIMINFO)->SetWindowTextA(strSimpleInfo);
+
     return TRUE;  // return TRUE  unless you set the focus to a control
 }
 
