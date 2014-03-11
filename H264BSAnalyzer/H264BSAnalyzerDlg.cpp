@@ -87,129 +87,6 @@ void CH264BSAnalyzerDlg::SystemClear()
 }
 
 //添加一条记录
-//每个字段的含义：类型，数据大小，时间戳，streamid，data的第一个字节
-//nal_lenth是包含起始码的NAL长度
-int CH264BSAnalyzerDlg::AppendNLInfo(int data_offset, int nal_lenth, char* startcode, int nal_unit_type, int nal_reference_idc)
-{
-    //如果选择了“最多输出5000条”，判断是否超过5000条
-    //if(m_vh264nallistmaxnum.GetCheck()==1&&nl_index>5000){
-    //    return 0;
-    //}
-
-    CString strTempIndex;
-    CString strOffset;
-    CString strNalLen;
-    CString strStartCode;
-    CString strNalUnitType;
-    CString strNalInfo;
-    CString strNalRefIdc;
-    int nIndex=0;
-
-    // NAL单元类型
-    switch(nal_unit_type){
-    case 0:
-        strNalUnitType.Format(_T("Unspecified"));
-        break;
-    case 1:
-        strNalUnitType.Format(_T("Coded slice of a non-IDR picture"));
-        strNalInfo.Format(_T(""));  // todo
-        break;
-    case 2:
-        strNalUnitType.Format(_T("DPA"));
-        break;
-    case 3:
-        strNalUnitType.Format(_T("DPB"));
-        break;
-    case 4:
-        strNalUnitType.Format(_T("DPC"));
-        break;
-    case 5:
-        strNalUnitType.Format(_T("Coded slice of an IDR picture"));
-        strNalInfo.Format(_T("IDR"));
-        break;
-    case 6:
-        strNalUnitType.Format(_T("SEI"));
-        strNalInfo.Format(_T("SEI"));
-        break;
-    case 7:
-        strNalUnitType.Format(_T("Sequence parameter set"));
-        strNalInfo.Format(_T("SPS"));
-        break;
-    case 8:
-        strNalUnitType.Format(_T("Picture parameter set"));
-        strNalInfo.Format(_T("PPS"));
-        break;
-    case 9:
-        strNalUnitType.Format(_T("Access UD"));
-        strNalInfo.Format(_T("AUD"));
-        break;
-    case 10:
-        strNalUnitType.Format(_T("END_SEQUENCE"));
-        break;
-    case 11:
-        strNalUnitType.Format(_T("END_STREAM"));
-        break;
-    case 12:
-        strNalUnitType.Format(_T("FILLER_DATA"));
-        break;
-    case 13:
-        strNalUnitType.Format(_T("SPS_EXT"));
-        break;
-    case 19:
-        strNalUnitType.Format(_T("AUXILIARY_SLICE"));
-        break;
-    default:
-        strNalUnitType.Format(_T("Other"));
-        break;
-    }
-
-    // 序号
-    strTempIndex.Format(_T("%d"),m_nNalIndex);
-    // 数据偏移
-    strOffset.Format(_T("%08x"), data_offset);
-    // 长度
-    strNalLen.Format(_T("%d"),nal_lenth);
-    //strStartCode.Format(_T("%08x"), startcode);
-    // 起始码
-    strStartCode.Format(_T("%s"), startcode);
-
-    // idc
-    strNalRefIdc.Format(_T("%d"),nal_reference_idc);
-
-    //is_b_slice
-    //获取当前记录条数
-    nIndex=m_h264NalList.GetItemCount();
-    //“行”数据结构
-    LV_ITEM lvitem;
-    lvitem.mask=LVIF_TEXT;
-    lvitem.iItem=nIndex;
-    lvitem.iSubItem=0;
-    //注：vframe_index不可以直接赋值！
-    //务必使用f_index执行Format!再赋值！
-    lvitem.pszText=(char *)(LPCTSTR)strTempIndex;
-    //------------------------
-    //这个vector记录了nal的位置信息
-    //使用它我们可以获取到NAL的详细信息
-    //我们要存储包含起始码的长度
-    //起始码原本不是NAL的一部分
-    NALInfo nalinfo;
-    nalinfo.data_lenth=nal_lenth;
-    nalinfo.data_offset=data_offset;
-    m_vNalInfoVector.push_back(nalinfo);
-
-    //------------------------显示在List中
-    m_h264NalList.InsertItem(&lvitem);
-    m_h264NalList.SetItemText(nIndex,1,strOffset);
-    m_h264NalList.SetItemText(nIndex,2,strNalLen);
-    m_h264NalList.SetItemText(nIndex,3,strStartCode);
-    m_h264NalList.SetItemText(nIndex,4,strNalUnitType);
-    m_h264NalList.SetItemText(nIndex,5,strNalInfo);
-    m_h264NalList.SetItemText(nIndex,6,strNalRefIdc);
-    
-    m_nNalIndex++;
-    return TRUE;
-}
-
 int CH264BSAnalyzerDlg::ShowNLInfo(NALU_t* nalu)
 {
     //如果选择了“最多输出5000条”，判断是否超过5000条
@@ -223,18 +100,32 @@ int CH264BSAnalyzerDlg::ShowNLInfo(NALU_t* nalu)
     CString strStartCode;
     CString strNalUnitType;
     CString strNalInfo;
-    CString strNalRefIdc;
+    //CString strNalRefIdc;
     int nIndex=0;
 
     // NAL单元类型
-    switch(nalu->nal_unit_type){
+    switch (nalu->nal_unit_type)
+    {
     case 0:
         strNalUnitType.Format(_T("Unspecified"));
         break;
     case 1:
         strNalUnitType.Format(_T("Coded slice of a non-IDR picture"));
-        if (nalu->is_b_slice == 0x1)
-        strNalInfo.Format(_T("B Slice"));  // todo
+        switch (nalu->slice_type)
+        {
+            case 0:
+            case 5:
+                strNalInfo.Format(_T("P Slice"));
+                break;
+            case 1:
+            case 6:
+                strNalInfo.Format(_T("B Slice"));
+                break;
+            case 2:
+            case 7:
+                strNalInfo.Format(_T("I Slice"));
+                break;
+        }
         break;
     case 2:
         strNalUnitType.Format(_T("DPA"));
@@ -295,7 +186,7 @@ int CH264BSAnalyzerDlg::ShowNLInfo(NALU_t* nalu)
     // 起始码
     strStartCode.Format(_T("%s"), nalu->startcode_buf);
     // idc
-    strNalRefIdc.Format(_T("%d"),nalu->nal_reference_idc);
+    //strNalRefIdc.Format(_T("%d"),nalu->nal_reference_idc);
 
     //获取当前记录条数
     nIndex=m_h264NalList.GetItemCount();
@@ -324,7 +215,7 @@ int CH264BSAnalyzerDlg::ShowNLInfo(NALU_t* nalu)
     m_h264NalList.SetItemText(nIndex,3,strStartCode);
     m_h264NalList.SetItemText(nIndex,4,strNalUnitType);
     m_h264NalList.SetItemText(nIndex,5,strNalInfo);
-    m_h264NalList.SetItemText(nIndex,6,strNalRefIdc);
+    //m_h264NalList.SetItemText(nIndex,6,strNalRefIdc);
     
     m_nNalIndex++;
     return TRUE;
@@ -369,13 +260,13 @@ BOOL CH264BSAnalyzerDlg::OnInitDialog()
     m_h264NalList.SetExtendedStyle(dwExStyle);
 
     // 左对齐
-    m_h264NalList.InsertColumn(0,_T("No."),LVCFMT_LEFT,40,0);
-    m_h264NalList.InsertColumn(1,_T("Offset"),LVCFMT_LEFT,70,0);
+    m_h264NalList.InsertColumn(0,_T("No."),LVCFMT_LEFT,50,0);
+    m_h264NalList.InsertColumn(1,_T("Offset"),LVCFMT_LEFT,75,0);
     m_h264NalList.InsertColumn(2,_T("Length"),LVCFMT_LEFT,60,0);
-    m_h264NalList.InsertColumn(3,_T("Start Code"),LVCFMT_LEFT,80,0);
-    m_h264NalList.InsertColumn(4,_T("NAL Type"),LVCFMT_LEFT,170,0);
-    m_h264NalList.InsertColumn(5,_T("Info"),LVCFMT_LEFT,50,0);
-    m_h264NalList.InsertColumn(6,_T("nal_ref_idc"),LVCFMT_LEFT,100,0);
+    m_h264NalList.InsertColumn(3,_T("Start Code"),LVCFMT_LEFT,90,0);
+    m_h264NalList.InsertColumn(4,_T("NAL Type"),LVCFMT_LEFT,190,0);
+    m_h264NalList.InsertColumn(5,_T("Info"),LVCFMT_LEFT,60,0);
+    //m_h264NalList.InsertColumn(6,_T("nal_ref_idc"),LVCFMT_LEFT,100,0);
 
     //---------------------
     //m_h264NalListmaxnum.SetCheck(1);
@@ -477,6 +368,11 @@ void CH264BSAnalyzerDlg::OnBnClickedH264InputurlOpen()
 
     CString strFilePath;
     m_edFileUrl.GetWindowText(m_strFileUrl);
+
+    // test
+    //m_strFileUrl.Format("%s", "foreman_cif.h264");
+    
+
     if(m_strFileUrl.IsEmpty()==TRUE)
     {
         AfxMessageBox(_T("文件路径为空，请打开文件！！"));
@@ -572,24 +468,35 @@ void CH264BSAnalyzerDlg::OnNMCustomdrawH264Nallist(NMHDR *pNMHDR, LRESULT *pResu
         int    nItem = static_cast<int>( pLVCD->nmcd.dwItemSpec );
 
         CString strTemp = m_h264NalList.GetItemText(nItem,5);   // 第5列是类型，判断之
-        if(strcmp(strTemp,"SLICE")==0){
+        if(strcmp(strTemp,"SLICE")==0)
+        {
             clrNewTextColor = RGB(0,0,0);        //Set the text 
             clrNewBkColor = RGB(0,255,255);        //青色
         }
-        else if(strcmp(strTemp,"SPS")==0){
+        else if(strcmp(strTemp,"SPS")==0)
+        {
+            //clrNewTextColor = RGB(255,255,0);
+            //clrNewBkColor = RGB(255,255,255);
             clrNewTextColor = RGB(0,0,0);        //text 
             clrNewBkColor = RGB(255,255,0);        //黄色
         }
-        else if(strcmp(strTemp,"PPS")==0){
+        else if(strcmp(strTemp,"PPS")==0)
+        {
             clrNewTextColor = RGB(0,0,0);        //text
             clrNewBkColor = RGB(255,153,0);        //咖啡色
-        }else if(strcmp(strTemp,"SEI")==0){
+        }
+        else if(strcmp(strTemp,"SEI")==0)
+        {
             clrNewTextColor = RGB(0,0,0);        //text
             clrNewBkColor = RGB(255,66,255);            //粉红色
-        }else if(strcmp(strTemp,"IDR")==0){
+        }
+        else if(strcmp(strTemp,"IDR")==0)
+        {
             clrNewTextColor = RGB(0,0,0);        //text
             clrNewBkColor = RGB(255,0,0);            //红色
-        }else{
+        }
+        else
+        {
             clrNewTextColor = RGB(0,0,0);        //text
             clrNewBkColor = RGB(255,255,255);            //白色
         }

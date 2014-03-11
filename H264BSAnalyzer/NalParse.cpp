@@ -13,7 +13,7 @@
 
 FILE *g_fpBitStream = NULL;                //!< the bit stream file
 //static bool flag = true;
-static int info2=0, info3=0;
+//static int info2=0, info3=0;
 
 //判断是否为0x000001,如果是返回1
 static int FindStartCode2 (unsigned char *Buf)
@@ -77,6 +77,36 @@ void OpenBitstreamFile (char *fn)
         exit(0);
     }
 }
+
+static int ue(char *buff, int len, int &start_bit)
+{
+    int zero_num = 0;
+    int ret = 0;
+
+    while (start_bit < len * 8)
+    {
+        if (buff[start_bit / 8] & (0x80 >> (start_bit % 8)))
+        {
+            break;
+        }
+        zero_num++;
+        start_bit++;
+    }
+    start_bit++;
+
+    for (int i=0; i<zero_num; i++)
+    {
+        ret <<= 1;
+        if (buff[start_bit / 8] & (0x80 >> (start_bit % 8)))
+        {
+            ret += 1;
+        }
+        start_bit++;
+    }
+    return (1 << zero_num) - 1 + ret;
+}
+
+
 //这个函数输入为一个NAL结构体，主要功能为得到一个完整的NALU并保存在NALU_t的buf中，获取他的长度，填充F,IDC,TYPE位。
 //并且返回两个开始字符之间间隔的字节数，即包含有前缀的NALU的长度
 // todo:每次读一个字节，较慢，有无好的方法？
@@ -85,21 +115,42 @@ int GetAnnexbNALU (NALU_t *nalu)
     int pos = 0;
     int found_startcode, rewind;
     unsigned char *Buf;
+    int info2=0, info3=0;
     
     if ((Buf = (unsigned char*)calloc (nalu->max_size , sizeof(char))) == NULL) 
         printf ("GetAnnexbNALU: Could not allocate Buf memory\n");
 
     nalu->startcodeprefix_len=3;//初始化码流序列的开始字符为3个字节
   
+#if 0
     // 读取startcode，假设是4个字节，假设最开始的一定是0，舍弃
     fread(Buf, 1, 5, g_fpBitStream);
-    Buf[5] = '\0';
+    Buf[6] = '\0';
     sprintf(nalu->startcode_buf, "%02x%02x%02x%02x%02x", Buf[0], Buf[1], Buf[2], Buf[3], Buf[4]);
 
-    nalu->is_b_slice = Buf[4];
-
-    fseek (g_fpBitStream, -5, SEEK_CUR);
-
+    if (Buf[0] == 0x0 && Buf[1] == 0x0 && Buf[2] == 0x0 && Buf[3] == 0x01)
+    {
+        int nal_type = 0;
+        nal_type = Buf[4] & 0x1f;
+        if (nal_type <= 5 && nal_type >= 1)
+        {
+            // read another 1 byte
+            fread(Buf+5, 1, 1, g_fpBitStream);
+            int nStartBit = 0;
+            int first_mb_in_slice = ue((char*)Buf+5, 8, nStartBit);
+            int slice_type = ue((char*)Buf+5, 8, nStartBit);
+            fseek (g_fpBitStream, -6, SEEK_CUR);
+        }
+        else
+        {
+        fseek (g_fpBitStream, -5, SEEK_CUR);
+        }
+    }
+    else
+    {
+        fseek (g_fpBitStream, -5, SEEK_CUR);
+    }
+#endif
 
     if (3 != fread (Buf, 1, 3, g_fpBitStream))//从码流中读3个字节
     {
@@ -169,21 +220,43 @@ int GetAnnexbNALU (NALU_t *nalu)
         printf("GetAnnexbNALU: Cannot fseek in the bit stream file");
     }
 
+#if 0
+    sprintf(nalu->startcode_buf, "%02x%02x%02x%02x%02x", Buf[0], Buf[1], Buf[2], Buf[3], Buf[4]);
+    if (Buf[0] == 0x0 && Buf[1] == 0x0 && Buf[2] == 0x0 && Buf[3] == 0x01)
+    {
+        int nal_type = 0;
+        nal_type = Buf[4] & 0x1f;
+        if (nal_type <= 5 && nal_type >= 1)
+        {
+            int nStartBit = 0;
+            int first_mb_in_slice = ue((char*)Buf+5, 8, nStartBit);
+            int slice_type = ue((char*)Buf+5, 8, nStartBit);
+            int a = slice_type;
+        }
+    }
+#endif
     // Here the Start code, the complete NALU, and the next start code is in the Buf.  
     // The size of Buf is pos, pos+rewind are the number of bytes excluding the next
     // start code, and (pos+rewind)-startcodeprefix_len is the size of the NALU excluding the start code
-
     nalu->len = (pos+rewind)-nalu->startcodeprefix_len;
+    sprintf(nalu->startcode_buf, "%02x%02x%02x%02x%02x", Buf[0], Buf[1], Buf[2], Buf[3], Buf[4]);
     memcpy (nalu->buf, &Buf[nalu->startcodeprefix_len], nalu->len);//拷贝一个完整NALU，不拷贝起始前缀0x000001或0x00000001
     nalu->forbidden_bit = nalu->buf[0] & 0x80; //1 bit
     nalu->nal_reference_idc = nalu->buf[0] & 0x60; // 2 bit
     nalu->nal_unit_type = (nalu->buf[0]) & 0x1f;// 5 bit
+
+    if (nalu->nal_unit_type <= 5 && nalu->nal_unit_type >= 1)
+    {
+        int nStartBit = 0;
+        int first_mb_in_slice = ue((char*)Buf+5, 8, nStartBit);
+        nalu->slice_type = ue((char*)Buf+5, 8, nStartBit);
+    }
     free(Buf);
  
     return (pos+rewind);//返回两个开始字符之间间隔的字节数，即包含有前缀的NALU的长度
 }
 
-// 获取NAL
+// 获取NAL类型
 // todo: 不能写死空间
 int h264_nal_parse(LPVOID lparam,char *fileurl)
 {
@@ -198,6 +271,7 @@ int h264_nal_parse(LPVOID lparam,char *fileurl)
     int data_offset=0;
 
     OpenBitstreamFile(fileurl);
+
     n = AllocNALU(8000000);//为结构体nalu_t及其成员buf分配空间。返回值为指向nalu_t存储空间的指针
 
     dlg=(CH264BSAnalyzerDlg *)lparam;

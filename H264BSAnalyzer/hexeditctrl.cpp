@@ -139,8 +139,8 @@ void CHexEdit::OnPaint()
 			m_lineHeight = sz.cy;
 			
             // 每一种类型的间隔
-			m_offHex	= m_bShowAddress ? (m_bAddressIsWide ? m_nullWidth * 10 : m_nullWidth * 5) : 0;
-			m_offAscii	= m_bShowAddress ? (m_bAddressIsWide ? m_nullWidth * 12 : m_nullWidth * 5) : 0;
+			m_offHex	= m_bShowAddress ? (m_bAddressIsWide ? m_nullWidth * 9 : m_nullWidth * 5) : 0;
+			m_offAscii	= m_bShowAddress ? (m_bAddressIsWide ? m_nullWidth * 10 : m_nullWidth * 5) : 0;
 			m_offAscii += m_bShowHex	 ? (m_bpr * 3 * m_nullWidth) : 0;
 			
 			m_lpp = rc.Height() / m_lineHeight;
