@@ -424,24 +424,16 @@ void CH264BSAnalyzerDlg::OnLvnItemActivateH264Nallist(NMHDR *pNMHDR, LRESULT *pR
         AfxMessageBox("解析NAL时出错，可能是文件读取出错。");
     }
 
-    //----------------------
-    //获得选中行的序号
-    //CString str;
-    //str=m_vh264nallist.GetItemText(nIndex,0);
-    //AfxMessageBox(str);
-    //----------------------
-
-    // 在这里显示是什么帧？
-    //m_h264NalList.SetItemText(nIndex,5,strNalInfo);
     *pResult = 0;
 }
-
 
 void CH264BSAnalyzerDlg::OnNMCustomdrawH264Nallist(NMHDR *pNMHDR, LRESULT *pResult)
 {
     //This code based on Michael Dunn's excellent article on
     //list control custom draw at http://www.codeproject.com/listctrl/lvcustomdraw.asp
 
+    COLORREF clrNewTextColor, clrNewBkColor;
+    int nItem;
     NMLVCUSTOMDRAW* pLVCD = reinterpret_cast<NMLVCUSTOMDRAW*>( pNMHDR );
 
     // Take the default processing unless we set this to something else below.
@@ -462,48 +454,47 @@ void CH264BSAnalyzerDlg::OnNMCustomdrawH264Nallist(NMHDR *pNMHDR, LRESULT *pResu
     }
     else if ( (CDDS_ITEMPREPAINT | CDDS_SUBITEM) == pLVCD->nmcd.dwDrawStage )
     {
+        clrNewTextColor = RGB(0,0,0);
+        clrNewBkColor = RGB(255,255,255);
 
-        COLORREF clrNewTextColor, clrNewBkColor;
-
-        int    nItem = static_cast<int>( pLVCD->nmcd.dwItemSpec );
+        nItem = static_cast<int>( pLVCD->nmcd.dwItemSpec );
 
         CString strTemp = m_h264NalList.GetItemText(nItem,5);   // 第5列是类型，判断之
         if(strcmp(strTemp,"SLICE")==0)
         {
-            clrNewTextColor = RGB(0,0,0);        //Set the text 
-            clrNewBkColor = RGB(0,255,255);        //青色
+            clrNewBkColor = RGB(0,255,255);       //青色
         }
         else if(strcmp(strTemp,"SPS")==0)
         {
-            //clrNewTextColor = RGB(255,255,0);
-            //clrNewBkColor = RGB(255,255,255);
-            clrNewTextColor = RGB(0,0,0);        //text 
             clrNewBkColor = RGB(255,255,0);        //黄色
         }
         else if(strcmp(strTemp,"PPS")==0)
         {
-            clrNewTextColor = RGB(0,0,0);        //text
             clrNewBkColor = RGB(255,153,0);        //咖啡色
         }
         else if(strcmp(strTemp,"SEI")==0)
         {
-            clrNewTextColor = RGB(0,0,0);        //text
-            clrNewBkColor = RGB(255,66,255);            //粉红色
+            clrNewBkColor = RGB(255,66,255);       //粉红色
         }
         else if(strcmp(strTemp,"IDR")==0)
         {
-            clrNewTextColor = RGB(0,0,0);        //text
-            clrNewBkColor = RGB(255,0,0);            //红色
+            clrNewBkColor = RGB(255,0,0);          //红色
         }
         else if(strcmp(strTemp,"P Slice")==0)
         {
-            clrNewTextColor = RGB(0,0,255);           //text
-            clrNewBkColor = RGB(255,255,255);
+            // 只有第5列才显示这里设置的颜色
+            if (pLVCD->iSubItem == 5)
+                clrNewTextColor = RGB(0,0,255); // Blue
         }
-        else
+        else if(strcmp(strTemp,"B Slice")==0)
         {
-            clrNewTextColor = RGB(0,0,0);        //text
-            clrNewBkColor = RGB(255,255,255);            //白色
+            if (pLVCD->iSubItem == 5)
+                clrNewTextColor = RGB(0,255,0); // Green
+        }
+        else if(strcmp(strTemp,"I Slice")==0)
+        {
+            if (pLVCD->iSubItem == 5)
+                clrNewTextColor = RGB(255,0,0); // Red
         }
 
         pLVCD->clrText = clrNewTextColor;

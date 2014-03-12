@@ -152,7 +152,6 @@ int GetAnnexbNALU (NALU_t *nalu)
             nalu->startcodeprefix_len = 4;
         }
     }
-   
     else
     {
         //如果是0x000001,得到开始前缀为3个字节
@@ -209,8 +208,8 @@ got_nal:
     
     char nal_header = 0;
     nal_header = Buf[nalu->startcodeprefix_len];
-    nalu->forbidden_bit = nal_header & 0x80; //1 bit
-    nalu->nal_reference_idc = nal_header & 0x60; // 2 bit
+//    nalu->forbidden_bit = nal_header & 0x80; //1 bit
+//    nalu->nal_reference_idc = nal_header & 0x60; // 2 bit
     nalu->nal_unit_type = nal_header & 0x1f;// 5 bit
 
     nalu->total_len = nalu->len + nalu->startcodeprefix_len;
@@ -236,17 +235,13 @@ int h264_nal_parse(LPVOID lparam,char *fileurl)
 {
     CH264BSAnalyzerDlg *dlg;
     NALU_t n;
-    char* nalu_payload;  
-    char sendbuf[1500];
-    
+
     unsigned short seq_num =0;
     int    bytes=0;
     int nal_num=0;
     int data_offset=0;
 
     OpenBitstreamFile(fileurl);
-
-    //n = AllocNALU(8000000);//为结构体nalu_t及其成员buf分配空间。返回值为指向nalu_t存储空间的指针
 
     memset(&n, '\0', sizeof(NALU_t));
     n.max_size = 8*1024*1024;   // 假设一个nal包最大为8MB
@@ -259,26 +254,21 @@ int h264_nal_parse(LPVOID lparam,char *fileurl)
         data_lenth=GetAnnexbNALU(&n);//每执行一次，文件的指针指向本次找到的NALU的末尾，下一个位置即为下个NALU的起始码0x000001
         n.data_offset=data_offset;
         data_offset=data_offset+data_lenth;
-        //n->total_len = n->len+n->startcodeprefix_len;
         //输出NALU长度和TYPE
-        // 简洁的方式
-        dlg->ShowNLInfo(&n);
+        dlg->ShowNLInfo(&n);    // 显示到界面上
         //判断是否选择了“只分析5000条”，如果选择了就不再分析了
         //if(dlg->m_h264Nallistmaxnum.GetCheck()==1&&nal_num>5000){
         //    break;
         //}
         nal_num++;
     }
-    //FreeNALU(n);
     return 0;
 }
 
 int h264_nal_parse_1(char *fileurl, handle_nalu_info p)
 {
     NALU_t *n;
-    char* nalu_payload;  
-    char sendbuf[1500];
-    
+
     unsigned short seq_num =0;
     int    bytes=0;
     int nal_num=0;
@@ -319,6 +309,9 @@ char outputstr[100000]={'\0'};
 //自己写的，解析NAL数据的函数
 int probe_nal_unit(char* filename,int data_offset,int data_lenth,LPVOID lparam)
 {
+    int nal_start,nal_end;
+    h264_stream_t* h = NULL;
+
     //清空字符串-----------------
     memset(outputstr,'\0',100000);
     //句柄
@@ -327,8 +320,6 @@ int probe_nal_unit(char* filename,int data_offset,int data_lenth,LPVOID lparam)
     //outputstr=(char *)malloc(100000);
     //内存用于存放NAL（包含起始码）
     uint8_t *nal_temp=(uint8_t *)malloc(data_lenth);
-
-    //uint8_t nal_temp[16*1024] = {0};
 
     //从文件读取
     FILE *fp=fopen(filename,"rb");
@@ -340,8 +331,8 @@ int probe_nal_unit(char* filename,int data_offset,int data_lenth,LPVOID lparam)
     fseek(fp,data_offset,SEEK_SET);
     fread(nal_temp,data_lenth,1,fp);
     // read some H264 data into buf
-    int nal_start,nal_end;
-    h264_stream_t* h = h264_new();
+
+    h = h264_new();
     find_nal_unit(nal_temp, data_lenth, &nal_start, &nal_end);
     read_nal_unit(h, &nal_temp[nal_start], nal_end - nal_start);
 
@@ -356,8 +347,13 @@ int probe_nal_unit(char* filename,int data_offset,int data_lenth,LPVOID lparam)
     // 不要控件焦点
     ::SendMessage(dlg->GetDlgItem(IDC_EDIT_HEX)-> m_hWnd,WM_KILLFOCUS,-1,0);
 
-    free(nal_temp);
-    nal_temp = NULL;
+    if (nal_temp != NULL)
+    {
+        free(nal_temp);
+        nal_temp = NULL;
+    }
+    // 必须调用，否则不释放内存
+    h264_free(h);
 
     fclose(fp);
     return 0;
