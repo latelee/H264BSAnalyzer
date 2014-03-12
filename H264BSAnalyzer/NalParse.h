@@ -12,10 +12,9 @@ typedef struct
   int forbidden_bit;            //! should be always FALSE
   int nal_reference_idc;        //! NALU_PRIORITY_xxxx
   int nal_unit_type;            //! NALU_TYPE_xxxx    
-  char *buf;                    //! contains the first byte followed by the EBSP
+  //char *buf;                    //! contains the first byte followed by the EBSP
   unsigned short lost_packets;  //! true, if packet loss is detected
   int data_offset;
-//  int startcode;
   int total_len;                // 含起始码的总的长度
   char startcode_buf[16];       // 起始码，字符串形式
   int slice_type;               // 帧类型

@@ -113,18 +113,18 @@ int CH264BSAnalyzerDlg::ShowNLInfo(NALU_t* nalu)
         strNalUnitType.Format(_T("Coded slice of a non-IDR picture"));
         switch (nalu->slice_type)
         {
-            case 0:
-            case 5:
-                strNalInfo.Format(_T("P Slice"));
-                break;
-            case 1:
-            case 6:
-                strNalInfo.Format(_T("B Slice"));
-                break;
-            case 2:
-            case 7:
-                strNalInfo.Format(_T("I Slice"));
-                break;
+        case 0:
+        case 5:
+            strNalInfo.Format(_T("P Slice"));
+            break;
+        case 1:
+        case 6:
+            strNalInfo.Format(_T("B Slice"));
+            break;
+        case 2:
+        case 7:
+            strNalInfo.Format(_T("I Slice"));
+            break;
         }
         break;
     case 2:
@@ -265,7 +265,7 @@ BOOL CH264BSAnalyzerDlg::OnInitDialog()
     m_h264NalList.InsertColumn(2,_T("Length"),LVCFMT_LEFT,60,0);
     m_h264NalList.InsertColumn(3,_T("Start Code"),LVCFMT_LEFT,90,0);
     m_h264NalList.InsertColumn(4,_T("NAL Type"),LVCFMT_LEFT,190,0);
-    m_h264NalList.InsertColumn(5,_T("Info"),LVCFMT_LEFT,60,0);
+    m_h264NalList.InsertColumn(5,_T("Info"),LVCFMT_LEFT,65,0);
     //m_h264NalList.InsertColumn(6,_T("nal_ref_idc"),LVCFMT_LEFT,100,0);
 
     //---------------------
@@ -370,7 +370,7 @@ void CH264BSAnalyzerDlg::OnBnClickedH264InputurlOpen()
     m_edFileUrl.GetWindowText(m_strFileUrl);
 
     // test
-    //m_strFileUrl.Format("%s", "foreman_cif.h264");
+    m_strFileUrl.Format("%s", "../foreman_cif.h264");
     
 
     if(m_strFileUrl.IsEmpty()==TRUE)
@@ -495,6 +495,11 @@ void CH264BSAnalyzerDlg::OnNMCustomdrawH264Nallist(NMHDR *pNMHDR, LRESULT *pResu
             clrNewTextColor = RGB(0,0,0);        //text
             clrNewBkColor = RGB(255,0,0);            //ºìÉ«
         }
+        else if(strcmp(strTemp,"P Slice")==0)
+        {
+            clrNewTextColor = RGB(0,0,255);           //text
+            clrNewBkColor = RGB(255,255,255);
+        }
         else
         {
             clrNewTextColor = RGB(0,0,0);        //text
@@ -600,9 +605,6 @@ void CAboutDlg::OnLButtonDown(UINT nFlags, CPoint point)
             ShellExecute(NULL, NULL, strLink, NULL, NULL, SW_NORMAL);
         }
     }
-    else
-    {
 
-    }
     CDialogEx::OnLButtonDown(nFlags, point);
 }
