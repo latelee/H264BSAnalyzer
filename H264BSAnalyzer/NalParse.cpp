@@ -353,7 +353,7 @@ int probe_nal_unit(char* filename,int data_offset,int data_lenth,LPVOID lparam)
     return 0;
 }
 
-int parse_sps(char* filename,int data_offset,int data_lenth)
+int parse_sps(char* filename,int data_offset,int data_lenth, SPSInfo_t& info)
 {
     int nal_start,nal_end;
     h264_stream_t* h = NULL;
@@ -376,10 +376,25 @@ int parse_sps(char* filename,int data_offset,int data_lenth)
     find_nal_unit(nal_temp, data_lenth, &nal_start, &nal_end);
     read_nal_unit(h, &nal_temp[nal_start], nal_end - nal_start);
 
-    // todo
-    int a,b;
-    a = h->sps->pic_width_in_mbs_minus1;
-    b = h->sps->pic_height_in_map_units_minus1;
+    int pic_width_in_mbs_minus1;
+    int pic_height_in_map_units_minus1;
+    int frame_crop_left_offset, frame_crop_right_offset;
+    int frame_mbs_only_flag, frame_crop_top_offset, frame_crop_bottom_offset;
+
+    pic_width_in_mbs_minus1 =  h->sps->pic_width_in_mbs_minus1;
+    pic_height_in_map_units_minus1 =  h->sps->pic_height_in_map_units_minus1;
+
+    frame_mbs_only_flag =  h->sps->frame_mbs_only_flag;
+    info.crop_left = frame_crop_left_offset = h->sps->frame_crop_left_offset;
+    info.crop_right = frame_crop_right_offset = h->sps->frame_crop_right_offset;
+    info.crop_top = frame_crop_top_offset = h->sps->frame_crop_top_offset;
+    info.crop_bottom = frame_crop_bottom_offset = h->sps->frame_crop_bottom_offset;
+
+    info.width = ((pic_width_in_mbs_minus1 +1)*16) - frame_crop_left_offset*2 - frame_crop_right_offset*2;
+    info.height= ((2 - frame_mbs_only_flag)* (pic_height_in_map_units_minus1 +1) * 16) - (frame_crop_top_offset * 2) - (frame_crop_bottom_offset * 2);
+
+    info.profile_idc = h->sps->profile_idc;
+    info.level_idc = h->sps->level_idc;
 
     if (nal_temp != NULL)
     {
@@ -393,7 +408,7 @@ int parse_sps(char* filename,int data_offset,int data_lenth)
     return 0;
 }
 
-int parse_pps(char* filename,int data_offset,int data_lenth)
+int parse_pps(char* filename,int data_offset,int data_lenth, PPSInfo_t& info)
 {
     int nal_start,nal_end;
     h264_stream_t* h = NULL;
@@ -416,7 +431,7 @@ int parse_pps(char* filename,int data_offset,int data_lenth)
     find_nal_unit(nal_temp, data_lenth, &nal_start, &nal_end);
     read_nal_unit(h, &nal_temp[nal_start], nal_end - nal_start);
 
-    // todo
+    info.encoding_type = h->pps->entropy_coding_mode_flag;
 
     if (nal_temp != NULL)
     {
@@ -710,7 +725,13 @@ static void debug_seis( h264_stream_t* h)
         my_printf(" payloadSize : %d \n", s->payloadSize );
 
         my_printf(" payload : " );
-        my_printf("%s", s->payload);
+        unsigned char* p = s->payload;
+        while (*p > 0x7f || *p < 0x20)
+        {
+            p++;
+        }
+        //my_printf("%s", s->payload);
+        my_printf("%s", p);
         //debug_bytes(s->payload, s->payloadSize);
         //for (i = 0; i < s->payloadSize; i++)
         //{

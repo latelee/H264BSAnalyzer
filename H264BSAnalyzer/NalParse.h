@@ -22,6 +22,25 @@ typedef struct
     char nal_unit_type;            //! NALU_TYPE_xxxx 
 } NALU_t;
 
+typedef struct 
+{
+    int profile_idc;
+    int level_idc;
+    int width;
+    int height;
+    int crop_left;
+    int crop_right;
+    int crop_top;
+    int crop_bottom;
+
+}SPSInfo_t;
+
+typedef struct 
+{
+    int encoding_type;
+
+}PPSInfo_t;
+
 typedef int handle_nalu_info(NALU_t* nalu);
 
 int h264_nal_parse(LPVOID lparam,char *fileurl);
@@ -30,8 +49,8 @@ int h264_nal_parse_1(char *fileurl, vector<NALU_t>& vNal);
 
 int probe_nal_unit(char* filename,int data_offset,int data_lenth,LPVOID lparam);;
 
-int parse_sps(char* filename,int data_offset,int data_lenth);
+int parse_sps(char* filename,int data_offset,int data_lenth, SPSInfo_t& info);
 
-int parse_pps(char* filename,int data_offset,int data_lenth);
+int parse_pps(char* filename,int data_offset,int data_lenth, PPSInfo_t& info);
 
 #endif

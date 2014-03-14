@@ -83,7 +83,7 @@ void CH264BSAnalyzerDlg::SystemClear()
 {
     m_vNalInfoVector.clear();
     m_h264NalList.DeleteAllItems();
-    m_nNalIndex = 1;
+    m_nNalIndex = 0;
 }
 
 //添加一条记录
@@ -239,17 +239,18 @@ int CH264BSAnalyzerDlg::ShowNLInfo_1(NALU_t* nalu)
         {
         case 0:
         case 5:
-            strNalInfo.Format(_T("P Slice"));
+            strNalInfo.Format(_T("P Slice #%d"), m_nNalIndex);
             break;
         case 1:
         case 6:
-            strNalInfo.Format(_T("B Slice"));
+            strNalInfo.Format(_T("B Slice #%d"), m_nNalIndex);
             break;
         case 2:
         case 7:
-            strNalInfo.Format(_T("I Slice"));
+            strNalInfo.Format(_T("I Slice #%d"), m_nNalIndex);
             break;
         }
+        m_nNalIndex++;
         break;
     case 2:
         strNalUnitType.Format(_T("DPA"));
@@ -262,7 +263,8 @@ int CH264BSAnalyzerDlg::ShowNLInfo_1(NALU_t* nalu)
         break;
     case 5:
         strNalUnitType.Format(_T("Coded slice of an IDR picture"));
-        strNalInfo.Format(_T("IDR"));
+        strNalInfo.Format(_T("IDR #%d"), m_nNalIndex);
+        m_nNalIndex++;
         break;
     case 6:
         strNalUnitType.Format(_T("SEI"));
@@ -340,8 +342,6 @@ int CH264BSAnalyzerDlg::ShowNLInfo_1(NALU_t* nalu)
     m_h264NalList.SetItemText(nIndex,3,strStartCode);
     m_h264NalList.SetItemText(nIndex,4,strNalUnitType);
     m_h264NalList.SetItemText(nIndex,5,strNalInfo);
-    
-    m_nNalIndex++;
 
     return TRUE;
 }
@@ -386,16 +386,16 @@ BOOL CH264BSAnalyzerDlg::OnInitDialog()
 
     // 左对齐
     m_h264NalList.InsertColumn(0,_T("No."),LVCFMT_LEFT,50,0);
-    m_h264NalList.InsertColumn(1,_T("Offset"),LVCFMT_LEFT,75,0);
+    m_h264NalList.InsertColumn(1,_T("Offset"),LVCFMT_LEFT,70,0);
     m_h264NalList.InsertColumn(2,_T("Length"),LVCFMT_LEFT,60,0);
-    m_h264NalList.InsertColumn(3,_T("Start Code"),LVCFMT_LEFT,90,0);
-    m_h264NalList.InsertColumn(4,_T("NAL Type"),LVCFMT_LEFT,190,0);
-    m_h264NalList.InsertColumn(5,_T("Info"),LVCFMT_LEFT,65,0);
+    m_h264NalList.InsertColumn(3,_T("Start Code"),LVCFMT_LEFT,80,0);
+    m_h264NalList.InsertColumn(4,_T("NAL Type"),LVCFMT_LEFT,180,0);
+    m_h264NalList.InsertColumn(5,_T("Info"),LVCFMT_LEFT,80,0);
     //m_h264NalList.InsertColumn(6,_T("nal_ref_idc"),LVCFMT_LEFT,100,0);
 
     //---------------------
     //m_h264NalListmaxnum.SetCheck(1);
-    m_nNalIndex = 1;
+    m_nNalIndex = 0;
     //------------
     // 不再使用
     //m_h264InputUrl.EnableFileBrowseButton(NULL,"H.264 Files (*.264,*.h264)|*.264;*.h264|All Files (*.*)|*.*||");
@@ -405,6 +405,7 @@ BOOL CH264BSAnalyzerDlg::OnInitDialog()
     m_edHexInfo.SetOptions(1, 1, 1, 1);
     m_edHexInfo.SetBPR(16); // 16字节
 
+#if 0
     // todo
     CString strSimpleInfo;
     strSimpleInfo.Format("todo  \r\n"
@@ -419,6 +420,7 @@ BOOL CH264BSAnalyzerDlg::OnInitDialog()
         "Encoding Type: xxx\r\n"
         );
     GetDlgItem(IDC_EDIT_SIMINFO)->SetWindowTextA(strSimpleInfo);
+#endif
 
     return TRUE;  // return TRUE  unless you set the focus to a control
 }
@@ -492,10 +494,16 @@ void CH264BSAnalyzerDlg::OnBnClickedH264InputurlOpen()
 #endif
 
     CString strFilePath;
+    CString strSimpleInfo;
+    CString strProfileInfo;
+    SPSInfo_t sps = {0};
+    PPSInfo_t pps = {0};
+    char* cabac = "CABAC";
+
     m_edFileUrl.GetWindowText(m_strFileUrl);
 
     // test
-    m_strFileUrl.Format("%s", "../foreman_cif.h264");
+    //m_strFileUrl.Format("%s", "../foreman_cif.h264");
     
 
     if(m_strFileUrl.IsEmpty()==TRUE)
@@ -514,16 +522,47 @@ void CH264BSAnalyzerDlg::OnBnClickedH264InputurlOpen()
         // 解析SPS
         if (m_vNalTypeVector[i].nal_unit_type == 7)
         {
-            parse_sps(str_szFileUrl, m_vNalTypeVector[i].data_offset, m_vNalTypeVector[i].total_len);
+            parse_sps(str_szFileUrl, m_vNalTypeVector[i].data_offset, m_vNalTypeVector[i].total_len, sps);
         }
         // 解析PPS
         if (m_vNalTypeVector[i].nal_unit_type == 8)
         {
-        
+            parse_pps(str_szFileUrl, m_vNalTypeVector[i].data_offset, m_vNalTypeVector[i].total_len, pps);
         }
         ShowNLInfo_1(&m_vNalTypeVector[i]);
-        
     }
+    switch (sps.profile_idc)
+    {
+    case 66:
+        strProfileInfo.Format("Baseline");
+        break;
+    case 100:
+        strProfileInfo.Format("High");
+        break;
+    case 77:
+        strProfileInfo.Format("Main");
+        break;
+    default:
+        break;
+    }
+    strSimpleInfo.Format(
+        "File name: %s\r\n"
+        "Picture Size: %dx%d\r\n"
+        " - Cropping Left       : %d\r\n"
+        " - Cropping Right      : %d\r\n"
+        " - Cropping Top        : %d\r\n"
+        " - Cropping Bottom     : %d\r\n"
+        "Stream Type: %s Profile @ Level %d\r\n"
+        "Video Type: xxx\r\n"
+        "Encoding Type: %s\r\n",
+        m_strFileUrl,
+        sps.width, sps.height,
+        sps.crop_left, sps.crop_right,
+        sps.crop_top, sps.crop_bottom,
+        strProfileInfo, sps.level_idc,
+        pps.encoding_type ? "CABAC" : "CAVLC"
+        );
+    GetDlgItem(IDC_EDIT_SIMINFO)->SetWindowTextA(strSimpleInfo);
 }
 
 // 主界面需要设置Accept Files为TRUE
@@ -604,38 +643,38 @@ void CH264BSAnalyzerDlg::OnNMCustomdrawH264Nallist(NMHDR *pNMHDR, LRESULT *pResu
         nItem = static_cast<int>( pLVCD->nmcd.dwItemSpec );
 
         CString strTemp = m_h264NalList.GetItemText(nItem,5);   // 第5列是类型，判断之
-        if(strcmp(strTemp,"SLICE")==0)
+        if(strncmp(strTemp,"SLICE", 5)==0)
         {
             clrNewBkColor = RGB(0,255,255);       //青色
         }
-        else if(strcmp(strTemp,"SPS")==0)
+        else if(strncmp(strTemp,"SPS", 3)==0)
         {
             clrNewBkColor = RGB(255,255,0);        //黄色
         }
-        else if(strcmp(strTemp,"PPS")==0)
+        else if(strncmp(strTemp,"PPS", 3)==0)
         {
             clrNewBkColor = RGB(255,153,0);        //咖啡色
         }
-        else if(strcmp(strTemp,"SEI")==0)
+        else if(strncmp(strTemp,"SEI", 3)==0)
         {
             clrNewBkColor = RGB(255,66,255);       //粉红色
         }
-        else if(strcmp(strTemp,"IDR")==0)
+        else if(strncmp(strTemp,"IDR", 3)==0)
         {
             clrNewBkColor = RGB(255,0,0);          //红色
         }
-        else if(strcmp(strTemp,"P Slice")==0)
+        else if(strncmp(strTemp,"P Slice", 7)==0)
         {
             // 只有第5列才显示这里设置的颜色
             if (pLVCD->iSubItem == 5)
                 clrNewTextColor = RGB(0,0,255); // Blue
         }
-        else if(strcmp(strTemp,"B Slice")==0)
+        else if(strncmp(strTemp,"B Slice", 7)==0)
         {
             if (pLVCD->iSubItem == 5)
                 clrNewTextColor = RGB(0,255,0); // Green
         }
-        else if(strcmp(strTemp,"I Slice")==0)
+        else if(strncmp(strTemp,"I Slice", 7)==0)
         {
             if (pLVCD->iSubItem == 5)
                 clrNewTextColor = RGB(255,0,0); // Red
@@ -648,7 +687,6 @@ void CH264BSAnalyzerDlg::OnNMCustomdrawH264Nallist(NMHDR *pNMHDR, LRESULT *pResu
         *pResult = CDRF_DODEFAULT;
     }
 }
-
 
 void CH264BSAnalyzerDlg::OnFileOpen()
 {
