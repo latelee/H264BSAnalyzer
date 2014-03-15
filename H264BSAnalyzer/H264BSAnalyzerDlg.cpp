@@ -63,6 +63,7 @@ void CH264BSAnalyzerDlg::DoDataExchange(CDataExchange* pDX)
     DDX_Control(pDX, IDC_H264_NALLIST, m_h264NalList);
     DDX_Control(pDX, IDC_EDIT_FILE, m_edFileUrl);
     DDX_Control(pDX, IDC_EDIT_HEX, m_edHexInfo);
+    DDX_Control(pDX, IDC_CB_NAL, m_cbNalNum);
 }
 
 BEGIN_MESSAGE_MAP(CH264BSAnalyzerDlg, CDialogEx)
@@ -78,17 +79,10 @@ BEGIN_MESSAGE_MAP(CH264BSAnalyzerDlg, CDialogEx)
     ON_COMMAND(ID_HOWTO_USAGE, &CH264BSAnalyzerDlg::OnHowtoUsage)
 END_MESSAGE_MAP()
 
-
-void CH264BSAnalyzerDlg::SystemClear()
-{
-    m_vNalInfoVector.clear();
-    m_h264NalList.DeleteAllItems();
-    m_nNalIndex = 0;
-}
-
 //添加一条记录
 int CH264BSAnalyzerDlg::ShowNLInfo(NALU_t* nalu)
 {
+#if 0
     //如果选择了“最多输出5000条”，判断是否超过5000条
     //if(m_vh264nallistmaxnum.GetCheck()==1&&nl_index>5000){
     //    return 0;
@@ -176,7 +170,7 @@ int CH264BSAnalyzerDlg::ShowNLInfo(NALU_t* nalu)
     }
 
     // 序号
-    strTempIndex.Format(_T("%d"),m_nNalIndex);
+    strTempIndex.Format(_T("%d"),m_nSliceIndex);
     // 数据偏移
     strOffset.Format(_T("%08x"), nalu->data_offset);
     // 长度
@@ -212,8 +206,8 @@ int CH264BSAnalyzerDlg::ShowNLInfo(NALU_t* nalu)
     m_h264NalList.SetItemText(nIndex,4,strNalUnitType);
     m_h264NalList.SetItemText(nIndex,5,strNalInfo);
     
-    m_nNalIndex++;
-
+    m_nSliceIndex++;
+#endif
     return TRUE;
 }
 
@@ -239,18 +233,18 @@ int CH264BSAnalyzerDlg::ShowNLInfo_1(NALU_t* nalu)
         {
         case 0:
         case 5:
-            strNalInfo.Format(_T("P Slice #%d"), m_nNalIndex);
+            strNalInfo.Format(_T("P Slice #%d"), m_nSliceIndex);
             break;
         case 1:
         case 6:
-            strNalInfo.Format(_T("B Slice #%d"), m_nNalIndex);
+            strNalInfo.Format(_T("B Slice #%d"), m_nSliceIndex);
             break;
         case 2:
         case 7:
-            strNalInfo.Format(_T("I Slice #%d"), m_nNalIndex);
+            strNalInfo.Format(_T("I Slice #%d"), m_nSliceIndex);
             break;
         }
-        m_nNalIndex++;
+        m_nSliceIndex++;
         break;
     case 2:
         strNalUnitType.Format(_T("DPA"));
@@ -263,8 +257,8 @@ int CH264BSAnalyzerDlg::ShowNLInfo_1(NALU_t* nalu)
         break;
     case 5:
         strNalUnitType.Format(_T("Coded slice of an IDR picture"));
-        strNalInfo.Format(_T("IDR #%d"), m_nNalIndex);
-        m_nNalIndex++;
+        strNalInfo.Format(_T("IDR #%d"), m_nSliceIndex);
+        m_nSliceIndex++;
         break;
     case 6:
         strNalUnitType.Format(_T("SEI"));
@@ -302,13 +296,12 @@ int CH264BSAnalyzerDlg::ShowNLInfo_1(NALU_t* nalu)
         break;
     }
 
-
     // 序号
-    strTempIndex.Format(_T("%d"),nalu->num);
+    strTempIndex.Format(_T("%d"),nalu->num+1);  // 向量中的序号从0开始
     // 数据偏移
     strOffset.Format(_T("%08x"), nalu->data_offset);
     // 长度
-    strNalLen.Format(_T("%d"),nalu->total_len);
+    strNalLen.Format(_T("%d"),nalu->len);
     // 起始码
     strStartCode.Format(_T("%s"), nalu->startcode_buf);
 
@@ -393,9 +386,10 @@ BOOL CH264BSAnalyzerDlg::OnInitDialog()
     m_h264NalList.InsertColumn(5,_T("Info"),LVCFMT_LEFT,80,0);
     //m_h264NalList.InsertColumn(6,_T("nal_ref_idc"),LVCFMT_LEFT,100,0);
 
+    m_cbNalNum.SetCurSel(0);
     //---------------------
     //m_h264NalListmaxnum.SetCheck(1);
-    m_nNalIndex = 0;
+    m_nSliceIndex = 0;
     //------------
     // 不再使用
     //m_h264InputUrl.EnableFileBrowseButton(NULL,"H.264 Files (*.264,*.h264)|*.264;*.h264|All Files (*.*)|*.*||");
@@ -404,23 +398,6 @@ BOOL CH264BSAnalyzerDlg::OnInitDialog()
 
     m_edHexInfo.SetOptions(1, 1, 1, 1);
     m_edHexInfo.SetBPR(16); // 16字节
-
-#if 0
-    // todo
-    CString strSimpleInfo;
-    strSimpleInfo.Format("todo  \r\n"
-        "File name: hell.h264 \r\n"
-        "Picture Size: xxx\r\n"
-        " - Cropping Left       : xx\r\n"
-        " - Cropping Right      : xx\r\n"
-        " - Cropping Top        : xx\r\n"
-        " - Cropping Bottom	    : xx\r\n"
-        "Stream Type: High Profile @ Level xxx\r\n"
-        "Video Type: xxx\r\n"
-        "Encoding Type: xxx\r\n"
-        );
-    GetDlgItem(IDC_EDIT_SIMINFO)->SetWindowTextA(strSimpleInfo);
-#endif
 
     return TRUE;  // return TRUE  unless you set the focus to a control
 }
@@ -474,6 +451,14 @@ HCURSOR CH264BSAnalyzerDlg::OnQueryDragIcon()
     return static_cast<HCURSOR>(m_hIcon);
 }
 
+void CH264BSAnalyzerDlg::SystemClear()
+{
+    //m_vNalInfoVector.clear();
+    m_vNalTypeVector.clear();
+    m_h264NalList.DeleteAllItems();
+    m_nSliceIndex = 0;
+}
+
 // 打开H264码流文件
 void CH264BSAnalyzerDlg::OnBnClickedH264InputurlOpen()
 {
@@ -490,18 +475,26 @@ void CH264BSAnalyzerDlg::OnBnClickedH264InputurlOpen()
     m_edHexInfo.SetBPR(16);
     m_edHexInfo.SetData((LPBYTE)pszBuffer, 100, strlen(pszBuffer));
     m_edHexInfo.SetFocus();
+
+    CString aaa;
+    GetDlgItem(IDC_CB_NAL)->GetWindowTextA(aaa);
+    MessageBox(aaa);
     return;
 #endif
 
     CString strFilePath;
     CString strSimpleInfo;
     CString strProfileInfo;
+    CString strMaxNalNum;
+    int nMaxNalNum = -1;
     SPSInfo_t sps = {0};
     PPSInfo_t pps = {0};
-    char* cabac = "CABAC";
 
     m_edFileUrl.GetWindowText(m_strFileUrl);
 
+    // 输入非数字时，获取的nMaxNalNum为-1，默认显示所有的NAL
+    m_cbNalNum.GetWindowTextA(strMaxNalNum);
+    sscanf(strMaxNalNum, "%d", &nMaxNalNum);
     // test
     //m_strFileUrl.Format("%s", "../foreman_cif.h264");
     
@@ -515,52 +508,71 @@ void CH264BSAnalyzerDlg::OnBnClickedH264InputurlOpen()
     strcpy(str_szFileUrl,m_strFileUrl.GetBuffer());
 
     //h264_nal_parse(this,str_szFileUrl);
-    h264_nal_parse_1(str_szFileUrl, m_vNalTypeVector);
+    h264_nal_parse_1(str_szFileUrl, m_vNalTypeVector, nMaxNalNum);
 
     for (int i = 0; i < (int)m_vNalTypeVector.size(); i++)
     {
         // 解析SPS
         if (m_vNalTypeVector[i].nal_unit_type == 7)
         {
-            parse_sps(str_szFileUrl, m_vNalTypeVector[i].data_offset, m_vNalTypeVector[i].total_len, sps);
+            parse_sps(str_szFileUrl, m_vNalTypeVector[i].data_offset, m_vNalTypeVector[i].len, sps);
         }
         // 解析PPS
         if (m_vNalTypeVector[i].nal_unit_type == 8)
         {
-            parse_pps(str_szFileUrl, m_vNalTypeVector[i].data_offset, m_vNalTypeVector[i].total_len, pps);
+            parse_pps(str_szFileUrl, m_vNalTypeVector[i].data_offset, m_vNalTypeVector[i].len, pps);
         }
         ShowNLInfo_1(&m_vNalTypeVector[i]);
     }
+    // 
     switch (sps.profile_idc)
     {
     case 66:
         strProfileInfo.Format("Baseline");
         break;
-    case 100:
-        strProfileInfo.Format("High");
-        break;
     case 77:
         strProfileInfo.Format("Main");
         break;
+    case 88:
+        strProfileInfo.Format("Extended");
+        break;
+    case 100:
+        strProfileInfo.Format("High");
+        break;
+    case 110:
+        strProfileInfo.Format("High 10");
+        break;
+    case 122:
+        strProfileInfo.Format("High 422");
+        break;
+    case 144:
+        strProfileInfo.Format("High 444");
+        break;
     default:
+        strProfileInfo.Format("Unkown");
         break;
     }
+    // todo
+    /*
+    "Video Format: xxx\r\n"
+    */
     strSimpleInfo.Format(
         "File name: %s\r\n"
         "Picture Size: %dx%d\r\n"
-        " - Cropping Left       : %d\r\n"
+        " - Cropping Left        : %d\r\n"
         " - Cropping Right      : %d\r\n"
         " - Cropping Top        : %d\r\n"
-        " - Cropping Bottom     : %d\r\n"
+        " - Cropping Bottom   : %d\r\n"
         "Stream Type: %s Profile @ Level %d\r\n"
-        "Video Type: xxx\r\n"
-        "Encoding Type: %s\r\n",
+        "Encoding Type: %s\r\n"
+        "Max fps: %d\r\n",
         m_strFileUrl,
         sps.width, sps.height,
         sps.crop_left, sps.crop_right,
         sps.crop_top, sps.crop_bottom,
         strProfileInfo, sps.level_idc,
-        pps.encoding_type ? "CABAC" : "CAVLC"
+        pps.encoding_type ? "CABAC" : "CAVLC",
+        sps.max_framerate
         );
     GetDlgItem(IDC_EDIT_SIMINFO)->SetWindowTextA(strSimpleInfo);
 }
@@ -599,7 +611,7 @@ void CH264BSAnalyzerDlg::OnLvnItemActivateH264Nallist(NMHDR *pNMHDR, LRESULT *pR
     data_lenth=m_vNalInfoVector[nIndex].data_lenth;
 #endif
     data_offset=m_vNalTypeVector[nIndex].data_offset;
-    data_lenth=m_vNalTypeVector[nIndex].total_len;
+    data_lenth=m_vNalTypeVector[nIndex].len;
     // 
     ret = probe_nal_unit(str_szFileUrl,data_offset,data_lenth,this);
     if (ret < 0)
@@ -728,6 +740,7 @@ void CH264BSAnalyzerDlg::OnHowtoUsage()
         "1)使用file菜单打开；2)将文件拖到本界面；3)在文件编辑框输入文件绝对路径\r\n"
         "2、点击start，开始分析NAL\r\n"
         "3、双击某一项NAL，即可得到详细信息\r\n"
+        "4、可以在show nal num下拉框选择要分析的NAL个数，也可以手动输入数值。"
         "限制：本程序仅能分析H264码流文件，其它文件无法分析\r\n"
         "本程序不能分析大型文件，勿怪\r\n";
     AfxMessageBox(help);

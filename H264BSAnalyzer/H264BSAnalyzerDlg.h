@@ -48,22 +48,24 @@ public:
     CEdit m_h264NalInfo;
     CListCtrl m_h264NalList;
     CEdit m_edFileUrl;
-    CHexEdit m_edHexInfo;
+    CHexEdit m_edHexInfo;   // 显示十六进制
+    CComboBox m_cbNalNum;   // 分析NAL数量
 
     afx_msg void OnBnClickedH264InputurlOpen();
 
     // our own
 private:
-    int m_nNalIndex;
+    int m_nSliceIndex;
     CString m_strFileUrl;
     char str_szFileUrl[MAX_URL_LENGTH];
+    /*
       //一条Packet记录
     typedef struct NALInfo{
         int data_offset;
         int data_lenth;
     }NALInfo;
     vector<NALInfo> m_vNalInfoVector;
-
+    */
     vector<NALU_t> m_vNalTypeVector;
 
 public:
@@ -73,5 +75,4 @@ public:
     afx_msg void OnFileOpen();
     afx_msg void OnHelpAbout();
     afx_msg void OnHowtoUsage();
-    
 };

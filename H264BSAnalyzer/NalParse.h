@@ -7,19 +7,19 @@ using std::vector;
 
 typedef struct
 {
-    int num;
-    int startcodeprefix_len;      //! 4 for parameter sets and first slice in picture, 3 for everything else (suggested)
-    unsigned int len;                 //! Length of the NAL unit (Excluding the start code, which does not belong to the NALU)
-    unsigned int total_len;                // 含起始码的总的长度
-    unsigned int max_size;            //! Nal Unit Buffer size
+    unsigned int num;               // 序号
+    unsigned int len;               // 含起始码的总的长度
+    char slice_type;               // 帧类型
+    char nal_unit_type;            // NAL类型
+    unsigned int data_offset;       // nal包在文件中的偏移
+    char startcode_buf[14];         // 起始码，字符串形式
+    //unsigned int max_size;            //! Nal Unit Buffer size
+    //int startcodeprefix_len;        //! 4 for parameter sets and first slice in picture, 3 for everything else (suggested)
+    //unsigned int len;                 //! Length of the NAL unit (Excluding the start code, which does not belong to the NALU)
     //  int forbidden_bit;            //! should be always FALSE
     //  int nal_reference_idc;        //! NALU_PRIORITY_xxxx
     //char *buf;                    //! contains the first byte followed by the EBSP
     //unsigned short lost_packets;  //! true, if packet loss is detected
-    unsigned int data_offset;
-    char startcode_buf[14];       // 起始码，字符串形式
-    char slice_type;               // 帧类型
-    char nal_unit_type;            //! NALU_TYPE_xxxx 
 } NALU_t;
 
 typedef struct 
@@ -32,12 +32,12 @@ typedef struct
     int crop_right;
     int crop_top;
     int crop_bottom;
-
+    int max_framerate;  // 由SPS计算得到的帧率，为0表示SPS中没有相应的字段计算
 }SPSInfo_t;
 
 typedef struct 
 {
-    int encoding_type;
+    int encoding_type;  // 为1表示CABAC 0表示CAVLC
 
 }PPSInfo_t;
 
@@ -45,7 +45,7 @@ typedef int handle_nalu_info(NALU_t* nalu);
 
 int h264_nal_parse(LPVOID lparam,char *fileurl);
 
-int h264_nal_parse_1(char *fileurl, vector<NALU_t>& vNal);
+int h264_nal_parse_1(char *fileurl, vector<NALU_t>& vNal, int num);
 
 int probe_nal_unit(char* filename,int data_offset,int data_lenth,LPVOID lparam);;
 

@@ -12,6 +12,8 @@
 #include "H264BSAnalyzerDlg.h"
 
 FILE *g_fpBitStream = NULL;                //!< the bit stream file
+#define MAX_NAL_SIZE (1*1024*1024)
+
 //static bool flag = true;
 //static int info2=0, info3=0;
 
@@ -44,7 +46,7 @@ NALU_t *AllocNALU(int buffersize)
         return NULL;
     }
 
-    n->max_size=buffersize;
+//    n->max_size=buffersize;
 #if 0
     if ((n->buf = (char*)calloc (buffersize, sizeof (char))) == NULL)
     {
@@ -119,11 +121,12 @@ int GetAnnexbNALU (NALU_t *nalu)
     unsigned char *Buf;
     int info2=0, info3=0;
     int eof = 0;
+    int startcodeprefix_len = 3; // 码流序列的开始字符为3个字节
     
-    if ((Buf = (unsigned char*)calloc (nalu->max_size , sizeof(char))) == NULL) 
+    if ((Buf = (unsigned char*)calloc (MAX_NAL_SIZE, sizeof(char))) == NULL) 
         printf ("GetAnnexbNALU: Could not allocate Buf memory\n");
 
-    nalu->startcodeprefix_len=3;//初始化码流序列的开始字符为3个字节
+    //nalu->startcodeprefix_len=3;
 
     if (3 != fread (Buf, 1, 3, g_fpBitStream))//从码流中读3个字节
     {
@@ -149,13 +152,13 @@ int GetAnnexbNALU (NALU_t *nalu)
         {
             //如果是0x00000001,得到开始前缀为4个字节
             pos = 4;
-            nalu->startcodeprefix_len = 4;
+            startcodeprefix_len = 4;
         }
     }
     else
     {
         //如果是0x000001,得到开始前缀为3个字节
-        nalu->startcodeprefix_len = 3;
+        startcodeprefix_len = 3;
         pos = 3;
     }
     //查找下一个开始字符的标志位
@@ -170,7 +173,7 @@ int GetAnnexbNALU (NALU_t *nalu)
             eof = 1;
             goto got_nal;
         }
-        Buf[pos++] = fgetc (g_fpBitStream);//读一个字节到BUF中
+        Buf[pos++] = fgetc(g_fpBitStream);//读一个字节到BUF中
 
         info3 = FindStartCode3(&Buf[pos-4]);//判断是否为0x00000001
         if(info3 != 1)
@@ -199,7 +202,7 @@ got_nal:
     // The size of Buf is pos, pos+rewind are the number of bytes excluding the next
     // start code, and (pos+rewind)-startcodeprefix_len is the size of the NALU excluding the start code
     // 不包含起始码的数据的长度
-    nalu->len = (pos+rewind)-nalu->startcodeprefix_len;
+    //nalu->len = (pos+rewind)-nalu->startcodeprefix_len;
     // 有什么用？
     //memcpy (nalu->buf, &Buf[nalu->startcodeprefix_len], nalu->len);//拷贝一个完整NALU，不拷贝起始前缀0x000001或0x00000001
     //nalu->forbidden_bit = nalu->buf[0] & 0x80; //1 bit
@@ -207,12 +210,10 @@ got_nal:
     //nalu->nal_unit_type = (nalu->buf[0]) & 0x1f;// 5 bit
     
     char nal_header = 0;
-    nal_header = Buf[nalu->startcodeprefix_len];
-//    nalu->forbidden_bit = nal_header & 0x80; //1 bit
-//    nalu->nal_reference_idc = nal_header & 0x60; // 2 bit
+    nal_header = Buf[startcodeprefix_len];
     nalu->nal_unit_type = nal_header & 0x1f;// 5 bit
 
-    nalu->total_len = nalu->len + nalu->startcodeprefix_len;
+    nalu->len = pos+rewind;   //nalu->len + nalu->startcodeprefix_len;
     // 包括起始码在内的5个字节
     sprintf(nalu->startcode_buf, "%02x%02x%02x%02x%02x", Buf[0], Buf[1], Buf[2], Buf[3], Buf[4]);
 
@@ -241,10 +242,13 @@ int h264_nal_parse(LPVOID lparam,char *fileurl)
     int data_offset=0;
     int data_lenth;
 
-    OpenBitstreamFile(fileurl);
+    g_fpBitStream=fopen(fileurl, "r+b");
+    if (g_fpBitStream == NULL)
+    {
+        return -1;
+    }
 
     memset(&n, '\0', sizeof(NALU_t));
-    n.max_size = 8*1024*1024;   // 假设一个nal包最大为8MB
 
     dlg=(CH264BSAnalyzerDlg *)lparam;
 
@@ -255,33 +259,40 @@ int h264_nal_parse(LPVOID lparam,char *fileurl)
         data_offset=data_offset+data_lenth;
         //输出NALU长度和TYPE
         dlg->ShowNLInfo(&n);    // 显示到界面上
-        //判断是否选择了“只分析5000条”，如果选择了就不再分析了
-        //if(dlg->m_h264Nallistmaxnum.GetCheck()==1&&nal_num>5000){
-        //    break;
-        //}
         nal_num++;
     }
+    if (g_fpBitStream != NULL)
+    {
+        fclose(g_fpBitStream);
+    }
+
     return 0;
 }
 
-int h264_nal_parse_1(char *fileurl, vector<NALU_t>& vNal)
+int h264_nal_parse_1(char *fileurl, vector<NALU_t>& vNal, int num)
 {
     NALU_t n;
-   // int    bytes=0;
     int nal_num=0;
     int data_offset=0;
     int data_lenth;
 
-    OpenBitstreamFile(fileurl);
+    g_fpBitStream=fopen(fileurl, "r+b");
+    if (g_fpBitStream == NULL)
+    {
+        return -1;
+    }
 
     memset(&n, '\0', sizeof(NALU_t));
-    n.max_size = 8*1024*1024;   // 假设一个nal包最大为8MB
 
     while(!feof(g_fpBitStream)) 
     {
+        if (num > 0 && nal_num == num)
+        {
+            break;
+        }
         data_lenth=GetAnnexbNALU(&n);//每执行一次，文件的指针指向本次找到的NALU的末尾，下一个位置即为下个NALU的起始码0x000001
         n.data_offset=data_offset;
-        n.num += 1;
+        n.num = nal_num;
         data_offset=data_offset+data_lenth;
 
         vNal.push_back(n);
@@ -390,12 +401,17 @@ int parse_sps(char* filename,int data_offset,int data_lenth, SPSInfo_t& info)
     info.crop_top = frame_crop_top_offset = h->sps->frame_crop_top_offset;
     info.crop_bottom = frame_crop_bottom_offset = h->sps->frame_crop_bottom_offset;
 
+    // 宽高计算公式
     info.width = ((pic_width_in_mbs_minus1 +1)*16) - frame_crop_left_offset*2 - frame_crop_right_offset*2;
     info.height= ((2 - frame_mbs_only_flag)* (pic_height_in_map_units_minus1 +1) * 16) - (frame_crop_top_offset * 2) - (frame_crop_bottom_offset * 2);
 
     info.profile_idc = h->sps->profile_idc;
     info.level_idc = h->sps->level_idc;
 
+    if (h->sps->vui_parameters_present_flag)
+    {
+        info.max_framerate = h->sps->vui.time_scale / h->sps->vui.num_units_in_tick;
+    }
     if (nal_temp != NULL)
     {
         free(nal_temp);
