@@ -339,6 +339,23 @@ int CH264BSAnalyzerDlg::ShowNLInfo_1(NALU_t* nalu)
     return TRUE;
 }
 
+HANDLE g_hSemaphore;
+HANDLE g_hAdapterOne;
+
+typedef struct 
+{
+    char* file;
+    vector<NALU_t>* vNalTypeVector;
+    int num;
+}NALInfo_t;
+
+NALInfo_t g_foo;
+
+char* g_file = NULL;
+int g_nMaxNalNum = 0;
+vector<NALU_t> g_vNalTypeVector;
+
+UINT ExecutingFunction(LPVOID pParam);
 // CH264BSAnalyzerDlg message handlers
 
 BOOL CH264BSAnalyzerDlg::OnInitDialog()
@@ -398,6 +415,18 @@ BOOL CH264BSAnalyzerDlg::OnInitDialog()
 
     m_edHexInfo.SetOptions(1, 1, 1, 1);
     m_edHexInfo.SetBPR(16); // 16字节
+
+    //
+    g_hSemaphore = CreateSemaphore(NULL, 0, 1, NULL);
+    if (g_hSemaphore == NULL)
+    {
+        return FALSE;
+    }
+    g_hAdapterOne = CreateSemaphore(NULL, 0, 1, NULL);
+
+    //g_hAdapterOne = OpenSemaphore(MUTEX_ALL_ACCESS, FALSE, "abc");
+
+    AfxBeginThread(ExecutingFunction, NULL);
 
     return TRUE;  // return TRUE  unless you set the focus to a control
 }
@@ -459,6 +488,28 @@ void CH264BSAnalyzerDlg::SystemClear()
     m_nSliceIndex = 0;
 }
 
+UINT ExecutingFunction(LPVOID pParam)
+{
+    //NALInfo_t* foo = (NALInfo_t *)pParam;
+    DWORD dwReturn;
+    while (1)
+    {
+        dwReturn = WaitForSingleObject(g_hSemaphore, 1000 * 60 * 10);
+        if(WAIT_OBJECT_0 == dwReturn)
+        {
+            //AfxMessageBox("abcd");
+
+            h264_nal_parse_1(g_file, g_vNalTypeVector, g_nMaxNalNum);
+            //h264_nal_parse_1(g_foo.file, *g_foo.vNalTypeVector, g_foo.num);
+            //AfxMessageBox("in ExecutingFunction");
+            //Sleep(10*1000);
+            ReleaseSemaphore(g_hAdapterOne, 1, NULL);
+        }
+        Sleep(100);
+    }
+    return 0;
+}
+
 // 打开H264码流文件
 void CH264BSAnalyzerDlg::OnBnClickedH264InputurlOpen()
 {
@@ -507,9 +558,21 @@ void CH264BSAnalyzerDlg::OnBnClickedH264InputurlOpen()
 
     strcpy(str_szFileUrl,m_strFileUrl.GetBuffer());
 
-    //h264_nal_parse(this,str_szFileUrl);
-    h264_nal_parse_1(str_szFileUrl, m_vNalTypeVector, nMaxNalNum);
+    //NALInfo_t foo;
+    g_foo.file = str_szFileUrl;
+    g_foo.num = nMaxNalNum;
+    g_foo.vNalTypeVector = &m_vNalTypeVector;
+g_file = str_szFileUrl;
+g_nMaxNalNum = nMaxNalNum;
+g_vNalTypeVector = m_vNalTypeVector;
+    ReleaseSemaphore(g_hSemaphore, 1, NULL);
+    //AfxBeginThread(ExecutingFunction, &foo);
 
+    //h264_nal_parse(this,str_szFileUrl);
+    //h264_nal_parse_1(str_szFileUrl, m_vNalTypeVector, nMaxNalNum);
+
+    WaitForSingleObject(g_hAdapterOne, INFINITE);
+    m_vNalTypeVector = g_vNalTypeVector;
     for (int i = 0; i < (int)m_vNalTypeVector.size(); i++)
     {
         // 解析SPS
@@ -524,7 +587,7 @@ void CH264BSAnalyzerDlg::OnBnClickedH264InputurlOpen()
         }
         ShowNLInfo_1(&m_vNalTypeVector[i]);
     }
-    // 
+    // profile类型
     switch (sps.profile_idc)
     {
     case 66:
