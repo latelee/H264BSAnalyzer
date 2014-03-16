@@ -230,46 +230,7 @@ got_nal:
     return (pos+rewind);//返回两个开始字符之间间隔的字节数，即包含有前缀的NALU的长度
 }
 
-// 获取NAL类型
-// todo: 不能写死空间
-int h264_nal_parse(LPVOID lparam,char *fileurl)
-{
-    CH264BSAnalyzerDlg *dlg;
-    NALU_t n;
-
-   // int    bytes=0;
-    int nal_num=0;
-    int data_offset=0;
-    int data_lenth;
-
-    g_fpBitStream=fopen(fileurl, "r+b");
-    if (g_fpBitStream == NULL)
-    {
-        return -1;
-    }
-
-    memset(&n, '\0', sizeof(NALU_t));
-
-    dlg=(CH264BSAnalyzerDlg *)lparam;
-
-    while(!feof(g_fpBitStream)) 
-    {
-        data_lenth=GetAnnexbNALU(&n);//每执行一次，文件的指针指向本次找到的NALU的末尾，下一个位置即为下个NALU的起始码0x000001
-        n.data_offset=data_offset;
-        data_offset=data_offset+data_lenth;
-        //输出NALU长度和TYPE
-        dlg->ShowNLInfo(&n);    // 显示到界面上
-        nal_num++;
-    }
-    if (g_fpBitStream != NULL)
-    {
-        fclose(g_fpBitStream);
-    }
-
-    return 0;
-}
-
-int h264_nal_parse_1(char *fileurl, vector<NALU_t>& vNal, int num)
+int h264_nal_parse(char *fileurl, vector<NALU_t>& vNal, int num)
 {
     NALU_t n;
     int nal_num=0;

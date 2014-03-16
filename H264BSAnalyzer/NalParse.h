@@ -43,9 +43,7 @@ typedef struct
 
 typedef int handle_nalu_info(NALU_t* nalu);
 
-int h264_nal_parse(LPVOID lparam,char *fileurl);
-
-int h264_nal_parse_1(char *fileurl, vector<NALU_t>& vNal, int num);
+int h264_nal_parse(char *fileurl, vector<NALU_t>& vNal, int num);
 
 int probe_nal_unit(char* filename,int data_offset,int data_lenth,LPVOID lparam);;
 

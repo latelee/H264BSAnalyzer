@@ -77,141 +77,11 @@ BEGIN_MESSAGE_MAP(CH264BSAnalyzerDlg, CDialogEx)
     ON_COMMAND(ID_FILE_OPEN32771, &CH264BSAnalyzerDlg::OnFileOpen)
     ON_COMMAND(ID_HELP_ABOUT, &CH264BSAnalyzerDlg::OnHelpAbout)
     ON_COMMAND(ID_HOWTO_USAGE, &CH264BSAnalyzerDlg::OnHowtoUsage)
+    ON_COMMAND(ID_DONATE_DONATE, &CH264BSAnalyzerDlg::OnDonateDonate)
 END_MESSAGE_MAP()
 
 //添加一条记录
 int CH264BSAnalyzerDlg::ShowNLInfo(NALU_t* nalu)
-{
-#if 0
-    //如果选择了“最多输出5000条”，判断是否超过5000条
-    //if(m_vh264nallistmaxnum.GetCheck()==1&&nl_index>5000){
-    //    return 0;
-    //}
-
-    CString strTempIndex;
-    CString strOffset;
-    CString strNalLen;
-    CString strStartCode;
-    CString strNalUnitType;
-    CString strNalInfo;
-    int nIndex=0;
-
-    // NAL单元类型
-    switch (nalu->nal_unit_type)
-    {
-    case 0:
-        strNalUnitType.Format(_T("Unspecified"));
-        break;
-    case 1:
-        strNalUnitType.Format(_T("Coded slice of a non-IDR picture"));
-        switch (nalu->slice_type)
-        {
-        case 0:
-        case 5:
-            strNalInfo.Format(_T("P Slice"));
-            break;
-        case 1:
-        case 6:
-            strNalInfo.Format(_T("B Slice"));
-            break;
-        case 2:
-        case 7:
-            strNalInfo.Format(_T("I Slice"));
-            break;
-        }
-        break;
-    case 2:
-        strNalUnitType.Format(_T("DPA"));
-        break;
-    case 3:
-        strNalUnitType.Format(_T("DPB"));
-        break;
-    case 4:
-        strNalUnitType.Format(_T("DPC"));
-        break;
-    case 5:
-        strNalUnitType.Format(_T("Coded slice of an IDR picture"));
-        strNalInfo.Format(_T("IDR"));
-        break;
-    case 6:
-        strNalUnitType.Format(_T("SEI"));
-        strNalInfo.Format(_T("SEI"));
-        break;
-    case 7:
-        strNalUnitType.Format(_T("Sequence parameter set"));
-        strNalInfo.Format(_T("SPS"));
-        break;
-    case 8:
-        strNalUnitType.Format(_T("Picture parameter set"));
-        strNalInfo.Format(_T("PPS"));
-        break;
-    case 9:
-        strNalUnitType.Format(_T("Access UD"));
-        strNalInfo.Format(_T("AUD"));
-        break;
-    case 10:
-        strNalUnitType.Format(_T("END_SEQUENCE"));
-        break;
-    case 11:
-        strNalUnitType.Format(_T("END_STREAM"));
-        break;
-    case 12:
-        strNalUnitType.Format(_T("FILLER_DATA"));
-        break;
-    case 13:
-        strNalUnitType.Format(_T("SPS_EXT"));
-        break;
-    case 19:
-        strNalUnitType.Format(_T("AUXILIARY_SLICE"));
-        break;
-    default:
-        strNalUnitType.Format(_T("Other"));
-        break;
-    }
-
-    // 序号
-    strTempIndex.Format(_T("%d"),m_nSliceIndex);
-    // 数据偏移
-    strOffset.Format(_T("%08x"), nalu->data_offset);
-    // 长度
-    strNalLen.Format(_T("%d"),nalu->total_len);
-    // 起始码
-    strStartCode.Format(_T("%s"), nalu->startcode_buf);
-
-    //获取当前记录条数
-    nIndex=m_h264NalList.GetItemCount();
-    //“行”数据结构
-    LV_ITEM lvitem;
-    lvitem.mask=LVIF_TEXT;
-    lvitem.iItem=nIndex;
-    lvitem.iSubItem=0;
-    //注：vframe_index不可以直接赋值！
-    //务必使用f_index执行Format!再赋值！
-    lvitem.pszText=(char *)(LPCTSTR)strTempIndex;
-    //------------------------
-    //这个vector记录了nal的位置信息
-    //使用它我们可以获取到NAL的详细信息
-    //我们要存储包含起始码的长度
-    //起始码原本不是NAL的一部分
-    NALInfo nalinfo;
-    nalinfo.data_lenth = nalu->total_len;
-    nalinfo.data_offset = nalu->data_offset;
-    m_vNalInfoVector.push_back(nalinfo);
-
-    //------------------------显示在List中
-    m_h264NalList.InsertItem(&lvitem);
-    m_h264NalList.SetItemText(nIndex,1,strOffset);
-    m_h264NalList.SetItemText(nIndex,2,strNalLen);
-    m_h264NalList.SetItemText(nIndex,3,strStartCode);
-    m_h264NalList.SetItemText(nIndex,4,strNalUnitType);
-    m_h264NalList.SetItemText(nIndex,5,strNalInfo);
-    
-    m_nSliceIndex++;
-#endif
-    return TRUE;
-}
-
-int CH264BSAnalyzerDlg::ShowNLInfo_1(NALU_t* nalu)
 {
     CString strTempIndex;
     CString strOffset;
@@ -316,18 +186,6 @@ int CH264BSAnalyzerDlg::ShowNLInfo_1(NALU_t* nalu)
     //务必使用f_index执行Format!再赋值！
     lvitem.pszText=(char *)(LPCTSTR)strTempIndex;
 
-#if 0
-    //------------------------
-    //这个vector记录了nal的位置信息
-    //使用它我们可以获取到NAL的详细信息
-    //我们要存储包含起始码的长度
-    //起始码原本不是NAL的一部分
-    NALInfo nalinfo;
-    nalinfo.data_lenth = nalu->total_len;
-    nalinfo.data_offset = nalu->data_offset;
-    m_vNalInfoVector.push_back(nalinfo);
-#endif
-
     //------------------------显示在List中
     m_h264NalList.InsertItem(&lvitem);
     m_h264NalList.SetItemText(nIndex,1,strOffset);
@@ -384,15 +242,10 @@ BOOL CH264BSAnalyzerDlg::OnInitDialog()
     m_h264NalList.InsertColumn(3,_T("Start Code"),LVCFMT_LEFT,80,0);
     m_h264NalList.InsertColumn(4,_T("NAL Type"),LVCFMT_LEFT,180,0);
     m_h264NalList.InsertColumn(5,_T("Info"),LVCFMT_LEFT,80,0);
-    //m_h264NalList.InsertColumn(6,_T("nal_ref_idc"),LVCFMT_LEFT,100,0);
 
     m_cbNalNum.SetCurSel(0);
-    //---------------------
-    //m_h264NalListmaxnum.SetCheck(1);
+
     m_nSliceIndex = 0;
-    //------------
-    // 不再使用
-    //m_h264InputUrl.EnableFileBrowseButton(NULL,"H.264 Files (*.264,*.h264)|*.264;*.h264|All Files (*.*)|*.*||");
 
     m_strFileUrl.Empty();
 
@@ -492,9 +345,10 @@ void CH264BSAnalyzerDlg::OnBnClickedH264InputurlOpen()
 
     m_edFileUrl.GetWindowText(m_strFileUrl);
 
-    // 输入非数字时，获取的nMaxNalNum为-1，默认显示所有的NAL
+    // 输入非数字时，获取的nMaxNalNum为-1，则显示所有的NAL
     m_cbNalNum.GetWindowTextA(strMaxNalNum);
     sscanf(strMaxNalNum, "%d", &nMaxNalNum);
+
     // test
     //m_strFileUrl.Format("%s", "../foreman_cif.h264");
     
@@ -507,8 +361,7 @@ void CH264BSAnalyzerDlg::OnBnClickedH264InputurlOpen()
 
     strcpy(str_szFileUrl,m_strFileUrl.GetBuffer());
 
-    //h264_nal_parse(this,str_szFileUrl);
-    h264_nal_parse_1(str_szFileUrl, m_vNalTypeVector, nMaxNalNum);
+    h264_nal_parse(str_szFileUrl, m_vNalTypeVector, nMaxNalNum);
 
     for (int i = 0; i < (int)m_vNalTypeVector.size(); i++)
     {
@@ -522,9 +375,9 @@ void CH264BSAnalyzerDlg::OnBnClickedH264InputurlOpen()
         {
             parse_pps(str_szFileUrl, m_vNalTypeVector[i].data_offset, m_vNalTypeVector[i].len, pps);
         }
-        ShowNLInfo_1(&m_vNalTypeVector[i]);
+        ShowNLInfo(&m_vNalTypeVector[i]);
     }
-    // 
+    // profile类型
     switch (sps.profile_idc)
     {
     case 66:
@@ -606,10 +459,7 @@ void CH264BSAnalyzerDlg::OnLvnItemActivateH264Nallist(NMHDR *pNMHDR, LRESULT *pR
     nIndex=m_h264NalList.GetNextSelectedItem(ps);
     //----------------------
     int data_offset,data_lenth;
-#if 0
-    data_offset=m_vNalInfoVector[nIndex].data_offset;
-    data_lenth=m_vNalInfoVector[nIndex].data_lenth;
-#endif
+
     data_offset=m_vNalTypeVector[nIndex].data_offset;
     data_lenth=m_vNalTypeVector[nIndex].len;
     // 
@@ -703,11 +553,6 @@ void CH264BSAnalyzerDlg::OnNMCustomdrawH264Nallist(NMHDR *pNMHDR, LRESULT *pResu
 void CH264BSAnalyzerDlg::OnFileOpen()
 {
     // TODO: Add your command handler code here
-    //AfxMessageBox("解析NAL时出错");
-
-    //CMFCEditBrowseCtrl eb_h264InputUrl;
-    //eb_h264InputUrl.EnableFileBrowseButton(NULL,
-    //        "H.264 Files (*.264,*.h264)|*.264;*.h264|All Files (*.*)|*.*||");
 
     CString strFilePath;
     char szFilter[] = "H.264 Files(*.h264;*.264)|*.h264;*.264|All Files(*.*)|*.*||";
@@ -792,4 +637,11 @@ void CAboutDlg::OnLButtonDown(UINT nFlags, CPoint point)
     }
 
     CDialogEx::OnLButtonDown(nFlags, point);
+}
+
+// donate
+void CH264BSAnalyzerDlg::OnDonateDonate()
+{
+    // TODO: 在此添加命令处理程序代码
+    ShellExecute(NULL, NULL, "https://me.alipay.com/jkeegg", NULL, NULL, SW_NORMAL);
 }

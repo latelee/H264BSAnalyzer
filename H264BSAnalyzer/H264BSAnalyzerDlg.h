@@ -30,9 +30,8 @@ public:
     // our own...
 public:
     void SystemClear();
-    //int AppendNLInfo(int data_offset, int nal_lenth, char* startcode, int nal_unit_type, int nal_reference_idc);
+
     int ShowNLInfo(NALU_t* nalu);
-    int ShowNLInfo_1(NALU_t* nalu);
 // Implementation
 protected:
     HICON m_hIcon;
@@ -75,4 +74,5 @@ public:
     afx_msg void OnFileOpen();
     afx_msg void OnHelpAbout();
     afx_msg void OnHowtoUsage();
+    afx_msg void OnDonateDonate();
 };
