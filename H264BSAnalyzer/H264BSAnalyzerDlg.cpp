@@ -78,6 +78,7 @@ BEGIN_MESSAGE_MAP(CH264BSAnalyzerDlg, CDialogEx)
     ON_COMMAND(ID_HELP_ABOUT, &CH264BSAnalyzerDlg::OnHelpAbout)
     ON_COMMAND(ID_HOWTO_USAGE, &CH264BSAnalyzerDlg::OnHowtoUsage)
     ON_COMMAND(ID_DONATE_DONATE, &CH264BSAnalyzerDlg::OnDonateDonate)
+    ON_NOTIFY(LVN_KEYDOWN, IDC_H264_NALLIST, &CH264BSAnalyzerDlg::OnLvnKeydownH264Nallist)
 END_MESSAGE_MAP()
 
 //添加一条记录
@@ -454,11 +455,18 @@ void CH264BSAnalyzerDlg::OnLvnItemActivateH264Nallist(NMHDR *pNMHDR, LRESULT *pR
     POSITION ps;
     int nIndex;
     int ret = 0;
+    int data_offset,data_lenth;
 
     ps=m_h264NalList.GetFirstSelectedItemPosition();
     nIndex=m_h264NalList.GetNextSelectedItem(ps);
-    //----------------------
-    int data_offset,data_lenth;
+
+#if 00
+    CString aaa;
+    aaa.Format("line: %d", nIndex);
+    AfxMessageBox(aaa);
+
+    return;
+#endif
 
     data_offset=m_vNalTypeVector[nIndex].data_offset;
     data_lenth=m_vNalTypeVector[nIndex].len;
@@ -566,6 +574,52 @@ void CH264BSAnalyzerDlg::OnFileOpen()
     m_strFileUrl = fileDlg.GetPathName();
 
     m_edFileUrl.SetWindowTextA(m_strFileUrl);
+}
+
+void CH264BSAnalyzerDlg::OnLvnKeydownH264Nallist(NMHDR *pNMHDR, LRESULT *pResult)
+{
+    LPNMLVKEYDOWN pLVKeyDow = reinterpret_cast<LPNMLVKEYDOWN>(pNMHDR);
+    // TODO: 在此添加控件通知处理程序代码
+    POSITION ps;
+    int nIndex;
+    int ret = 0;
+    int data_offset,data_lenth;
+
+    ps=m_h264NalList.GetFirstSelectedItemPosition();
+    if (ps == NULL)
+    {
+        AfxMessageBox("No items were selected!");
+        return;
+    }
+    else
+    {
+        while (ps)
+        {
+            nIndex=m_h264NalList.GetNextSelectedItem(ps);
+        }
+    }
+    
+
+#if 01
+    CString aaa;
+    aaa.Format("line: %d", nIndex);
+    AfxMessageBox(aaa);
+
+    return;
+#endif
+    if (nIndex != 0)
+        nIndex -= 1;
+
+    data_offset=m_vNalTypeVector[nIndex].data_offset;
+    data_lenth=m_vNalTypeVector[nIndex].len;
+    // 
+    ret = probe_nal_unit(str_szFileUrl,data_offset,data_lenth,this);
+    if (ret < 0)
+    {
+        AfxMessageBox("解析NAL时出错，可能是文件读取出错。");
+    }
+
+    *pResult = 0;
 }
 
 
