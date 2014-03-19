@@ -585,7 +585,7 @@ void CH264BSAnalyzerDlg::OnHowtoUsage()
         "1)使用file菜单打开；2)将文件拖到本界面；3)在文件编辑框输入文件绝对路径\r\n"
         "2、点击start，开始分析NAL\r\n"
         "3、双击某一项NAL，即可得到详细信息\r\n"
-        "4、可以在show nal num下拉框选择要分析的NAL个数，也可以手动输入数值。"
+        "4、可以在show nal num下拉框选择要分析的NAL个数，也可以手动输入数值。\r\n"
         "限制：本程序仅能分析H264码流文件，其它文件无法分析\r\n"
         "本程序不能分析大型文件，勿怪\r\n";
     AfxMessageBox(help);

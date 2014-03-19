@@ -484,12 +484,12 @@ void read_seq_parameter_set_rbsp(h264_stream_t* h, bs_t* b)
                 {
                     if( i < 6 )
                     {
-                        read_scaling_list( b, sps->ScalingList4x4[ i ], 16,
+                        read_scaling_list( b, &sps->ScalingList4x4[ i ], 16,
                                       sps->UseDefaultScalingMatrix4x4Flag[ i ]);
                     }
                     else
                     {
-                        read_scaling_list( b, sps->ScalingList8x8[ i - 6 ], 64,
+                        read_scaling_list( b, &sps->ScalingList8x8[ i - 6 ], 64,
                                       sps->UseDefaultScalingMatrix8x8Flag[ i - 6 ] );
                     }
                 }
@@ -1366,12 +1366,12 @@ void write_seq_parameter_set_rbsp(h264_stream_t* h, bs_t* b)
                 {
                     if( i < 6 )
                     {
-                        write_scaling_list( b, sps->ScalingList4x4[ i ], 16,
+                        write_scaling_list( b, &sps->ScalingList4x4[ i ], 16,
                                       sps->UseDefaultScalingMatrix4x4Flag[ i ]);
                     }
                     else
                     {
-                        write_scaling_list( b, sps->ScalingList8x8[ i - 6 ], 64,
+                        write_scaling_list( b, &sps->ScalingList8x8[ i - 6 ], 64,
                                       sps->UseDefaultScalingMatrix8x8Flag[ i - 6 ] );
                     }
                 }

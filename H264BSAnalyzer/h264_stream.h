@@ -60,9 +60,9 @@ typedef struct
     int qpprime_y_zero_transform_bypass_flag;
     int seq_scaling_matrix_present_flag;
       int seq_scaling_list_present_flag[8];
-      int* ScalingList4x4[6];
+      int ScalingList4x4[6];
       int UseDefaultScalingMatrix4x4Flag[6];
-      int* ScalingList8x8[2];
+      int ScalingList8x8[2];
       int UseDefaultScalingMatrix8x8Flag[2];
     int log2_max_frame_num_minus4;
     int pic_order_cnt_type;
