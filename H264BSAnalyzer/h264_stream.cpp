@@ -477,7 +477,7 @@ void read_seq_parameter_set_rbsp(h264_stream_t* h, bs_t* b)
         sps->seq_scaling_matrix_present_flag = bs_read_u1(b);
         if( sps->seq_scaling_matrix_present_flag )
         {
-            for( i = 0; i < 8; i++ )
+            for( i = 0; i < ((sps->chroma_format_idc!=3) ? 8 : 12); i++ )
             {
                 sps->seq_scaling_list_present_flag[ i ] = bs_read_u1(b);
                 if( sps->seq_scaling_list_present_flag[ i ] )

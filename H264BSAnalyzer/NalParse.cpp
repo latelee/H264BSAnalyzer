@@ -448,6 +448,13 @@ static void debug_sps(sps_t* sps)
     my_printf(" bit_depth_chroma_minus8 : %d \n", sps->bit_depth_chroma_minus8 );
     my_printf(" qpprime_y_zero_transform_bypass_flag : %d \n", sps->qpprime_y_zero_transform_bypass_flag );
     my_printf(" seq_scaling_matrix_present_flag : %d \n", sps->seq_scaling_matrix_present_flag );
+    if (sps->seq_scaling_matrix_present_flag)
+    {
+        for (int i = 0; i < ((sps->chroma_format_idc!=3) ? 8 : 12); i++)
+        {
+            my_printf("   seq_scaling_list_present_flag[%d] : %d\n", i, sps->seq_scaling_list_present_flag[i]);
+        }
+    }
     //  int seq_scaling_list_present_flag[8];
     //  void* ScalingList4x4[6];
     //  int UseDefaultScalingMatrix4x4Flag[6];
@@ -469,46 +476,50 @@ static void debug_sps(sps_t* sps)
     my_printf(" mb_adaptive_frame_field_flag : %d \n", sps->mb_adaptive_frame_field_flag );
     my_printf(" direct_8x8_inference_flag : %d \n", sps->direct_8x8_inference_flag );
     my_printf(" frame_cropping_flag : %d \n", sps->frame_cropping_flag );
-    my_printf("   frame_crop_left_offset : %d \n", sps->frame_crop_left_offset );
-    my_printf("   frame_crop_right_offset : %d \n", sps->frame_crop_right_offset );
-    my_printf("   frame_crop_top_offset : %d \n", sps->frame_crop_top_offset );
-    my_printf("   frame_crop_bottom_offset : %d \n", sps->frame_crop_bottom_offset );
+    if (sps->frame_cropping_flag)
+    {
+        my_printf("   frame_crop_left_offset : %d \n", sps->frame_crop_left_offset );
+        my_printf("   frame_crop_right_offset : %d \n", sps->frame_crop_right_offset );
+        my_printf("   frame_crop_top_offset : %d \n", sps->frame_crop_top_offset );
+        my_printf("   frame_crop_bottom_offset : %d \n", sps->frame_crop_bottom_offset );
+    }
     my_printf(" vui_parameters_present_flag : %d \n", sps->vui_parameters_present_flag );
-
-    my_printf("=== VUI ===\n");
-    my_printf(" aspect_ratio_info_present_flag : %d \n", sps->vui.aspect_ratio_info_present_flag );
-    my_printf("   aspect_ratio_idc : %d \n", sps->vui.aspect_ratio_idc );
-    my_printf("     sar_width : %d \n", sps->vui.sar_width );
-    my_printf("     sar_height : %d \n", sps->vui.sar_height );
-    my_printf(" overscan_info_present_flag : %d \n", sps->vui.overscan_info_present_flag );
-    my_printf("   overscan_appropriate_flag : %d \n", sps->vui.overscan_appropriate_flag );
-    my_printf(" video_signal_type_present_flag : %d \n", sps->vui.video_signal_type_present_flag );
-    my_printf("   video_format : %d \n", sps->vui.video_format );
-    my_printf("   video_full_range_flag : %d \n", sps->vui.video_full_range_flag );
-    my_printf("   colour_description_present_flag : %d \n", sps->vui.colour_description_present_flag );
-    my_printf("     colour_primaries : %d \n", sps->vui.colour_primaries );
-    my_printf("   transfer_characteristics : %d \n", sps->vui.transfer_characteristics );
-    my_printf("   matrix_coefficients : %d \n", sps->vui.matrix_coefficients );
-    my_printf(" chroma_loc_info_present_flag : %d \n", sps->vui.chroma_loc_info_present_flag );
-    my_printf("   chroma_sample_loc_type_top_field : %d \n", sps->vui.chroma_sample_loc_type_top_field );
-    my_printf("   chroma_sample_loc_type_bottom_field : %d \n", sps->vui.chroma_sample_loc_type_bottom_field );
-    my_printf(" timing_info_present_flag : %d \n", sps->vui.timing_info_present_flag );
-    my_printf("   num_units_in_tick : %d \n", sps->vui.num_units_in_tick );
-    my_printf("   time_scale : %d \n", sps->vui.time_scale );
-    my_printf("   fixed_frame_rate_flag : %d \n", sps->vui.fixed_frame_rate_flag );
-    my_printf(" nal_hrd_parameters_present_flag : %d \n", sps->vui.nal_hrd_parameters_present_flag );
-    my_printf(" vcl_hrd_parameters_present_flag : %d \n", sps->vui.vcl_hrd_parameters_present_flag );
-    my_printf("   low_delay_hrd_flag : %d \n", sps->vui.low_delay_hrd_flag );
-    my_printf(" pic_struct_present_flag : %d \n", sps->vui.pic_struct_present_flag );
-    my_printf(" bitstream_restriction_flag : %d \n", sps->vui.bitstream_restriction_flag );
-    my_printf("   motion_vectors_over_pic_boundaries_flag : %d \n", sps->vui.motion_vectors_over_pic_boundaries_flag );
-    my_printf("   max_bytes_per_pic_denom : %d \n", sps->vui.max_bytes_per_pic_denom );
-    my_printf("   max_bits_per_mb_denom : %d \n", sps->vui.max_bits_per_mb_denom );
-    my_printf("   log2_max_mv_length_horizontal : %d \n", sps->vui.log2_max_mv_length_horizontal );
-    my_printf("   log2_max_mv_length_vertical : %d \n", sps->vui.log2_max_mv_length_vertical );
-    my_printf("   num_reorder_frames : %d \n", sps->vui.num_reorder_frames );
-    my_printf("   max_dec_frame_buffering : %d \n", sps->vui.max_dec_frame_buffering );
-
+    if (sps->vui_parameters_present_flag)
+    {
+        my_printf("=== VUI ===\n");
+        my_printf(" aspect_ratio_info_present_flag : %d \n", sps->vui.aspect_ratio_info_present_flag );
+        my_printf("   aspect_ratio_idc : %d \n", sps->vui.aspect_ratio_idc );
+        my_printf("     sar_width : %d \n", sps->vui.sar_width );
+        my_printf("     sar_height : %d \n", sps->vui.sar_height );
+        my_printf(" overscan_info_present_flag : %d \n", sps->vui.overscan_info_present_flag );
+        my_printf("   overscan_appropriate_flag : %d \n", sps->vui.overscan_appropriate_flag );
+        my_printf(" video_signal_type_present_flag : %d \n", sps->vui.video_signal_type_present_flag );
+        my_printf("   video_format : %d \n", sps->vui.video_format );
+        my_printf("   video_full_range_flag : %d \n", sps->vui.video_full_range_flag );
+        my_printf("   colour_description_present_flag : %d \n", sps->vui.colour_description_present_flag );
+        my_printf("     colour_primaries : %d \n", sps->vui.colour_primaries );
+        my_printf("   transfer_characteristics : %d \n", sps->vui.transfer_characteristics );
+        my_printf("   matrix_coefficients : %d \n", sps->vui.matrix_coefficients );
+        my_printf(" chroma_loc_info_present_flag : %d \n", sps->vui.chroma_loc_info_present_flag );
+        my_printf("   chroma_sample_loc_type_top_field : %d \n", sps->vui.chroma_sample_loc_type_top_field );
+        my_printf("   chroma_sample_loc_type_bottom_field : %d \n", sps->vui.chroma_sample_loc_type_bottom_field );
+        my_printf(" timing_info_present_flag : %d \n", sps->vui.timing_info_present_flag );
+        my_printf("   num_units_in_tick : %d \n", sps->vui.num_units_in_tick );
+        my_printf("   time_scale : %d \n", sps->vui.time_scale );
+        my_printf("   fixed_frame_rate_flag : %d \n", sps->vui.fixed_frame_rate_flag );
+        my_printf(" nal_hrd_parameters_present_flag : %d \n", sps->vui.nal_hrd_parameters_present_flag );
+        my_printf(" vcl_hrd_parameters_present_flag : %d \n", sps->vui.vcl_hrd_parameters_present_flag );
+        my_printf("   low_delay_hrd_flag : %d \n", sps->vui.low_delay_hrd_flag );
+        my_printf(" pic_struct_present_flag : %d \n", sps->vui.pic_struct_present_flag );
+        my_printf(" bitstream_restriction_flag : %d \n", sps->vui.bitstream_restriction_flag );
+        my_printf("   motion_vectors_over_pic_boundaries_flag : %d \n", sps->vui.motion_vectors_over_pic_boundaries_flag );
+        my_printf("   max_bytes_per_pic_denom : %d \n", sps->vui.max_bytes_per_pic_denom );
+        my_printf("   max_bits_per_mb_denom : %d \n", sps->vui.max_bits_per_mb_denom );
+        my_printf("   log2_max_mv_length_horizontal : %d \n", sps->vui.log2_max_mv_length_horizontal );
+        my_printf("   log2_max_mv_length_vertical : %d \n", sps->vui.log2_max_mv_length_vertical );
+        my_printf("   num_reorder_frames : %d \n", sps->vui.num_reorder_frames );
+        my_printf("   max_dec_frame_buffering : %d \n", sps->vui.max_dec_frame_buffering );
+    }
     my_printf("=== HRD ===\n");
     my_printf(" cpb_cnt_minus1 : %d \n", sps->hrd.cpb_cnt_minus1 );
     my_printf(" bit_rate_scale : %d \n", sps->hrd.bit_rate_scale );
