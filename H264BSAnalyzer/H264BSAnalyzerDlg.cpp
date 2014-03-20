@@ -339,6 +339,7 @@ void CH264BSAnalyzerDlg::OnBnClickedH264InputurlOpen()
     CString strFilePath;
     CString strSimpleInfo;
     CString strProfileInfo;
+    CString strVideoFormat;
     CString strMaxNalNum;
     int nMaxNalNum = -1;
     SPSInfo_t sps = {0};
@@ -406,6 +407,25 @@ void CH264BSAnalyzerDlg::OnBnClickedH264InputurlOpen()
         strProfileInfo.Format("Unkown");
         break;
     }
+    switch (sps.chroma_format_idc)
+    {
+    case 1:
+        strVideoFormat.Format("YUV420");
+        break;
+    case 2:
+        strVideoFormat.Format("YUV422");
+        break;
+    case 3:
+        strVideoFormat.Format("YUV444");
+        break;
+    case 0:
+        strVideoFormat.Format("monochrome");
+        break;
+    default:
+        strVideoFormat.Format("Unkown");
+        break;
+    }
+        
     // todo
     /*
     "Video Format: xxx\r\n"
@@ -417,13 +437,15 @@ void CH264BSAnalyzerDlg::OnBnClickedH264InputurlOpen()
         " - Cropping Right      : %d\r\n"
         " - Cropping Top        : %d\r\n"
         " - Cropping Bottom   : %d\r\n"
+        "Video Format: %s\r\n"
         "Stream Type: %s Profile @ Level %d\r\n"
         "Encoding Type: %s\r\n"
-        "Max fps: %d\r\n",
+        "Max fps: %.03f\r\n",
         m_strFileUrl,
         sps.width, sps.height,
         sps.crop_left, sps.crop_right,
         sps.crop_top, sps.crop_bottom,
+        strVideoFormat,
         strProfileInfo, sps.level_idc,
         pps.encoding_type ? "CABAC" : "CAVLC",
         sps.max_framerate

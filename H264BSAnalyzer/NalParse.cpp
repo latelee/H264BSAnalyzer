@@ -369,9 +369,13 @@ int parse_sps(char* filename,int data_offset,int data_lenth, SPSInfo_t& info)
     info.profile_idc = h->sps->profile_idc;
     info.level_idc = h->sps->level_idc;
 
+    // YUV空间
+    info.chroma_format_idc = h->sps->chroma_format_idc;
+
+    // 注：这里的帧率计算还有疑问
     if (h->sps->vui_parameters_present_flag)
     {
-        info.max_framerate = h->sps->vui.time_scale / h->sps->vui.num_units_in_tick;
+        info.max_framerate = (float)(h->sps->vui.time_scale) / (float)(h->sps->vui.num_units_in_tick);
     }
     if (nal_temp != NULL)
     {

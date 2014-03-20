@@ -32,7 +32,8 @@ typedef struct
     int crop_right;
     int crop_top;
     int crop_bottom;
-    int max_framerate;  // 由SPS计算得到的帧率，为0表示SPS中没有相应的字段计算
+    float max_framerate;  // 由SPS计算得到的帧率，为0表示SPS中没有相应的字段计算
+    int chroma_format_idc;  // YUV颜色空间 0: monochrome 1:420 2:422 3:444
 }SPSInfo_t;
 
 typedef struct 
