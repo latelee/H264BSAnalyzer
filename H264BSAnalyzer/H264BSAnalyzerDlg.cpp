@@ -605,37 +605,36 @@ void CH264BSAnalyzerDlg::OnLvnKeydownH264Nallist(NMHDR *pNMHDR, LRESULT *pResult
     int data_offset = 0;
     int data_lenth = 0;
 
-
-    //if (pLVKeyDown->wVKey == VK_UP || pLVKeyDown->wVKey == VK_DOWN)
+    // 不是上下光标的，不响应
     if (pLVKeyDown->wVKey != VK_UP && pLVKeyDown->wVKey != VK_DOWN)
     {
         return;
     }
+
+    ps=m_h264NalList.GetFirstSelectedItemPosition();
+    if (ps == NULL)
     {
-        ps=m_h264NalList.GetFirstSelectedItemPosition();
-        if (ps == NULL)
+        AfxMessageBox("No items were selected!");
+        return;
+    }
+    else
+    {
+        while (ps)
         {
-            AfxMessageBox("No items were selected!");
-            return;
-        }
-        else
-        {
-            while (ps)
-            {
-                nIndex=m_h264NalList.GetNextSelectedItem(ps);
-            }
-        }
-        // i don't know how this works...
-        // but it just ok
-        if (pLVKeyDown->wVKey == VK_UP)
-        {
-            nIndex--;
-        }
-        else if (pLVKeyDown->wVKey == VK_DOWN)
-        {
-            nIndex++;
+            nIndex=m_h264NalList.GetNextSelectedItem(ps);
         }
     }
+    // i don't know how this works...
+    // but it just ok
+    if (pLVKeyDown->wVKey == VK_UP)
+    {
+        nIndex--;
+    }
+    else if (pLVKeyDown->wVKey == VK_DOWN)
+    {
+        nIndex++;
+    }
+
     if (nIndex < 0) nIndex = 0;
     if (nIndex > m_nValTotalNum - 1) nIndex = m_nValTotalNum - 1;
 
