@@ -280,6 +280,9 @@ int probe_nal_unit(char* filename,int data_offset,int data_lenth,LPVOID lparam)
 
     //Çå¿Õ×Ö·û´®-----------------
     memset(outputstr,'\0',100000);
+
+    if (data_lenth == 0)
+        return 0;
     //¾ä±ú
     CH264BSAnalyzerDlg *dlg=(CH264BSAnalyzerDlg *)lparam;
     //tempstr=(char *)malloc(10000);

@@ -66,6 +66,7 @@ private:
     vector<NALInfo> m_vNalInfoVector;
     */
     vector<NALU_t> m_vNalTypeVector;
+    int m_nValTotalNum; // m_vNalTypeVector有多少个NALU_t
 
 public:
     afx_msg void OnDropFiles(HDROP hDropInfo);

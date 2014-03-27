@@ -168,7 +168,7 @@ int CH264BSAnalyzerDlg::ShowNLInfo(NALU_t* nalu)
     }
 
     // 序号
-    strTempIndex.Format(_T("%d"),nalu->num+1);  // 向量中的序号从0开始
+    strTempIndex.Format(_T("%d"),nalu->num + 1);  // 向量中的序号从0开始
     // 数据偏移
     strOffset.Format(_T("%08x"), nalu->data_offset);
     // 长度
@@ -185,7 +185,7 @@ int CH264BSAnalyzerDlg::ShowNLInfo(NALU_t* nalu)
     lvitem.iSubItem=0;
     //注：vframe_index不可以直接赋值！
     //务必使用f_index执行Format!再赋值！
-    lvitem.pszText=(char *)(LPCTSTR)strTempIndex;
+    lvitem.pszText=(LPSTR)strTempIndex.GetBuffer();;
 
     //------------------------显示在List中
     m_h264NalList.InsertItem(&lvitem);
@@ -247,6 +247,8 @@ BOOL CH264BSAnalyzerDlg::OnInitDialog()
     m_cbNalNum.SetCurSel(0);
 
     m_nSliceIndex = 0;
+
+    m_nValTotalNum = 0;
 
     m_strFileUrl.Empty();
 
@@ -311,6 +313,7 @@ void CH264BSAnalyzerDlg::SystemClear()
     m_vNalTypeVector.clear();
     m_h264NalList.DeleteAllItems();
     m_nSliceIndex = 0;
+    m_nValTotalNum = 0;
 }
 
 // 打开H264码流文件
@@ -348,8 +351,8 @@ void CH264BSAnalyzerDlg::OnBnClickedH264InputurlOpen()
     m_edFileUrl.GetWindowText(m_strFileUrl);
 
     // 输入非数字时，获取的nMaxNalNum为-1，则显示所有的NAL
-    m_cbNalNum.GetWindowTextA(strMaxNalNum);
-    sscanf(strMaxNalNum, "%d", &nMaxNalNum);
+    m_cbNalNum.GetWindowText(strMaxNalNum);
+    sscanf((char*)strMaxNalNum.GetBuffer(), "%d", &nMaxNalNum);
 
     // test
     //m_strFileUrl.Format("%s", "../foreman_cif.h264");
@@ -361,11 +364,13 @@ void CH264BSAnalyzerDlg::OnBnClickedH264InputurlOpen()
         return;
     }
 
-    strcpy(str_szFileUrl,m_strFileUrl.GetBuffer());
+    strcpy(str_szFileUrl, (char*)m_strFileUrl.GetBuffer());
 
     h264_nal_parse(str_szFileUrl, m_vNalTypeVector, nMaxNalNum);
 
-    for (int i = 0; i < (int)m_vNalTypeVector.size(); i++)
+    m_nValTotalNum = m_vNalTypeVector.size();
+
+    for (int i = 0; i < m_nValTotalNum; i++)
     {
         // 解析SPS
         if (m_vNalTypeVector[i].nal_unit_type == 7)
@@ -383,46 +388,46 @@ void CH264BSAnalyzerDlg::OnBnClickedH264InputurlOpen()
     switch (sps.profile_idc)
     {
     case 66:
-        strProfileInfo.Format("Baseline");
+        strProfileInfo.Format(_T("Baseline"));
         break;
     case 77:
-        strProfileInfo.Format("Main");
+        strProfileInfo.Format(_T("Main"));
         break;
     case 88:
-        strProfileInfo.Format("Extended");
+        strProfileInfo.Format(_T("Extended"));
         break;
     case 100:
-        strProfileInfo.Format("High");
+        strProfileInfo.Format(_T("High"));
         break;
     case 110:
-        strProfileInfo.Format("High 10");
+        strProfileInfo.Format(_T("High 10"));
         break;
     case 122:
-        strProfileInfo.Format("High 422");
+        strProfileInfo.Format(_T("High 422"));
         break;
     case 144:
-        strProfileInfo.Format("High 444");
+        strProfileInfo.Format(_T("High 444"));
         break;
     default:
-        strProfileInfo.Format("Unkown");
+        strProfileInfo.Format(_T("Unkown"));
         break;
     }
     switch (sps.chroma_format_idc)
     {
     case 1:
-        strVideoFormat.Format("YUV420");
+        strVideoFormat.Format(_T("YUV420"));
         break;
     case 2:
-        strVideoFormat.Format("YUV422");
+        strVideoFormat.Format(_T("YUV422"));
         break;
     case 3:
-        strVideoFormat.Format("YUV444");
+        strVideoFormat.Format(_T("YUV444"));
         break;
     case 0:
-        strVideoFormat.Format("monochrome");
+        strVideoFormat.Format(_T("monochrome"));
         break;
     default:
-        strVideoFormat.Format("Unkown");
+        strVideoFormat.Format(_T("Unkown"));
         break;
     }
         
@@ -450,7 +455,7 @@ void CH264BSAnalyzerDlg::OnBnClickedH264InputurlOpen()
         pps.encoding_type ? "CABAC" : "CAVLC",
         sps.max_framerate
         );
-    GetDlgItem(IDC_EDIT_SIMINFO)->SetWindowTextA(strSimpleInfo);
+    GetDlgItem(IDC_EDIT_SIMINFO)->SetWindowText(strSimpleInfo);
 }
 
 // 主界面需要设置Accept Files为TRUE
@@ -460,15 +465,15 @@ void CH264BSAnalyzerDlg::OnDropFiles(HDROP hDropInfo)
     CDialogEx::OnDropFiles(hDropInfo);
 
     char* pFilePathName =(char *)malloc(MAX_URL_LENGTH);
-    ::DragQueryFile(hDropInfo, 0, pFilePathName,MAX_URL_LENGTH);  // 获取拖放文件的完整文件名，最关键！
+    ::DragQueryFile(hDropInfo, 0, (LPSTR)pFilePathName, MAX_URL_LENGTH);  // 获取拖放文件的完整文件名，最关键！
     //m_h264InputUrl.SetWindowTextA(pFilePathName);
-    m_edFileUrl.SetWindowTextA(pFilePathName);
-    m_strFileUrl.Format("%s", pFilePathName);
+    m_edFileUrl.SetWindowText((LPSTR)pFilePathName);
+    m_strFileUrl.Format(_T("%s"), pFilePathName);
     ::DragFinish(hDropInfo);   // 注意这个不能少，它用于释放Windows 为处理文件拖放而分配的内存
     free(pFilePathName);
 }
 
-// 双击某一项，进行NAL详细分析
+// 双击(单击)某一项，进行NAL详细分析
 void CH264BSAnalyzerDlg::OnLvnItemActivateH264Nallist(NMHDR *pNMHDR, LRESULT *pResult)
 {
     LPNMITEMACTIVATE pNMIA = reinterpret_cast<LPNMITEMACTIVATE>(pNMHDR);
@@ -481,14 +486,6 @@ void CH264BSAnalyzerDlg::OnLvnItemActivateH264Nallist(NMHDR *pNMHDR, LRESULT *pR
 
     ps=m_h264NalList.GetFirstSelectedItemPosition();
     nIndex=m_h264NalList.GetNextSelectedItem(ps);
-
-#if 00
-    CString aaa;
-    aaa.Format("line: %d", nIndex);
-    AfxMessageBox(aaa);
-
-    return;
-#endif
 
     data_offset=m_vNalTypeVector[nIndex].data_offset;
     data_lenth=m_vNalTypeVector[nIndex].len;
@@ -600,41 +597,60 @@ void CH264BSAnalyzerDlg::OnFileOpen()
 
 void CH264BSAnalyzerDlg::OnLvnKeydownH264Nallist(NMHDR *pNMHDR, LRESULT *pResult)
 {
-    LPNMLVKEYDOWN pLVKeyDow = reinterpret_cast<LPNMLVKEYDOWN>(pNMHDR);
+    LPNMLVKEYDOWN pLVKeyDown = reinterpret_cast<LPNMLVKEYDOWN>(pNMHDR);
     // TODO: 在此添加控件通知处理程序代码
     POSITION ps;
-    int nIndex;
+    int nIndex = 0;
     int ret = 0;
-    int data_offset,data_lenth;
+    int data_offset = 0;
+    int data_lenth = 0;
 
-    ps=m_h264NalList.GetFirstSelectedItemPosition();
-    if (ps == NULL)
+
+    //if (pLVKeyDown->wVKey == VK_UP || pLVKeyDown->wVKey == VK_DOWN)
+    if (pLVKeyDown->wVKey != VK_UP && pLVKeyDown->wVKey != VK_DOWN)
     {
-        AfxMessageBox("No items were selected!");
         return;
     }
-    else
     {
-        while (ps)
+        ps=m_h264NalList.GetFirstSelectedItemPosition();
+        if (ps == NULL)
         {
-            nIndex=m_h264NalList.GetNextSelectedItem(ps);
+            AfxMessageBox("No items were selected!");
+            return;
+        }
+        else
+        {
+            while (ps)
+            {
+                nIndex=m_h264NalList.GetNextSelectedItem(ps);
+            }
+        }
+        // i don't know how this works...
+        // but it just ok
+        if (pLVKeyDown->wVKey == VK_UP)
+        {
+            nIndex--;
+        }
+        else if (pLVKeyDown->wVKey == VK_DOWN)
+        {
+            nIndex++;
         }
     }
-    
+    if (nIndex < 0) nIndex = 0;
+    if (nIndex > m_nValTotalNum - 1) nIndex = m_nValTotalNum - 1;
 
-#if 01
+    // test
+#if 0
     CString aaa;
-    aaa.Format("line: %d", nIndex);
-    AfxMessageBox(aaa);
+    aaa.Format("line: %d key: %x", nIndex, pLVKeyDown->wVKey);
+    GetDlgItem(IDC_EDIT_SIMINFO)->SetWindowTextA(aaa);
 
     return;
 #endif
-    if (nIndex != 0)
-        nIndex -= 1;
 
     data_offset=m_vNalTypeVector[nIndex].data_offset;
     data_lenth=m_vNalTypeVector[nIndex].len;
-    // 
+
     ret = probe_nal_unit(str_szFileUrl,data_offset,data_lenth,this);
     if (ret < 0)
     {
