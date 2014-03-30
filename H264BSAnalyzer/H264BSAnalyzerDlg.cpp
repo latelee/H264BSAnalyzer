@@ -53,6 +53,10 @@ CH264BSAnalyzerDlg::CH264BSAnalyzerDlg(CWnd* pParent /*=NULL*/)
     : CDialogEx(CH264BSAnalyzerDlg::IDD, pParent)
 {
     m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
+    m_hFileThread = INVALID_HANDLE_VALUE;
+    m_hNALThread = INVALID_HANDLE_VALUE;
+    m_hFileLock = INVALID_HANDLE_VALUE;
+    m_hNALLock = INVALID_HANDLE_VALUE;
 }
 
 void CH264BSAnalyzerDlg::DoDataExchange(CDataExchange* pDX)
@@ -80,6 +84,132 @@ BEGIN_MESSAGE_MAP(CH264BSAnalyzerDlg, CDialogEx)
     ON_COMMAND(ID_DONATE_DONATE, &CH264BSAnalyzerDlg::OnDonateDonate)
     ON_NOTIFY(LVN_KEYDOWN, IDC_H264_NALLIST, &CH264BSAnalyzerDlg::OnLvnKeydownH264Nallist)
 END_MESSAGE_MAP()
+
+// CH264BSAnalyzerDlg message handlers
+
+BOOL CH264BSAnalyzerDlg::OnInitDialog()
+{
+    CDialogEx::OnInitDialog();
+
+    // Add "About..." menu item to system menu.
+
+    // IDM_ABOUTBOX must be in the system command range.
+    ASSERT((IDM_ABOUTBOX & 0xFFF0) == IDM_ABOUTBOX);
+    ASSERT(IDM_ABOUTBOX < 0xF000);
+
+    CMenu* pSysMenu = GetSystemMenu(FALSE);
+    if (pSysMenu != NULL)
+    {
+        BOOL bNameValid;
+        CString strAboutMenu;
+        bNameValid = strAboutMenu.LoadString(IDS_ABOUTBOX);
+        ASSERT(bNameValid);
+        if (!strAboutMenu.IsEmpty())
+        {
+            pSysMenu->AppendMenu(MF_SEPARATOR);
+            pSysMenu->AppendMenu(MF_STRING, IDM_ABOUTBOX, strAboutMenu);
+        }
+    }
+
+    // Set the icon for this dialog.  The framework does this automatically
+    //  when the application's main window is not a dialog
+    SetIcon(m_hIcon, TRUE);            // Set big icon
+    SetIcon(m_hIcon, FALSE);        // Set small icon
+
+    // TODO: Add extra initialization here
+    //整行选择；有表格线；表头；单击激活
+    DWORD dwExStyle=LVS_EX_FULLROWSELECT|LVS_EX_GRIDLINES|LVS_EX_HEADERDRAGDROP|LVS_EX_ONECLICKACTIVATE;
+    //报表风格；单行选择；高亮显示选择行
+    m_h264NalList.ModifyStyle(0,LVS_SINGLESEL|LVS_REPORT|LVS_SHOWSELALWAYS);
+    m_h264NalList.SetExtendedStyle(dwExStyle);
+
+    // 左对齐
+    m_h264NalList.InsertColumn(0,_T("No."),LVCFMT_LEFT,50,0);
+    m_h264NalList.InsertColumn(1,_T("Offset"),LVCFMT_LEFT,70,0);
+    m_h264NalList.InsertColumn(2,_T("Length"),LVCFMT_LEFT,60,0);
+    m_h264NalList.InsertColumn(3,_T("Start Code"),LVCFMT_LEFT,80,0);
+    m_h264NalList.InsertColumn(4,_T("NAL Type"),LVCFMT_LEFT,180,0);
+    m_h264NalList.InsertColumn(5,_T("Info"),LVCFMT_LEFT,80,0);
+
+    m_cbNalNum.SetCurSel(0);
+
+    m_nSliceIndex = 0;
+
+    m_nValTotalNum = 0;
+
+    m_strFileUrl.Empty();
+
+    m_edHexInfo.SetOptions(1, 1, 1, 1);
+    m_edHexInfo.SetBPR(16); // 16字节
+
+    if (m_hFileLock == INVALID_HANDLE_VALUE)
+    {
+        m_hFileLock = CreateEvent(NULL,FALSE,FALSE,NULL);
+    }
+    if (m_hNALLock == INVALID_HANDLE_VALUE)
+    {
+        m_hNALLock = CreateEvent(NULL,FALSE,FALSE,NULL);
+    }
+    if (m_hFileThread == INVALID_HANDLE_VALUE)
+    {
+        m_hFileThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadFuncReadFile, this, NULL, NULL );
+    }
+    if (m_hNALThread == INVALID_HANDLE_VALUE)
+    {
+        m_hNALThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadFuncPaseNal, this, NULL, NULL );
+    }
+    return TRUE;  // return TRUE  unless you set the focus to a control
+}
+
+void CH264BSAnalyzerDlg::OnSysCommand(UINT nID, LPARAM lParam)
+{
+    if ((nID & 0xFFF0) == IDM_ABOUTBOX)
+    {
+        CAboutDlg dlgAbout;
+        dlgAbout.DoModal();
+    }
+    else
+    {
+        CDialogEx::OnSysCommand(nID, lParam);
+    }
+}
+
+// If you add a minimize button to your dialog, you will need the code below
+//  to draw the icon.  For MFC applications using the document/view model,
+//  this is automatically done for you by the framework.
+
+void CH264BSAnalyzerDlg::OnPaint()
+{
+    if (IsIconic())
+    {
+        CPaintDC dc(this); // device context for painting
+
+        SendMessage(WM_ICONERASEBKGND, reinterpret_cast<WPARAM>(dc.GetSafeHdc()), 0);
+
+        // Center icon in client rectangle
+        int cxIcon = GetSystemMetrics(SM_CXICON);
+        int cyIcon = GetSystemMetrics(SM_CYICON);
+        CRect rect;
+        GetClientRect(&rect);
+        int x = (rect.Width() - cxIcon + 1) / 2;
+        int y = (rect.Height() - cyIcon + 1) / 2;
+
+        // Draw the icon
+        dc.DrawIcon(x, y, m_hIcon);
+    }
+    else
+    {
+        CDialogEx::OnPaint();
+    }
+}
+
+// The system calls this function to obtain the cursor to display while the user drags
+//  the minimized window.
+HCURSOR CH264BSAnalyzerDlg::OnQueryDragIcon()
+{
+    return static_cast<HCURSOR>(m_hIcon);
+}
+
 
 //添加一条记录
 int CH264BSAnalyzerDlg::ShowNLInfo(NALU_t* nalu)
@@ -198,115 +328,6 @@ int CH264BSAnalyzerDlg::ShowNLInfo(NALU_t* nalu)
     return TRUE;
 }
 
-// CH264BSAnalyzerDlg message handlers
-
-BOOL CH264BSAnalyzerDlg::OnInitDialog()
-{
-    CDialogEx::OnInitDialog();
-
-    // Add "About..." menu item to system menu.
-
-    // IDM_ABOUTBOX must be in the system command range.
-    ASSERT((IDM_ABOUTBOX & 0xFFF0) == IDM_ABOUTBOX);
-    ASSERT(IDM_ABOUTBOX < 0xF000);
-
-    CMenu* pSysMenu = GetSystemMenu(FALSE);
-    if (pSysMenu != NULL)
-    {
-        BOOL bNameValid;
-        CString strAboutMenu;
-        bNameValid = strAboutMenu.LoadString(IDS_ABOUTBOX);
-        ASSERT(bNameValid);
-        if (!strAboutMenu.IsEmpty())
-        {
-            pSysMenu->AppendMenu(MF_SEPARATOR);
-            pSysMenu->AppendMenu(MF_STRING, IDM_ABOUTBOX, strAboutMenu);
-        }
-    }
-
-    // Set the icon for this dialog.  The framework does this automatically
-    //  when the application's main window is not a dialog
-    SetIcon(m_hIcon, TRUE);            // Set big icon
-    SetIcon(m_hIcon, FALSE);        // Set small icon
-
-    // TODO: Add extra initialization here
-    //整行选择；有表格线；表头；单击激活
-    DWORD dwExStyle=LVS_EX_FULLROWSELECT|LVS_EX_GRIDLINES|LVS_EX_HEADERDRAGDROP|LVS_EX_ONECLICKACTIVATE;
-    //报表风格；单行选择；高亮显示选择行
-    m_h264NalList.ModifyStyle(0,LVS_SINGLESEL|LVS_REPORT|LVS_SHOWSELALWAYS);
-    m_h264NalList.SetExtendedStyle(dwExStyle);
-
-    // 左对齐
-    m_h264NalList.InsertColumn(0,_T("No."),LVCFMT_LEFT,50,0);
-    m_h264NalList.InsertColumn(1,_T("Offset"),LVCFMT_LEFT,70,0);
-    m_h264NalList.InsertColumn(2,_T("Length"),LVCFMT_LEFT,60,0);
-    m_h264NalList.InsertColumn(3,_T("Start Code"),LVCFMT_LEFT,80,0);
-    m_h264NalList.InsertColumn(4,_T("NAL Type"),LVCFMT_LEFT,180,0);
-    m_h264NalList.InsertColumn(5,_T("Info"),LVCFMT_LEFT,80,0);
-
-    m_cbNalNum.SetCurSel(0);
-
-    m_nSliceIndex = 0;
-
-    m_nValTotalNum = 0;
-
-    m_strFileUrl.Empty();
-
-    m_edHexInfo.SetOptions(1, 1, 1, 1);
-    m_edHexInfo.SetBPR(16); // 16字节
-
-    return TRUE;  // return TRUE  unless you set the focus to a control
-}
-
-void CH264BSAnalyzerDlg::OnSysCommand(UINT nID, LPARAM lParam)
-{
-    if ((nID & 0xFFF0) == IDM_ABOUTBOX)
-    {
-        CAboutDlg dlgAbout;
-        dlgAbout.DoModal();
-    }
-    else
-    {
-        CDialogEx::OnSysCommand(nID, lParam);
-    }
-}
-
-// If you add a minimize button to your dialog, you will need the code below
-//  to draw the icon.  For MFC applications using the document/view model,
-//  this is automatically done for you by the framework.
-
-void CH264BSAnalyzerDlg::OnPaint()
-{
-    if (IsIconic())
-    {
-        CPaintDC dc(this); // device context for painting
-
-        SendMessage(WM_ICONERASEBKGND, reinterpret_cast<WPARAM>(dc.GetSafeHdc()), 0);
-
-        // Center icon in client rectangle
-        int cxIcon = GetSystemMetrics(SM_CXICON);
-        int cyIcon = GetSystemMetrics(SM_CYICON);
-        CRect rect;
-        GetClientRect(&rect);
-        int x = (rect.Width() - cxIcon + 1) / 2;
-        int y = (rect.Height() - cyIcon + 1) / 2;
-
-        // Draw the icon
-        dc.DrawIcon(x, y, m_hIcon);
-    }
-    else
-    {
-        CDialogEx::OnPaint();
-    }
-}
-
-// The system calls this function to obtain the cursor to display while the user drags
-//  the minimized window.
-HCURSOR CH264BSAnalyzerDlg::OnQueryDragIcon()
-{
-    return static_cast<HCURSOR>(m_hIcon);
-}
-
 void CH264BSAnalyzerDlg::SystemClear()
 {
     //m_vNalInfoVector.clear();
@@ -366,6 +387,8 @@ void CH264BSAnalyzerDlg::OnBnClickedH264InputurlOpen()
 
     strcpy(str_szFileUrl, (char*)m_strFileUrl.GetBuffer());
 
+    SetEvent(m_hFileLock);
+#if 0
     h264_nal_parse(str_szFileUrl, m_vNalTypeVector, nMaxNalNum);
 
     m_nValTotalNum = m_vNalTypeVector.size();
@@ -456,23 +479,145 @@ void CH264BSAnalyzerDlg::OnBnClickedH264InputurlOpen()
         sps.max_framerate
         );
     GetDlgItem(IDC_EDIT_SIMINFO)->SetWindowText(strSimpleInfo);
+#endif
 }
 
-// 主界面需要设置Accept Files为TRUE
-void CH264BSAnalyzerDlg::OnDropFiles(HDROP hDropInfo)
+UINT CH264BSAnalyzerDlg::ThreadFuncReadFile(LPVOID* lpvoid)
 {
-    // TODO: Add your message handler code here and/or call default
-    CDialogEx::OnDropFiles(hDropInfo);
-
-    char* pFilePathName =(char *)malloc(MAX_URL_LENGTH);
-    ::DragQueryFile(hDropInfo, 0, (LPSTR)pFilePathName, MAX_URL_LENGTH);  // 获取拖放文件的完整文件名，最关键！
-    //m_h264InputUrl.SetWindowTextA(pFilePathName);
-    m_edFileUrl.SetWindowText((LPSTR)pFilePathName);
-    m_strFileUrl.Format(_T("%s"), pFilePathName);
-    ::DragFinish(hDropInfo);   // 注意这个不能少，它用于释放Windows 为处理文件拖放而分配的内存
-    free(pFilePathName);
+    CH264BSAnalyzerDlg* dlg = (CH264BSAnalyzerDlg*)lpvoid;
+    dlg->ReadFile();
+    return 0;
 }
 
+void CH264BSAnalyzerDlg::ReadFile(void)
+{
+    CString strFilePath;
+    CString strSimpleInfo;
+    CString strProfileInfo;
+    CString strVideoFormat;
+    CString strMaxNalNum;
+    int nMaxNalNum = -1;
+    SPSInfo_t sps = {0};
+    PPSInfo_t pps = {0};
+
+    while (true)
+    {
+        WaitForSingleObject(m_hFileLock, INFINITE);
+
+        h264_nal_parse(str_szFileUrl, m_vNalTypeVector, nMaxNalNum);
+
+        m_nValTotalNum = m_vNalTypeVector.size();
+
+        for (int i = 0; i < m_nValTotalNum; i++)
+        {
+            // 解析SPS
+            if (m_vNalTypeVector[i].nal_unit_type == 7)
+            {
+                parse_sps(str_szFileUrl, m_vNalTypeVector[i].data_offset, m_vNalTypeVector[i].len, sps);
+            }
+            // 解析PPS
+            if (m_vNalTypeVector[i].nal_unit_type == 8)
+            {
+                parse_pps(str_szFileUrl, m_vNalTypeVector[i].data_offset, m_vNalTypeVector[i].len, pps);
+            }
+            ShowNLInfo(&m_vNalTypeVector[i]);
+        }
+        // profile类型
+        switch (sps.profile_idc)
+        {
+        case 66:
+            strProfileInfo.Format(_T("Baseline"));
+            break;
+        case 77:
+            strProfileInfo.Format(_T("Main"));
+            break;
+        case 88:
+            strProfileInfo.Format(_T("Extended"));
+            break;
+        case 100:
+            strProfileInfo.Format(_T("High"));
+            break;
+        case 110:
+            strProfileInfo.Format(_T("High 10"));
+            break;
+        case 122:
+            strProfileInfo.Format(_T("High 422"));
+            break;
+        case 144:
+            strProfileInfo.Format(_T("High 444"));
+            break;
+        default:
+            strProfileInfo.Format(_T("Unkown"));
+            break;
+        }
+        switch (sps.chroma_format_idc)
+        {
+        case 1:
+            strVideoFormat.Format(_T("YUV420"));
+            break;
+        case 2:
+            strVideoFormat.Format(_T("YUV422"));
+            break;
+        case 3:
+            strVideoFormat.Format(_T("YUV444"));
+            break;
+        case 0:
+            strVideoFormat.Format(_T("monochrome"));
+            break;
+        default:
+            strVideoFormat.Format(_T("Unkown"));
+            break;
+        }
+        
+        // todo
+        /*
+        "Video Format: xxx\r\n"
+        */
+        strSimpleInfo.Format(
+            "File name: %s\r\n"
+            "Picture Size: %dx%d\r\n"
+            " - Cropping Left        : %d\r\n"
+            " - Cropping Right      : %d\r\n"
+            " - Cropping Top        : %d\r\n"
+            " - Cropping Bottom   : %d\r\n"
+            "Video Format: %s\r\n"
+            "Stream Type: %s Profile @ Level %d\r\n"
+            "Encoding Type: %s\r\n"
+            "Max fps: %.03f\r\n",
+            m_strFileUrl,
+            sps.width, sps.height,
+            sps.crop_left, sps.crop_right,
+            sps.crop_top, sps.crop_bottom,
+            strVideoFormat,
+            strProfileInfo, sps.level_idc,
+            pps.encoding_type ? "CABAC" : "CAVLC",
+            sps.max_framerate
+            );
+        GetDlgItem(IDC_EDIT_SIMINFO)->SetWindowText(strSimpleInfo);
+    }
+}
+
+UINT CH264BSAnalyzerDlg::ThreadFuncPaseNal(LPVOID* lpvoid)
+{
+    CH264BSAnalyzerDlg* dlg = (CH264BSAnalyzerDlg*)lpvoid;
+    dlg->PaseNal();
+    return 0;
+}
+
+void CH264BSAnalyzerDlg::PaseNal(void)
+{
+    int ret = 0;
+    while (true)
+    {
+        WaitForSingleObject(m_hNALLock, INFINITE);
+
+        ret = probe_nal_unit(str_szFileUrl,m_nNalOffset,m_nNalLen,this);
+        if (ret < 0)
+        {
+            AfxMessageBox("解析NAL时出错，可能是文件读取出错。");
+        }
+    }
+}
 // 双击(单击)某一项，进行NAL详细分析
 void CH264BSAnalyzerDlg::OnLvnItemActivateH264Nallist(NMHDR *pNMHDR, LRESULT *pResult)
 {
@@ -482,19 +627,89 @@ void CH264BSAnalyzerDlg::OnLvnItemActivateH264Nallist(NMHDR *pNMHDR, LRESULT *pR
     POSITION ps;
     int nIndex;
     int ret = 0;
-    int data_offset,data_lenth;
 
     ps=m_h264NalList.GetFirstSelectedItemPosition();
     nIndex=m_h264NalList.GetNextSelectedItem(ps);
 
-    data_offset=m_vNalTypeVector[nIndex].data_offset;
-    data_lenth=m_vNalTypeVector[nIndex].len;
+    m_nNalOffset=m_vNalTypeVector[nIndex].data_offset;
+    m_nNalLen=m_vNalTypeVector[nIndex].len;
+#if 0
+    SetEvent(m_hNALLock);
+#else
     // 
-    ret = probe_nal_unit(str_szFileUrl,data_offset,data_lenth,this);
+    ret = probe_nal_unit(str_szFileUrl,m_nNalOffset,m_nNalLen,this);
     if (ret < 0)
     {
         AfxMessageBox("解析NAL时出错，可能是文件读取出错。");
     }
+#endif
+
+    *pResult = 0;
+}
+
+
+void CH264BSAnalyzerDlg::OnLvnKeydownH264Nallist(NMHDR *pNMHDR, LRESULT *pResult)
+{
+    LPNMLVKEYDOWN pLVKeyDown = reinterpret_cast<LPNMLVKEYDOWN>(pNMHDR);
+    // TODO: 在此添加控件通知处理程序代码
+    POSITION ps;
+    int nIndex = 0;
+    int ret = 0;
+
+    // 不是上下光标的，不响应
+    if (pLVKeyDown->wVKey != VK_UP && pLVKeyDown->wVKey != VK_DOWN)
+    {
+        return;
+    }
+
+    ps=m_h264NalList.GetFirstSelectedItemPosition();
+    if (ps == NULL)
+    {
+        AfxMessageBox("No items were selected!");
+        return;
+    }
+    else
+    {
+        while (ps)
+        {
+            nIndex=m_h264NalList.GetNextSelectedItem(ps);
+        }
+    }
+    // i don't know how this works...
+    // but it just ok
+    if (pLVKeyDown->wVKey == VK_UP)
+    {
+        nIndex--;
+    }
+    else if (pLVKeyDown->wVKey == VK_DOWN)
+    {
+        nIndex++;
+    }
+
+    if (nIndex < 0) nIndex = 0;
+    if (nIndex > m_nValTotalNum - 1) nIndex = m_nValTotalNum - 1;
+
+    // test
+#if 0
+    CString aaa;
+    aaa.Format("line: %d key: %x", nIndex, pLVKeyDown->wVKey);
+    GetDlgItem(IDC_EDIT_SIMINFO)->SetWindowTextA(aaa);
+
+    return;
+#endif
+
+    m_nNalOffset=m_vNalTypeVector[nIndex].data_offset;
+    m_nNalLen=m_vNalTypeVector[nIndex].len;
+
+#if 0
+    SetEvent(m_hNALLock);
+#else
+    ret = probe_nal_unit(str_szFileUrl,m_nNalOffset,m_nNalLen,this);
+    if (ret < 0)
+    {
+        AfxMessageBox("解析NAL时出错，可能是文件读取出错。");
+    }
+#endif
 
     *pResult = 0;
 }
@@ -577,6 +792,22 @@ void CH264BSAnalyzerDlg::OnNMCustomdrawH264Nallist(NMHDR *pNMHDR, LRESULT *pResu
     }
 }
 
+
+// 主界面需要设置Accept Files为TRUE
+void CH264BSAnalyzerDlg::OnDropFiles(HDROP hDropInfo)
+{
+    // TODO: Add your message handler code here and/or call default
+    CDialogEx::OnDropFiles(hDropInfo);
+
+    char* pFilePathName =(char *)malloc(MAX_URL_LENGTH);
+    ::DragQueryFile(hDropInfo, 0, (LPSTR)pFilePathName, MAX_URL_LENGTH);  // 获取拖放文件的完整文件名，最关键！
+    //m_h264InputUrl.SetWindowTextA(pFilePathName);
+    m_edFileUrl.SetWindowText((LPSTR)pFilePathName);
+    m_strFileUrl.Format(_T("%s"), pFilePathName);
+    ::DragFinish(hDropInfo);   // 注意这个不能少，它用于释放Windows 为处理文件拖放而分配的内存
+    free(pFilePathName);
+}
+
 void CH264BSAnalyzerDlg::OnFileOpen()
 {
     // TODO: Add your command handler code here
@@ -594,71 +825,6 @@ void CH264BSAnalyzerDlg::OnFileOpen()
 
     m_edFileUrl.SetWindowTextA(m_strFileUrl);
 }
-
-void CH264BSAnalyzerDlg::OnLvnKeydownH264Nallist(NMHDR *pNMHDR, LRESULT *pResult)
-{
-    LPNMLVKEYDOWN pLVKeyDown = reinterpret_cast<LPNMLVKEYDOWN>(pNMHDR);
-    // TODO: 在此添加控件通知处理程序代码
-    POSITION ps;
-    int nIndex = 0;
-    int ret = 0;
-    int data_offset = 0;
-    int data_lenth = 0;
-
-    // 不是上下光标的，不响应
-    if (pLVKeyDown->wVKey != VK_UP && pLVKeyDown->wVKey != VK_DOWN)
-    {
-        return;
-    }
-
-    ps=m_h264NalList.GetFirstSelectedItemPosition();
-    if (ps == NULL)
-    {
-        AfxMessageBox("No items were selected!");
-        return;
-    }
-    else
-    {
-        while (ps)
-        {
-            nIndex=m_h264NalList.GetNextSelectedItem(ps);
-        }
-    }
-    // i don't know how this works...
-    // but it just ok
-    if (pLVKeyDown->wVKey == VK_UP)
-    {
-        nIndex--;
-    }
-    else if (pLVKeyDown->wVKey == VK_DOWN)
-    {
-        nIndex++;
-    }
-
-    if (nIndex < 0) nIndex = 0;
-    if (nIndex > m_nValTotalNum - 1) nIndex = m_nValTotalNum - 1;
-
-    // test
-#if 0
-    CString aaa;
-    aaa.Format("line: %d key: %x", nIndex, pLVKeyDown->wVKey);
-    GetDlgItem(IDC_EDIT_SIMINFO)->SetWindowTextA(aaa);
-
-    return;
-#endif
-
-    data_offset=m_vNalTypeVector[nIndex].data_offset;
-    data_lenth=m_vNalTypeVector[nIndex].len;
-
-    ret = probe_nal_unit(str_szFileUrl,data_offset,data_lenth,this);
-    if (ret < 0)
-    {
-        AfxMessageBox("解析NAL时出错，可能是文件读取出错。");
-    }
-
-    *pResult = 0;
-}
-
 
 void CH264BSAnalyzerDlg::OnHelpAbout()
 {

@@ -68,6 +68,20 @@ private:
     vector<NALU_t> m_vNalTypeVector;
     int m_nValTotalNum; // m_vNalTypeVector有多少个NALU_t
 
+    HANDLE m_hFileThread;
+    HANDLE m_hNALThread;
+
+    HANDLE m_hFileLock;
+    HANDLE m_hNALLock;
+
+    static UINT ThreadFuncReadFile(LPVOID* lpvoid);
+    static UINT ThreadFuncPaseNal(LPVOID* lpvoid);
+
+    void ReadFile(void);
+    void PaseNal(void);
+
+    int m_nNalOffset;
+    int m_nNalLen;
 public:
     afx_msg void OnDropFiles(HDROP hDropInfo);
     afx_msg void OnLvnItemActivateH264Nallist(NMHDR *pNMHDR, LRESULT *pResult);
