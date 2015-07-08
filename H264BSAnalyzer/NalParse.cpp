@@ -237,6 +237,46 @@ got_nal:
     return (pos+rewind);//返回两个开始字符之间间隔的字节数，即包含有前缀的NALU的长度
 }
 
+int find_first_nal()
+{
+    int found_startcode = 0;
+    int info2 = 0;
+    int info3 = 0;
+    int eof = 0;
+    int pos = 0;
+    int startcode_len = 0;
+    unsigned char *Buf = NULL;
+
+    if ((Buf = (unsigned char*)calloc (MAX_NAL_SIZE, sizeof(char))) == NULL) 
+        printf ("GetAnnexbNALU: Could not allocate Buf memory\n");
+
+    while (!found_startcode)
+    {
+        Buf[pos++] = fgetc(g_fpBitStream);//读一个字节到BUF中
+
+        info3 = FindStartCode3(&Buf[pos-4]);//判断是否为0x00000001
+        if(info3 != 1)
+        {
+            info2 = FindStartCode2(&Buf[pos-3]);//判断是否为0x000001
+            if (info2)
+            {
+                startcode_len = 3;
+            }
+        }
+        else
+        {
+            startcode_len = 4;
+        }
+
+        found_startcode = (info2 == 1 || info3 == 1);
+    }
+    
+    // 文件指针要恢复
+    fseek (g_fpBitStream, -startcode_len, SEEK_CUR);
+
+    return pos - startcode_len;
+}
+
 int h264_nal_parse(char *fileurl, vector<NALU_t>& vNal, int num)
 {
     NALU_t n;
@@ -251,6 +291,10 @@ int h264_nal_parse(char *fileurl, vector<NALU_t>& vNal, int num)
     }
 
     memset(&n, '\0', sizeof(NALU_t));
+
+    int tmp = find_first_nal();
+
+    data_offset = tmp;
 
     while(!feof(g_fpBitStream)) 
     {
