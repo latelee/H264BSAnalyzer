@@ -20,19 +20,25 @@ FILE *g_fpBitStream = NULL;                //!< the bit stream file
 //判断是否为0x000001,如果是返回1
 static int FindStartCode2 (unsigned char *Buf)
 {
-    if(Buf[0]!=0 || Buf[1]!=0 || Buf[2] !=1)
-        return 0;
-    else
+#if 0
+    if(Buf[0]==0 && Buf[1]==0 && Buf[2]==1)
         return 1;
+    else
+        return 0;
+#endif
+    return (Buf[0]==0 && Buf[1]==0 && Buf[2]==1);
 }
 
 //判断是否为0x00000001,如果是返回1
 static int FindStartCode3 (unsigned char *Buf)
 {
-    if(Buf[0]!=0 || Buf[1]!=0 || Buf[2] !=0 || Buf[3] !=1)
-        return 0;
-    else
+#if 0
+    if(Buf[0]==0 && Buf[1]==0 && Buf[2]==0 && Buf[3]==1)
         return 1;
+    else
+        return 0;
+#endif
+    return (Buf[0]==0 && Buf[1]==0 && Buf[2]==0 && Buf[3]==1);
 }
 
 //为NALU_t结构体分配内存空间
@@ -60,7 +66,7 @@ NALU_t *AllocNALU(int buffersize)
 //释放
 void FreeNALU(NALU_t *n)
 {
-    if (n)
+    if (n != NULL)
     {
 #if 0
         if (n->buf)
@@ -70,6 +76,7 @@ void FreeNALU(NALU_t *n)
         }
 #endif
         free (n);
+        n = NULL;
     }
 }
 
