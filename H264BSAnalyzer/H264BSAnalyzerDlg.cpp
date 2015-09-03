@@ -27,6 +27,7 @@ public:
     virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
 
     RECT m_pRectLink;
+    RECT m_pRectLink1;
 public:
     virtual BOOL OnInitDialog();
     DECLARE_MESSAGE_MAP()
@@ -81,7 +82,6 @@ BEGIN_MESSAGE_MAP(CH264BSAnalyzerDlg, CDialogEx)
     ON_COMMAND(ID_FILE_OPEN32771, &CH264BSAnalyzerDlg::OnFileOpen)
     ON_COMMAND(ID_HELP_ABOUT, &CH264BSAnalyzerDlg::OnHelpAbout)
     ON_COMMAND(ID_HOWTO_USAGE, &CH264BSAnalyzerDlg::OnHowtoUsage)
-    ON_COMMAND(ID_DONATE_DONATE, &CH264BSAnalyzerDlg::OnDonateDonate)
     ON_NOTIFY(LVN_KEYDOWN, IDC_H264_NALLIST, &CH264BSAnalyzerDlg::OnLvnKeydownH264Nallist)
 END_MESSAGE_MAP()
 
@@ -856,6 +856,8 @@ BOOL CAboutDlg::OnInitDialog()
     // TODO:  Add extra initialization here
     GetDlgItem(IDC_STATIC_URL)->GetWindowRect(&m_pRectLink);
     ScreenToClient(&m_pRectLink);
+    GetDlgItem(IDC_STATIC_WEB)->GetWindowRect(&m_pRectLink1);
+    ScreenToClient(&m_pRectLink1);
     return TRUE;  // return TRUE unless you set the focus to a control
     // EXCEPTION: OCX Property Pages should return FALSE
 }
@@ -867,11 +869,16 @@ END_MESSAGE_MAP()
 
 void CAboutDlg::OnMouseMove(UINT nFlags, CPoint point)
 {
+    HCURSOR hCursor;
     // TODO: Add your message handler code here and/or call default
     if (point.x > m_pRectLink.left && point.x < m_pRectLink.right && point.y < m_pRectLink.bottom && point.y > m_pRectLink.top)
     {
-        //变成手形
-        HCURSOR hCursor;
+        //变成手形    
+        hCursor = ::LoadCursor (NULL, IDC_HAND);
+        ::SetCursor(hCursor);
+    }
+    if (point.x > m_pRectLink1.left && point.x < m_pRectLink1.right && point.y < m_pRectLink1.bottom && point.y > m_pRectLink1.top)
+    {
         hCursor = ::LoadCursor (NULL, IDC_HAND);
         ::SetCursor(hCursor);
     }
@@ -892,13 +899,14 @@ void CAboutDlg::OnLButtonDown(UINT nFlags, CPoint point)
             ShellExecute(NULL, NULL, strLink, NULL, NULL, SW_NORMAL);
         }
     }
-
+    if (point.x > m_pRectLink1.left && point.x < m_pRectLink1.right && point.y < m_pRectLink1.bottom && point.y > m_pRectLink1.top)
+    {
+        if (nFlags == MK_LBUTTON)
+        {
+            GetDlgItem(IDC_STATIC_WEB)->GetWindowText(strLink);
+            ShellExecute(NULL, NULL, strLink, NULL, NULL, SW_NORMAL);
+        }
+    }
     CDialogEx::OnLButtonDown(nFlags, point);
 }
 
-// donate
-void CH264BSAnalyzerDlg::OnDonateDonate()
-{
-    // TODO: 在此添加命令处理程序代码
-    ShellExecute(NULL, NULL, "https://me.alipay.com/jkeegg", NULL, NULL, SW_NORMAL);
-}
