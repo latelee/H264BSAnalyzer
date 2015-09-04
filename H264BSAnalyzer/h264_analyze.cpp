@@ -18,8 +18,9 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
-#include "stdafx.h" // for mfc
 
+#include "stdafx.h" // for mfc
+#if 0
 #include "h264_stream.h"
 
 #include <stdlib.h>
@@ -27,6 +28,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
+
 
 #define BUFSIZE 32*1024*1024
 
@@ -200,3 +202,5 @@ int main(int argc, char *argv[])
 
     return 0;
 }
+
+#endif

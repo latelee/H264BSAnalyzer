@@ -2117,6 +2117,7 @@ slice_data( )
 
 /***************************** debug ******************************/
 
+#if 0
 void debug_sps(sps_t* sps)
 {
     printf("======= SPS =======\n");
@@ -2449,3 +2450,4 @@ void debug_bytes(uint8_t* buf, int len)
     }
     printf("\n");
 }
+#endif
