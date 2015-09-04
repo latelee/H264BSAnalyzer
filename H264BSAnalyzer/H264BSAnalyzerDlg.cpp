@@ -154,10 +154,13 @@ BOOL CH264BSAnalyzerDlg::OnInitDialog()
     {
         m_hFileThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadFuncReadFile, this, NULL, NULL );
     }
+    // 暂不使用
+    /*
     if (m_hNALThread == INVALID_HANDLE_VALUE)
     {
         m_hNALThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadFuncPaseNal, this, NULL, NULL );
     }
+    */
     return TRUE;  // return TRUE  unless you set the focus to a control
 }
 
@@ -389,7 +392,7 @@ void CH264BSAnalyzerDlg::OnBnClickedH264InputurlOpen()
 
     SetEvent(m_hFileLock);
 #if 0
-    h264_nal_parse(str_szFileUrl, m_vNalTypeVector, nMaxNalNum);
+    h264_nal_probe(str_szFileUrl, m_vNalTypeVector, nMaxNalNum);
 
     m_nValTotalNum = m_vNalTypeVector.size();
 
@@ -398,12 +401,12 @@ void CH264BSAnalyzerDlg::OnBnClickedH264InputurlOpen()
         // 解析SPS
         if (m_vNalTypeVector[i].nal_unit_type == 7)
         {
-            parse_sps(str_szFileUrl, m_vNalTypeVector[i].data_offset, m_vNalTypeVector[i].len, sps);
+            h264_sps_parse(str_szFileUrl, m_vNalTypeVector[i].data_offset, m_vNalTypeVector[i].len, sps);
         }
         // 解析PPS
         if (m_vNalTypeVector[i].nal_unit_type == 8)
         {
-            parse_pps(str_szFileUrl, m_vNalTypeVector[i].data_offset, m_vNalTypeVector[i].len, pps);
+            h264_pps_parse(str_szFileUrl, m_vNalTypeVector[i].data_offset, m_vNalTypeVector[i].len, pps);
         }
         ShowNLInfo(&m_vNalTypeVector[i]);
     }
@@ -504,7 +507,7 @@ void CH264BSAnalyzerDlg::ReadFile(void)
     {
         WaitForSingleObject(m_hFileLock, INFINITE);
 
-        h264_nal_parse(str_szFileUrl, m_vNalTypeVector, nMaxNalNum);
+        h264_nal_probe(str_szFileUrl, m_vNalTypeVector, nMaxNalNum);
 
         m_nValTotalNum = m_vNalTypeVector.size();
 
@@ -513,12 +516,12 @@ void CH264BSAnalyzerDlg::ReadFile(void)
             // 解析SPS
             if (m_vNalTypeVector[i].nal_unit_type == 7)
             {
-                parse_sps(str_szFileUrl, m_vNalTypeVector[i].data_offset, m_vNalTypeVector[i].len, sps);
+                h264_sps_parse(str_szFileUrl, m_vNalTypeVector[i].data_offset, m_vNalTypeVector[i].len, sps);
             }
             // 解析PPS
             if (m_vNalTypeVector[i].nal_unit_type == 8)
             {
-                parse_pps(str_szFileUrl, m_vNalTypeVector[i].data_offset, m_vNalTypeVector[i].len, pps);
+                h264_pps_parse(str_szFileUrl, m_vNalTypeVector[i].data_offset, m_vNalTypeVector[i].len, pps);
             }
             ShowNLInfo(&m_vNalTypeVector[i]);
         }
@@ -611,7 +614,7 @@ void CH264BSAnalyzerDlg::PaseNal(void)
     {
         WaitForSingleObject(m_hNALLock, INFINITE);
 
-        ret = probe_nal_unit(str_szFileUrl,m_nNalOffset,m_nNalLen,this);
+        ret = h264_nal_parse(str_szFileUrl,m_nNalOffset,m_nNalLen,this);
         if (ret < 0)
         {
             AfxMessageBox("解析NAL时出错，可能是文件读取出错。");
@@ -637,7 +640,7 @@ void CH264BSAnalyzerDlg::OnLvnItemActivateH264Nallist(NMHDR *pNMHDR, LRESULT *pR
     SetEvent(m_hNALLock);
 #else
     // 
-    ret = probe_nal_unit(str_szFileUrl,m_nNalOffset,m_nNalLen,this);
+    ret = h264_nal_parse(str_szFileUrl,m_nNalOffset,m_nNalLen,this);
     if (ret < 0)
     {
         AfxMessageBox("解析NAL时出错，可能是文件读取出错。");
@@ -704,7 +707,7 @@ void CH264BSAnalyzerDlg::OnLvnKeydownH264Nallist(NMHDR *pNMHDR, LRESULT *pResult
 #if 0
     SetEvent(m_hNALLock);
 #else
-    ret = probe_nal_unit(str_szFileUrl,m_nNalOffset,m_nNalLen,this);
+    ret = h264_nal_parse(str_szFileUrl,m_nNalOffset,m_nNalLen,this);
     if (ret < 0)
     {
         AfxMessageBox("解析NAL时出错，可能是文件读取出错。");

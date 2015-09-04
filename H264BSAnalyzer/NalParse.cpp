@@ -277,7 +277,7 @@ int find_first_nal()
     return pos - startcode_len;
 }
 
-int h264_nal_parse(char *fileurl, vector<NALU_t>& vNal, int num)
+int h264_nal_probe(char *fileurl, vector<NALU_t>& vNal, int num)
 {
     NALU_t n;
     int nal_num=0;
@@ -314,7 +314,7 @@ int h264_nal_parse(char *fileurl, vector<NALU_t>& vNal, int num)
     return 0;
 }
 
-static void debug_nal(h264_stream_t* h, nal_t* nal);
+static void h264_debug_nal(h264_stream_t* h, nal_t* nal);
 void dump_hex(const char *buffer, int offset, int len);
 
 // todo：不使用这种写死空间的做法
@@ -324,7 +324,7 @@ char tempstr[1000]={0};
 char outputstr[100000]={'\0'};
 
 //自己写的，解析NAL数据的函数
-int probe_nal_unit(char* filename,int data_offset,int data_lenth,LPVOID lparam)
+int h264_nal_parse(char* filename,int data_offset,int data_lenth,LPVOID lparam)
 {
     int nal_start,nal_end;
     h264_stream_t* h = NULL;
@@ -356,7 +356,7 @@ int probe_nal_unit(char* filename,int data_offset,int data_lenth,LPVOID lparam)
     find_nal_unit(nal_temp, data_lenth, &nal_start, &nal_end);
     read_nal_unit(h, &nal_temp[nal_start], nal_end - nal_start);
 
-    debug_nal(h,h->nal);    // 打印到outputstr中
+    h264_debug_nal(h,h->nal);    // 打印到outputstr中
     dlg->m_h264NalInfo.SetWindowText(outputstr);    // 把NAL详细信息显示到界面上
 
     //dump_hex((char*)nal_temp, data_offset, data_lenth);
@@ -379,7 +379,7 @@ int probe_nal_unit(char* filename,int data_offset,int data_lenth,LPVOID lparam)
     return 0;
 }
 
-int parse_sps(char* filename,int data_offset,int data_lenth, SPSInfo_t& info)
+int h264_sps_parse(char* filename,int data_offset,int data_lenth, SPSInfo_t& info)
 {
     int nal_start,nal_end;
     h264_stream_t* h = NULL;
@@ -443,7 +443,7 @@ int parse_sps(char* filename,int data_offset,int data_lenth, SPSInfo_t& info)
     return 0;
 }
 
-int parse_pps(char* filename,int data_offset,int data_lenth, PPSInfo_t& info)
+int h264_pps_parse(char* filename,int data_offset,int data_lenth, PPSInfo_t& info)
 {
     int nal_start,nal_end;
     h264_stream_t* h = NULL;
@@ -487,7 +487,7 @@ int parse_pps(char* filename,int data_offset,int data_lenth, PPSInfo_t& info)
     strcat(tempstr,"\r\n");                        \
     strcat(outputstr,tempstr);
 
-static void debug_sps(sps_t* sps)
+static void h264_debug_sps(sps_t* sps)
 {
     my_printf("======= SPS =======\n");
     my_printf(" profile_idc : %d \n", sps->profile_idc );
@@ -596,7 +596,7 @@ static void debug_sps(sps_t* sps)
 }
 
 
-static void debug_pps(pps_t* pps)
+static void h264_debug_pps(pps_t* pps)
 {
     my_printf("======= PPS =======\n");
     my_printf(" pic_parameter_set_id : %d \n", pps->pic_parameter_set_id );
@@ -632,7 +632,7 @@ static void debug_pps(pps_t* pps)
     my_printf(" second_chroma_qp_index_offset : %d \n", pps->second_chroma_qp_index_offset );
 }
 
-static void debug_slice_header(slice_header_t* sh)
+static void h264_debug_slice_header(slice_header_t* sh)
 {
     my_printf("======= Slice Header =======\n");
     my_printf(" first_mb_in_slice : %d \n", sh->first_mb_in_slice );
@@ -710,7 +710,7 @@ static void debug_slice_header(slice_header_t* sh)
 
 }
 
-static void debug_aud(aud_t* aud)
+static void h264_debug_aud(aud_t* aud)
 {
     my_printf("======= Access Unit Delimiter =======\n");
     const char* primary_pic_type_name;
@@ -729,7 +729,7 @@ static void debug_aud(aud_t* aud)
     my_printf(" primary_pic_type : %d ( %s ) \n", aud->primary_pic_type, primary_pic_type_name );
 }
 
-static void debug_seis( h264_stream_t* h)
+static void h264_debug_seis( h264_stream_t* h)
 {
     sei_t** seis = h->seis;
     int num_seis = h->num_seis;
@@ -793,9 +793,9 @@ static void debug_seis( h264_stream_t* h)
  @param[in]      h          the stream object
  @param[in]      nal        the nal unit
  */
-static void debug_nal(h264_stream_t* h, nal_t* nal)
+static void h264_debug_nal(h264_stream_t* h, nal_t* nal)
 {
-    my_printf("==================== NAL ====================\n");
+    my_printf("==================== NAL1 ====================\n");
     my_printf(" forbidden_zero_bit : %d \n", nal->forbidden_zero_bit );
     my_printf(" nal_ref_idc : %d \n", nal->nal_ref_idc );
     // TODO make into subroutine
@@ -824,12 +824,12 @@ static void debug_nal(h264_stream_t* h, nal_t* nal)
     }
     my_printf(" nal_unit_type : %d ( %s ) \n", nal->nal_unit_type, nal_unit_type_name );
 
-    if( nal->nal_unit_type == NAL_UNIT_TYPE_CODED_SLICE_NON_IDR) { debug_slice_header(h->sh); }
-    else if( nal->nal_unit_type == NAL_UNIT_TYPE_CODED_SLICE_IDR) { debug_slice_header(h->sh); }
-    else if( nal->nal_unit_type == NAL_UNIT_TYPE_SPS) { debug_sps(h->sps); }
-    else if( nal->nal_unit_type == NAL_UNIT_TYPE_PPS) { debug_pps(h->pps); }
-    else if( nal->nal_unit_type == NAL_UNIT_TYPE_AUD) { debug_aud(h->aud); }
-    else if( nal->nal_unit_type == NAL_UNIT_TYPE_SEI) { debug_seis( h ); }
+    if( nal->nal_unit_type == NAL_UNIT_TYPE_CODED_SLICE_NON_IDR) { h264_debug_slice_header(h->sh); }
+    else if( nal->nal_unit_type == NAL_UNIT_TYPE_CODED_SLICE_IDR) { h264_debug_slice_header(h->sh); }
+    else if( nal->nal_unit_type == NAL_UNIT_TYPE_SPS) { h264_debug_sps(h->sps); }
+    else if( nal->nal_unit_type == NAL_UNIT_TYPE_PPS) { h264_debug_pps(h->pps); }
+    else if( nal->nal_unit_type == NAL_UNIT_TYPE_AUD) { h264_debug_aud(h->aud); }
+    else if( nal->nal_unit_type == NAL_UNIT_TYPE_SEI) { h264_debug_seis( h ); }
 }
 
 static void debug_bytes(uint8_t* buf, int len)

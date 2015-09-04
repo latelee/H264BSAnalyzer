@@ -13,13 +13,6 @@ typedef struct
     char nal_unit_type;            // NAL类型
     unsigned int data_offset;       // nal包在文件中的偏移
     char startcode_buf[14];         // 起始码，字符串形式
-    //unsigned int max_size;            //! Nal Unit Buffer size
-    //int startcodeprefix_len;        //! 4 for parameter sets and first slice in picture, 3 for everything else (suggested)
-    //unsigned int len;                 //! Length of the NAL unit (Excluding the start code, which does not belong to the NALU)
-    //  int forbidden_bit;            //! should be always FALSE
-    //  int nal_reference_idc;        //! NALU_PRIORITY_xxxx
-    //char *buf;                    //! contains the first byte followed by the EBSP
-    //unsigned short lost_packets;  //! true, if packet loss is detected
 } NALU_t;
 
 typedef struct 
@@ -44,12 +37,12 @@ typedef struct
 
 typedef int handle_nalu_info(NALU_t* nalu);
 
-int h264_nal_parse(char *fileurl, vector<NALU_t>& vNal, int num);
+int h264_nal_probe(char *fileurl, vector<NALU_t>& vNal, int num);
 
-int probe_nal_unit(char* filename,int data_offset,int data_lenth,LPVOID lparam);;
+int h264_nal_parse(char* filename,int data_offset,int data_lenth,LPVOID lparam);;
 
-int parse_sps(char* filename,int data_offset,int data_lenth, SPSInfo_t& info);
+int h264_sps_parse(char* filename,int data_offset,int data_lenth, SPSInfo_t& info);
 
-int parse_pps(char* filename,int data_offset,int data_lenth, PPSInfo_t& info);
+int h264_pps_parse(char* filename,int data_offset,int data_lenth, PPSInfo_t& info);
 
 #endif
