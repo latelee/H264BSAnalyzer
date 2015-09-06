@@ -107,6 +107,9 @@
     <ClInclude Include="h264_avcc.h" />
     <ClInclude Include="h264_sei.h" />
     <ClInclude Include="h264_stream.h" />
+    <ClInclude Include="h265_avcc.h" />
+    <ClInclude Include="h265_sei.h" />
+    <ClInclude Include="h265_stream.h" />
     <ClInclude Include="hexeditctrl.h" />
     <ClInclude Include="NalParse.h" />
     <ClInclude Include="Resource.h" />
@@ -120,6 +123,9 @@
     <ClCompile Include="h264_avcc.cpp" />
     <ClCompile Include="h264_sei.cpp" />
     <ClCompile Include="h264_stream.cpp" />
+    <ClCompile Include="h265_avcc.cpp" />
+    <ClCompile Include="h265_sei.cpp" />
+    <ClCompile Include="h265_stream.cpp" />
     <ClCompile Include="hexeditctrl.cpp" />
     <ClCompile Include="NalParse.cpp" />
     <ClCompile Include="stdafx.cpp">

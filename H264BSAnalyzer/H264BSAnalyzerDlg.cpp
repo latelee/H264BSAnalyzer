@@ -225,85 +225,167 @@ int CH264BSAnalyzerDlg::ShowNLInfo(NALU_t* nalu)
     CString strNalInfo;
     int nIndex=0;
 
-    // NAL单元类型
-    switch (nalu->nal_unit_type)
+    if (nalu->type == 0)
     {
-    case 0:
-        strNalUnitType.Format(_T("Unspecified"));
-        break;
-    case 1:
-        strNalUnitType.Format(_T("Coded slice of a non-IDR picture"));
-        switch (nalu->slice_type)
+        // NAL单元类型
+        switch (nalu->nal_unit_type)
         {
         case 0:
-        case 5:
-            strNalInfo.Format(_T("P Slice #%d"), m_nSliceIndex);
+            strNalUnitType.Format(_T("Unspecified"));
             break;
         case 1:
-        case 6:
-            strNalInfo.Format(_T("B Slice #%d"), m_nSliceIndex);
+            strNalUnitType.Format(_T("Coded slice of a non-IDR picture"));
+            switch (nalu->slice_type)
+            {
+            case 0:
+            case 5:
+                strNalInfo.Format(_T("P Slice #%d"), m_nSliceIndex);
+                break;
+            case 1:
+            case 6:
+                strNalInfo.Format(_T("B Slice #%d"), m_nSliceIndex);
+                break;
+            case 2:
+            case 7:
+                strNalInfo.Format(_T("I Slice #%d"), m_nSliceIndex);
+                break;
+            }
+            m_nSliceIndex++;
             break;
         case 2:
+            strNalUnitType.Format(_T("DPA"));
+            break;
+        case 3:
+            strNalUnitType.Format(_T("DPB"));
+            break;
+        case 4:
+            strNalUnitType.Format(_T("DPC"));
+            break;
+        case 5:
+            strNalUnitType.Format(_T("Coded slice of an IDR picture"));
+            strNalInfo.Format(_T("IDR #%d"), m_nSliceIndex);
+            m_nSliceIndex++;
+            break;
+        case 6:
+            strNalUnitType.Format(_T("SEI"));
+            strNalInfo.Format(_T("SEI"));
+            break;
         case 7:
-            strNalInfo.Format(_T("I Slice #%d"), m_nSliceIndex);
+            strNalUnitType.Format(_T("Sequence parameter set"));
+            strNalInfo.Format(_T("SPS"));
+            break;
+        case 8:
+            strNalUnitType.Format(_T("Picture parameter set"));
+            strNalInfo.Format(_T("PPS"));
+            break;
+        case 9:
+            strNalUnitType.Format(_T("Access UD"));
+            strNalInfo.Format(_T("AUD"));
+            break;
+        case 10:
+            strNalUnitType.Format(_T("END_SEQUENCE"));
+            break;
+        case 11:
+            strNalUnitType.Format(_T("END_STREAM"));
+            break;
+        case 12:
+            strNalUnitType.Format(_T("FILLER_DATA"));
+            break;
+        case 13:
+            strNalUnitType.Format(_T("SPS_EXT"));
+            break;
+        case 19:
+            strNalUnitType.Format(_T("AUXILIARY_SLICE"));
+            break;
+        default:
+            strNalUnitType.Format(_T("Other"));
             break;
         }
-        m_nSliceIndex++;
-        break;
-    case 2:
-        strNalUnitType.Format(_T("DPA"));
-        break;
-    case 3:
-        strNalUnitType.Format(_T("DPB"));
-        break;
-    case 4:
-        strNalUnitType.Format(_T("DPC"));
-        break;
-    case 5:
-        strNalUnitType.Format(_T("Coded slice of an IDR picture"));
-        strNalInfo.Format(_T("IDR #%d"), m_nSliceIndex);
-        m_nSliceIndex++;
-        break;
-    case 6:
-        strNalUnitType.Format(_T("SEI"));
-        strNalInfo.Format(_T("SEI"));
-        break;
-    case 7:
-        strNalUnitType.Format(_T("Sequence parameter set"));
-        strNalInfo.Format(_T("SPS"));
-        break;
-    case 8:
-        strNalUnitType.Format(_T("Picture parameter set"));
-        strNalInfo.Format(_T("PPS"));
-        break;
-    case 9:
-        strNalUnitType.Format(_T("Access UD"));
-        strNalInfo.Format(_T("AUD"));
-        break;
-    case 10:
-        strNalUnitType.Format(_T("END_SEQUENCE"));
-        break;
-    case 11:
-        strNalUnitType.Format(_T("END_STREAM"));
-        break;
-    case 12:
-        strNalUnitType.Format(_T("FILLER_DATA"));
-        break;
-    case 13:
-        strNalUnitType.Format(_T("SPS_EXT"));
-        break;
-    case 19:
-        strNalUnitType.Format(_T("AUXILIARY_SLICE"));
-        break;
-    default:
-        strNalUnitType.Format(_T("Other"));
-        break;
     }
+    else
+    {
+        // NAL单元类型
+        switch (nalu->nal_unit_type)
+        {
+        case NAL_UNIT_CODED_SLICE_TRAIL_N:
+        case NAL_UNIT_CODED_SLICE_TRAIL_R:
+            strNalUnitType.Format(_T("Coded slice segment of a non-TSA, non-STSA trailing picture"));
+            // todo
+            switch (nalu->slice_type)
+            {
+            case 0:
+            case 5:
+                strNalInfo.Format(_T("P Slice #%d"), m_nSliceIndex);
+                break;
+            case 1:
+            case 6:
+                strNalInfo.Format(_T("B Slice #%d"), m_nSliceIndex);
+                break;
+            case 2:
+            case 7:
+                strNalInfo.Format(_T("I Slice #%d"), m_nSliceIndex);
+                break;
+            }
+            m_nSliceIndex++;
+            break;
+        case NAL_UNIT_CODED_SLICE_TSA_N:
+        case NAL_UNIT_CODED_SLICE_TSA_R:
+            strNalUnitType.Format(_T("Coded slice segment of a TSA picture"));
+            m_nSliceIndex++;
+            break;
+        case NAL_UNIT_CODED_SLICE_RADL_N:
+        case NAL_UNIT_CODED_SLICE_RADL_R:
+            strNalUnitType.Format(_T("Coded slice segment of a TSA picture"));
+            m_nSliceIndex++;
+            break;
+        // todo...
+        case NAL_UNIT_CODED_SLICE_IDR_W_RADL:
+        case NAL_UNIT_CODED_SLICE_IDR_N_LP:
+            strNalUnitType.Format(_T("Coded slice of an IDR picture"));
+            strNalInfo.Format(_T("IDR #%d"), m_nSliceIndex);
+            m_nSliceIndex++;
+            break;
+        case NAL_UNIT_PREFIX_SEI:
+        case NAL_UNIT_SUFFIX_SEI:
+            strNalUnitType.Format(_T("SEI"));
+            strNalInfo.Format(_T("SEI"));
+            break;
+        case NAL_UNIT_VPS:
+            strNalUnitType.Format(_T("Video parameter set"));
+            strNalInfo.Format(_T("VPS"));
+            break;
+        case NAL_UNIT_SPS:
+            strNalUnitType.Format(_T("Sequence parameter set"));
+            strNalInfo.Format(_T("SPS"));
+            break;
+        case NAL_UNIT_PPS:
+            strNalUnitType.Format(_T("Picture parameter set"));
+            strNalInfo.Format(_T("PPS"));
+            break;
+        case NAL_UNIT_AUD:
+            strNalUnitType.Format(_T("Access UD"));
+            strNalInfo.Format(_T("AUD"));
+            break;
+        case NAL_UNIT_EOS:
+            strNalUnitType.Format(_T("END_SEQUENCE"));
+            break;
+        case NAL_UNIT_EOB:
+            strNalUnitType.Format(_T("END_STREAM"));
+            break;
+        case NAL_UNIT_FILLER_DATA:
+            strNalUnitType.Format(_T("FILLER_DATA"));
+            break;
+        default:
+            strNalUnitType.Format(_T("Unknown"));
+            break;
+        }
+    }
+
 
     // 序号
     strTempIndex.Format(_T("%d"),nalu->num + 1);  // 向量中的序号从0开始
     // 数据偏移
-    strOffset.Format(_T("%08x"), nalu->data_offset);
+    strOffset.Format(_T("%08X"), nalu->data_offset);
     // 长度
     strNalLen.Format(_T("%d"),nalu->len);
     // 起始码
@@ -753,6 +835,10 @@ void CH264BSAnalyzerDlg::OnNMCustomdrawH264Nallist(NMHDR *pNMHDR, LRESULT *pResu
         if(strncmp(strTemp,"SLICE", 5)==0)
         {
             clrNewBkColor = RGB(0,255,255);       //青色
+        }
+        else if(strncmp(strTemp,"VPS", 3)==0)
+        {
+            clrNewBkColor = RGB(0,0,255);        //蓝色
         }
         else if(strncmp(strTemp,"SPS", 3)==0)
         {

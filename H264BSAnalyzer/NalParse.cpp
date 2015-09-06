@@ -7,8 +7,6 @@
 
 #include "NaLParse.h"
 
-#include "h264_stream.h"
-
 #include "H264BSAnalyzerDlg.h"
 
 FILE *g_fpBitStream = NULL;                //!< the bit stream file
@@ -129,8 +127,8 @@ int GetAnnexbNALU (NALU_t *nalu)
     int info2=0, info3=0;
     int eof = 0;
     int startcodeprefix_len = 3; // 码流序列的开始字符为3个字节
-    
-    if ((Buf = (unsigned char*)calloc (MAX_NAL_SIZE, sizeof(char))) == NULL) 
+
+    if ((Buf = (unsigned char*)calloc (MAX_NAL_SIZE, sizeof(char))) == NULL)
         printf ("GetAnnexbNALU: Could not allocate Buf memory\n");
 
     //nalu->startcodeprefix_len=3;
@@ -140,8 +138,8 @@ int GetAnnexbNALU (NALU_t *nalu)
         free(Buf);
         return 0;
     }
-    info2 = FindStartCode2 (Buf);//判断是否为0x000001 
-    if(info2 != 1) 
+    info2 = FindStartCode2 (Buf);//判断是否为0x000001
+    if(info2 != 1)
     {
         //如果不是，再读一个字节
         if(1 != fread(Buf+3, 1, 1, g_fpBitStream))//读一个字节
@@ -151,11 +149,11 @@ int GetAnnexbNALU (NALU_t *nalu)
         }
         info3 = FindStartCode3 (Buf);//判断是否为0x00000001
         if (info3 != 1)//如果不是，返回-1
-        { 
+        {
             free(Buf);
             return -1;
         }
-        else 
+        else
         {
             //如果是0x00000001,得到开始前缀为4个字节
             pos = 4;
@@ -172,7 +170,7 @@ int GetAnnexbNALU (NALU_t *nalu)
     found_startcode = 0;
     info2 = 0;
     info3 = 0;
-  
+
     while (!found_startcode)
     {
         if (feof (g_fpBitStream))//判断是否到了文件尾
@@ -205,7 +203,7 @@ got_nal:
     {
         rewind = -1;
     }
-    // Here the Start code, the complete NALU, and the next start code is in the Buf.  
+    // Here the Start code, the complete NALU, and the next start code is in the Buf.
     // The size of Buf is pos, pos+rewind are the number of bytes excluding the next
     // start code, and (pos+rewind)-startcodeprefix_len is the size of the NALU excluding the start code
     // 不包含起始码的数据的长度
@@ -215,25 +213,38 @@ got_nal:
     //nalu->forbidden_bit = nalu->buf[0] & 0x80; //1 bit
     //nalu->nal_reference_idc = nalu->buf[0] & 0x60; // 2 bit
     //nalu->nal_unit_type = (nalu->buf[0]) & 0x1f;// 5 bit
-    
-    char nal_header = 0;
-    nal_header = Buf[startcodeprefix_len];
-    nalu->nal_unit_type = nal_header & 0x1f;// 5 bit
 
-    nalu->len = pos+rewind;   //nalu->len + nalu->startcodeprefix_len;
     // 包括起始码在内的5个字节
     sprintf(nalu->startcode_buf, "%02x%02x%02x%02x%02x", Buf[0], Buf[1], Buf[2], Buf[3], Buf[4]);
-
-    // 获取slice类型：I帧、P帧、B帧
-    // 注：在nal类型为1~5时获取
-    if (nalu->nal_unit_type <= 5 && nalu->nal_unit_type >= 1)
+    nalu->len = pos+rewind;   //nalu->len + nalu->startcodeprefix_len;
+    uint16_t nal_header = 0; // two bytes for h.265
+    if (nalu->type)
     {
-        int start_bit = 0;
-        int first_mb_in_slice = ue((char*)Buf+5, 8, start_bit);
-        nalu->slice_type = ue((char*)Buf+5, 8, start_bit);
+        //nal_header = (Buf[startcodeprefix_len]<<8) | Buf[startcodeprefix_len+1];
+        nal_header = Buf[startcodeprefix_len];
+        nalu->nal_unit_type = (nal_header>>1) & 0x3f;// 6 bit
+        // todo 读slice_type
+
     }
+    else
+    {
+        //char nal_header = 0;
+        nal_header = Buf[startcodeprefix_len];
+        nalu->nal_unit_type = nal_header & 0x1f;// 5 bit
+
+        // 获取slice类型：I帧、P帧、B帧
+        // 注：在nal类型为1~5时获取
+        if (nalu->nal_unit_type <= 5 && nalu->nal_unit_type >= 1)
+        {
+            int start_bit = 0;
+            int first_mb_in_slice = ue((char*)Buf+startcodeprefix_len+1, 8, start_bit);
+            nalu->slice_type = ue((char*)Buf+startcodeprefix_len+1, 8, start_bit);
+        }
+    }
+
+
     free(Buf);
- 
+
     return (pos+rewind);//返回两个开始字符之间间隔的字节数，即包含有前缀的NALU的长度
 }
 
@@ -247,7 +258,7 @@ int find_first_nal()
     int startcode_len = 0;
     unsigned char *Buf = NULL;
 
-    if ((Buf = (unsigned char*)calloc (MAX_NAL_SIZE, sizeof(char))) == NULL) 
+    if ((Buf = (unsigned char*)calloc (MAX_NAL_SIZE, sizeof(char))) == NULL)
         printf ("GetAnnexbNALU: Could not allocate Buf memory\n");
 
     while (!found_startcode)
@@ -270,7 +281,7 @@ int find_first_nal()
 
         found_startcode = (info2 == 1 || info3 == 1);
     }
-    
+
     // 文件指针要恢复
     fseek (g_fpBitStream, -startcode_len, SEEK_CUR);
 
@@ -292,11 +303,13 @@ int h264_nal_probe(char *fileurl, vector<NALU_t>& vNal, int num)
 
     memset(&n, '\0', sizeof(NALU_t));
 
+    n.type = 1; // h.265
+
     int tmp = find_first_nal();
 
     data_offset = tmp;
 
-    while(!feof(g_fpBitStream)) 
+    while(!feof(g_fpBitStream))
     {
         if (num > 0 && nal_num == num)
         {
@@ -315,6 +328,7 @@ int h264_nal_probe(char *fileurl, vector<NALU_t>& vNal, int num)
 }
 
 static void h264_debug_nal(h264_stream_t* h, nal_t* nal);
+static void h265_debug_nal(h265_stream_t* h, nal_t* nal);
 void dump_hex(const char *buffer, int offset, int len);
 
 // todo：不使用这种写死空间的做法
@@ -350,7 +364,8 @@ int h264_nal_parse(char* filename,int data_offset,int data_lenth,LPVOID lparam)
 
     fseek(fp,data_offset,SEEK_SET);
     fread(nal_temp,data_lenth,1,fp);
-    // read some H264 data into buf
+
+    printf("test\n");
 
     h = h264_new();
     find_nal_unit(nal_temp, data_lenth, &nal_start, &nal_end);
@@ -379,6 +394,7 @@ int h264_nal_parse(char* filename,int data_offset,int data_lenth,LPVOID lparam)
     return 0;
 }
 
+// 解析SPS，得到视频宽高、yuv空间等信息
 int h264_sps_parse(char* filename,int data_offset,int data_lenth, SPSInfo_t& info)
 {
     int nal_start,nal_end;
@@ -841,4 +857,130 @@ static void debug_bytes(uint8_t* buf, int len)
         if ((i+1) % 16 == 0) { my_printf ("\n"); }
     }
     my_printf("\n");
+}
+
+////////////////////////////////////////////////////////
+
+static void h265_debug_nal(h265_stream_t* h, nal_t* nal)
+{
+    my_printf("==================== NAL1 ====================\n");
+    my_printf(" forbidden_zero_bit : %d \n", nal->forbidden_zero_bit );
+    my_printf(" nal_ref_idc : %d \n", nal->nal_ref_idc );
+    const char* nal_unit_type_name;
+    switch (nal->nal_unit_type)
+    {
+    case NAL_UNIT_VPS:
+        nal_unit_type_name = "Video parameter set";
+        break;
+    case NAL_UNIT_SPS:
+        nal_unit_type_name = "Sequence parameter set";
+        break;
+    case NAL_UNIT_PPS:
+        nal_unit_type_name = "Picture parameter set";
+        break;
+    case NAL_UNIT_AUD:
+        nal_unit_type_name = "Access unit delimiter";
+        break;
+    case NAL_UNIT_EOS:
+        nal_unit_type_name = "End of sequence";
+        break;
+    case NAL_UNIT_EOB:
+        nal_unit_type_name = "End of bitstream";
+        break;
+    case NAL_UNIT_FILLER_DATA:
+        nal_unit_type_name = "Filler data";
+        break;
+    case NAL_UNIT_PREFIX_SEI:
+    case NAL_UNIT_SUFFIX_SEI:
+        nal_unit_type_name = "Supplemental enhancement information";
+        break;
+    case NAL_UNIT_CODED_SLICE_TRAIL_N:
+    case NAL_UNIT_CODED_SLICE_TRAIL_R:
+        nal_unit_type_name = "Coded slice segment of a non-TSA, non-STSA trailing picture";
+        break;
+    case NAL_UNIT_CODED_SLICE_TSA_N:
+    case NAL_UNIT_CODED_SLICE_TSA_R:
+        nal_unit_type_name = "Coded slice segment of a TSA picture";
+        break;
+    case NAL_UNIT_CODED_SLICE_STSA_N:
+    case NAL_UNIT_CODED_SLICE_STSA_R:
+        nal_unit_type_name = "Coded slice segment of an STSA picture";
+        break;
+    case NAL_UNIT_CODED_SLICE_RADL_N:
+    case NAL_UNIT_CODED_SLICE_RADL_R:
+        nal_unit_type_name = "Coded slice segment of a RADL picture";
+        break;
+    case NAL_UNIT_CODED_SLICE_RASL_N:
+    case NAL_UNIT_CODED_SLICE_RASL_R:
+        nal_unit_type_name = "Coded slice segment of a RASL picture";
+        break;
+    case NAL_UNIT_RESERVED_VCL_N10:
+    case NAL_UNIT_RESERVED_VCL_N12:
+    case NAL_UNIT_RESERVED_VCL_N14:
+        nal_unit_type_name = "Reserved non-IRAP SLNR VCL NAL unit types";
+        break;
+    case NAL_UNIT_RESERVED_VCL_R11:
+    case NAL_UNIT_RESERVED_VCL_R13:
+    case NAL_UNIT_RESERVED_VCL_R15:
+        nal_unit_type_name = "Reserved non-IRAP sub-layer reference VCL NAL unit types";
+        break;
+    case NAL_UNIT_CODED_SLICE_BLA_W_LP:
+    case NAL_UNIT_CODED_SLICE_BLA_W_RADL:
+    case NAL_UNIT_CODED_SLICE_BLA_N_LP:
+        nal_unit_type_name = "Coded slice segment of a BLA picture";
+        break;
+    case NAL_UNIT_CODED_SLICE_IDR_W_RADL:
+    case NAL_UNIT_CODED_SLICE_IDR_N_LP:
+        nal_unit_type_name = "Coded slice segment of an IDR picture";
+        break;
+    case NAL_UNIT_CODED_SLICE_CRA:
+        nal_unit_type_name = "Coded slice segment of a CRA picture";
+        break;
+
+    case NAL_UNIT_RESERVED_IRAP_VCL22:
+    case NAL_UNIT_RESERVED_IRAP_VCL23:
+        nal_unit_type_name = "Reserved IRAP VCL NAL unit types";
+        break;
+    case NAL_UNIT_RESERVED_VCL24:
+    case NAL_UNIT_RESERVED_VCL25:
+    case NAL_UNIT_RESERVED_VCL26:
+    case NAL_UNIT_RESERVED_VCL27:
+    case NAL_UNIT_RESERVED_VCL28:
+    case NAL_UNIT_RESERVED_VCL29:
+    case NAL_UNIT_RESERVED_VCL30:
+    case NAL_UNIT_RESERVED_VCL31:
+        nal_unit_type_name = "Reserved non-IRAP VCL NAL unit types";
+        break;
+    case NAL_UNIT_RESERVED_NVCL41:
+    case NAL_UNIT_RESERVED_NVCL42:
+    case NAL_UNIT_RESERVED_NVCL43:
+    case NAL_UNIT_RESERVED_NVCL44:
+    case NAL_UNIT_RESERVED_NVCL45:
+    case NAL_UNIT_RESERVED_NVCL46:
+    case NAL_UNIT_RESERVED_NVCL47:
+        nal_unit_type_name = "Reserved";
+        break;
+    case NAL_UNIT_UNSPECIFIED_48:
+    case NAL_UNIT_UNSPECIFIED_49:
+    case NAL_UNIT_UNSPECIFIED_50:
+    case NAL_UNIT_UNSPECIFIED_51:
+    case NAL_UNIT_UNSPECIFIED_52:
+    case NAL_UNIT_UNSPECIFIED_53:
+    case NAL_UNIT_UNSPECIFIED_54:
+    case NAL_UNIT_UNSPECIFIED_55:
+    case NAL_UNIT_UNSPECIFIED_56:
+    case NAL_UNIT_UNSPECIFIED_57:
+    case NAL_UNIT_UNSPECIFIED_58:
+    case NAL_UNIT_UNSPECIFIED_59:
+    case NAL_UNIT_UNSPECIFIED_60:
+    case NAL_UNIT_UNSPECIFIED_61:
+    case NAL_UNIT_UNSPECIFIED_62:
+    case NAL_UNIT_UNSPECIFIED_63:
+        nal_unit_type_name = "Unspecified";
+        break;
+    default :
+        nal_unit_type_name = "Unknown";
+        break;
+    }
+    my_printf(" nal_unit_type : %d ( %s ) \n", nal->nal_unit_type, nal_unit_type_name );
 }

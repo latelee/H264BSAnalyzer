@@ -58,6 +58,15 @@
     <ClInclude Include="hexeditctrl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="h265_avcc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="h265_sei.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="h265_stream.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="H264BSAnalyzer.cpp">
@@ -85,6 +94,15 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="hexeditctrl.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="h265_avcc.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="h265_sei.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="h265_stream.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

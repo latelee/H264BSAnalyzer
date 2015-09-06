@@ -12,7 +12,7 @@ using std::vector;
 
 #pragma once
 
-#define MAX_URL_LENGTH 2000
+#define MAX_URL_LENGTH 512
 
 // CH264BSAnalyzerDlg dialog
 class CH264BSAnalyzerDlg : public CDialogEx

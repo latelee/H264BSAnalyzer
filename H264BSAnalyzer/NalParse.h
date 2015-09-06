@@ -2,11 +2,16 @@
 #define PALPARSE_H
 
 #include "stdafx.h"
+
+#include "h264_stream.h"
+#include "h265_stream.h"
+
 #include <vector>
 using std::vector;
 
 typedef struct
 {
+    int type;                       // 0 -- h.264; 1 -- h.265
     unsigned int num;               // 序号
     unsigned int len;               // 含起始码的总的长度
     char slice_type;               // 帧类型
