@@ -11,7 +11,9 @@ H.265 ver:
 #include <assert.h>
 
 #include "bs.h"
-#include "h265_sei.h"
+
+#include <vector>
+using std::vector;
 
 #ifdef __cplusplus
 extern "C" {
@@ -35,9 +37,42 @@ typedef struct
     //int rbsp_size;
 } h265_nal_t;
 
+typedef struct
+{
+    int payloadType;
+    int payloadSize;
+    uint8_t* payload;
+} h265_sei_t;
+
 /**
    Profile, tier and level 
    @see 7.3.3 Profile, tier and level syntax 
+*/
+/*
+vector<int> sub_layer_profile_present_flag;
+vector<int> sub_layer_level_present_flag;
+vector<int> reserved_zero_2bits;
+vector<int> sub_layer_profile_space;
+vector<int> sub_layer_tier_flag;
+vector<int> sub_layer_profile_idc;
+//int sub_layer_profile_compatibility_flag[256][32];
+vector<vector <int> > sub_layer_profile_compatibility_flag;
+vector<int> sub_layer_progressive_source_flag;
+vector<int> sub_layer_interlaced_source_flag;
+vector<int> sub_layer_non_packed_constraint_flag;
+vector<int> sub_layer_frame_only_constraint_flag;
+vector<int> sub_layer_max_12bit_constraint_flag;
+vector<int> sub_layer_max_10bit_constraint_flag;
+vector<int> sub_layer_max_8bit_constraint_flag;
+// todo...
+vector<int> sub_layer_max_422chroma_constraint_flag;
+vector<int> sub_layer_max_420chroma_constraint_flag;
+vector<int> sub_layer_max_monochrome_constraint_flag;
+vector<int> sub_layer_intra_constraint_flag;
+vector<int> sub_layer_one_picture_only_constraint_flag;
+vector<int> sub_layer_lower_bit_rate_constraint_flag;
+vector<uint64_t> sub_layer_reserved_zero_34bits;
+vector<uint64_t> sub_layer_reserved_zero_43bits;
 */
 typedef struct
 {
@@ -53,6 +88,7 @@ typedef struct
     int general_max_10bit_constraint_flag;
     int general_max_8bit_constraint_flag;
     int general_max_422chroma_constraint_flag;
+    int general_max_420chroma_constraint_flag;
     int general_max_monochrome_constraint_flag;
     int general_intra_constraint_flag;
     int general_one_picture_only_constraint_flag;
@@ -76,7 +112,17 @@ typedef struct
     int sub_layer_max_12bit_constraint_flag[32];
     int sub_layer_max_10bit_constraint_flag[32];
     int sub_layer_max_8bit_constraint_flag[32];
-    // todo...
+    int sub_layer_max_422chroma_constraint_flag[32];
+    int sub_layer_max_420chroma_constraint_flag[32];
+    int sub_layer_max_monochrome_constraint_flag[32];
+    int sub_layer_intra_constraint_flag[32];
+    int sub_layer_one_picture_only_constraint_flag[32];
+    int sub_layer_lower_bit_rate_constraint_flag[32];
+    uint64_t sub_layer_reserved_zero_34bits[32];
+    uint64_t sub_layer_reserved_zero_43bits[32];
+    int sub_layer_inbld_flag[32];
+    int sub_layer_reserved_zero_bit[32];
+    int sub_layer_level_idc[32];
 
 } profile_tier_level_t;
 
@@ -160,11 +206,13 @@ typedef struct
 
 /**
 7.3.4  Scaling list data syntax 
-
 */
 typedef struct
 {
-
+    int scaling_list_pred_mode_flag[4][6];
+    int scaling_list_pred_matrix_id_delta[4][6];
+    int scaling_list_dc_coef_minus8[4][6];
+    int ScalingList[4][6][64];
 } scaling_list_data_t;
 
 /**
@@ -228,7 +276,7 @@ typedef struct
     int vps_max_sub_layers_minus1; // u(3) 
     int vps_temporal_id_nesting_flag; // u(1) 
     int vps_reserved_0xffff_16bits; // u(16) 
-    //profile_tier_level_t profile_tier_level;
+    profile_tier_level_t profile_tier_level;
     int vps_sub_layer_ordering_info_present_flag;
     // Sublayers
     int vps_max_dec_pic_buffering_minus1[8]; // max u(3)
@@ -437,7 +485,7 @@ typedef struct
 } h265_slice_data_rbsp_t;
 
 /**
-   H264 stream
+   H265 stream
    Contains data structures for all NAL types that can be handled by this library.  
    When reading, data is read into those, and when writing it is written from those.  
    The reason why they are all contained in one place is that some of them depend on others, we need to 
@@ -477,10 +525,6 @@ void h265_read_end_of_stream_rbsp(h265_stream_t* h, bs_t* b);
 
 void h265_read_rbsp_trailing_bits(bs_t* b);
 int h265_more_rbsp_trailing_data(bs_t* b);
-
-void h265_read_scaling_list(bs_t* b, int* scalingList);
-void h265_read_vui_parameters(h265_stream_t* h, bs_t* b);
-void h265_read_hrd_parameters(h265_stream_t* h, bs_t* b);
 
 //Table 7-1 NAL unit type codes and NAL unit type classes 
 enum NalUnitType
@@ -568,9 +612,9 @@ enum NalUnitType
 #define H265_SH_SLICE_TYPE_I        2        // I (I slice)
 
 //7.4.3.5 Table 7-2 ¨C Interpretation of pic_type --check
-#define AUD_PRIMARY_PIC_TYPE_I       0                // I
-#define AUD_PRIMARY_PIC_TYPE_IP      1                // P, I
-#define AUD_PRIMARY_PIC_TYPE_IPB     2                // B, P, I
+#define H265_AUD_PRIMARY_PIC_TYPE_I       0                // I
+#define H265_AUD_PRIMARY_PIC_TYPE_IP      1                // P, I
+#define H265_AUD_PRIMARY_PIC_TYPE_IPB     2                // B, P, I
 
 //Appendix E. Table E-1  Meaning of sample aspect ratio indicator --check
 #define H265_SAR_Unspecified  0           // Unspecified
@@ -590,8 +634,8 @@ enum NalUnitType
 #define H265_SAR_4_3       14             // 160:99
 #define H265_SAR_3_2       15             // 160:99
 #define H265_SAR_2_1       16             // 160:99
-                                     // 17..254           Reserved
-#define H265_SAR_Extended      255        // Extended_SAR
+                                          // 17..254           Reserved
+#define H265_SAR_Extended  255        // Extended_SAR
 
 
 // file handle for debug output

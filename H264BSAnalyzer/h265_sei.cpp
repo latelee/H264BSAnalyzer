@@ -1,7 +1,5 @@
 #include "stdafx.h" // for mfc
 
-#include "bs.h"
-#include "h265_stream.h"
 #include "h265_sei.h"
 
 #include <stdio.h>
@@ -24,8 +22,8 @@ void h265_sei_free(h265_sei_t* s)
     free(s);
 }
 
-#if 0
-void read_sei_end_bits(h265_stream_t* h, bs_t* b )
+
+void h265_read_sei_end_bits(bs_t* b )
 {
     // if the message doesn't end at a byte border
     if ( !bs_byte_aligned( b ) )
@@ -37,11 +35,11 @@ void read_sei_end_bits(h265_stream_t* h, bs_t* b )
         }
     }
 
-    read_rbsp_trailing_bits(h, b);
+    h265_read_rbsp_trailing_bits(b);
 }
 
 // D.1 SEI payload syntax
-void read_sei_payload(h265_stream_t* h, bs_t* b, int payloadType, int payloadSize)
+void h265_read_sei_payload(h265_stream_t* h, bs_t* b, int payloadType, int payloadSize)
 {
     h265_sei_t* s = h->sei;
 
@@ -52,9 +50,10 @@ void read_sei_payload(h265_stream_t* h, bs_t* b, int payloadType, int payloadSiz
     for ( i = 0; i < payloadSize; i++ )
         s->payload[i] = bs_read_u(b, 8);
         
-    read_sei_end_bits(h, b);
+    h265_read_sei_end_bits(b);
 }
 
+#if 0
 // D.1 SEI payload syntax
 void write_sei_payload(h265_stream_t* h, bs_t* b, int payloadType, int payloadSize)
 {

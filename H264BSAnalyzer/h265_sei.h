@@ -6,20 +6,15 @@
 #include <stdint.h>
 
 #include "bs.h"
+#include "h265_stream.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef struct
-{
-    int payloadType;
-    int payloadSize;
-    uint8_t* payload;
-} h265_sei_t;
-
 h265_sei_t* h265_sei_new();
 void h265_sei_free(h265_sei_t* s);
+void h265_read_sei_payload(h265_stream_t* h, bs_t* b, int payloadType, int payloadSize);
 
 //D.1 SEI payload syntax
 #define H265_SEI_TYPE_BUFFERING_PERIOD 0

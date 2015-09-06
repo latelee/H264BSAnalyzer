@@ -228,12 +228,279 @@ int h265_read_nal_unit(h265_stream_t* h, uint8_t* buf, int size)
     return nal_size;
 }
 
+void h265_parse_ptl(profile_tier_level_t* ptl, bs_t* b, int profilePresentFlag, int max_sub_layers_minus1)
+{
+    int i = 0;
+    if (profilePresentFlag)
+    {
+        ptl->general_profile_space = bs_read_u(b, 2);
+        ptl->general_tier_flag     =  bs_read_u1(b);
+        ptl->general_profile_idc   = bs_read_u(b, 5);
+        for (i = 0; i < 32; i++)
+        {
+            ptl->general_profile_compatibility_flag[i] = bs_read_u1(b);
+        }
+        ptl->general_progressive_source_flag    = bs_read_u1(b);
+        ptl->general_interlaced_source_flag     = bs_read_u1(b);
+        ptl->general_non_packed_constraint_flag = bs_read_u1(b);
+        ptl->general_frame_only_constraint_flag = bs_read_u1(b);
+        if (ptl->general_profile_idc==4 || ptl->general_profile_compatibility_flag[4] ||
+            ptl->general_profile_idc==5 || ptl->general_profile_compatibility_flag[5] ||
+            ptl->general_profile_idc==6 || ptl->general_profile_compatibility_flag[6] ||
+            ptl->general_profile_idc==7 || ptl->general_profile_compatibility_flag[7])
+        {
+            ptl->general_max_12bit_constraint_flag      = bs_read_u1(b);
+            ptl->general_max_10bit_constraint_flag      = bs_read_u1(b);
+            ptl->general_max_8bit_constraint_flag       = bs_read_u1(b);
+            ptl->general_max_422chroma_constraint_flag  = bs_read_u1(b);
+            ptl->general_max_420chroma_constraint_flag  = bs_read_u1(b);
+            ptl->general_max_monochrome_constraint_flag = bs_read_u1(b);
+            ptl->general_intra_constraint_flag          = bs_read_u1(b);
+            ptl->general_one_picture_only_constraint_flag = bs_read_u1(b);
+            ptl->general_lower_bit_rate_constraint_flag = bs_read_u1(b);
+            uint64_t tmp1 = bs_read_u(b, 32);
+            uint64_t tmp2 = bs_read_u(b, 2);
+            ptl->general_reserved_zero_34bits = tmp1+tmp2;
+        }
+        else
+        {
+            uint64_t tmp1 = bs_read_u(b, 32);
+            uint64_t tmp2 = bs_read_u(b, 12);
+            ptl->general_reserved_zero_43bits = tmp1+tmp2;
+        }
+        if ((ptl->general_profile_idc>=1 && ptl->general_profile_idc<=5) ||
+            ptl->general_profile_compatibility_flag[1] || ptl->general_profile_compatibility_flag[2] ||
+            ptl->general_profile_compatibility_flag[3] || ptl->general_profile_compatibility_flag[4] ||
+            ptl->general_profile_compatibility_flag[4])
+        {
+            ptl->general_inbld_flag = bs_read_u1(b);
+        }
+        else
+        {
+            ptl->general_reserved_zero_bit = bs_read_u1(b);
+        }
+    }
+    ptl->general_level_idc = bs_read_u8(b);
+    for (i = 0; i < max_sub_layers_minus1; i++)
+    {
+        ptl->sub_layer_profile_present_flag[i] = bs_read_u1(b);
+        ptl->sub_layer_level_present_flag[i] = bs_read_u1(b);
+    }
+    if (max_sub_layers_minus1 > 0)
+    {
+        for (i = max_sub_layers_minus1; i < 8; i++)
+        {
+            ptl->reserved_zero_2bits[i] = bs_read_u(b, 2);
+        }
+    }
+
+    // todo
+    for (i = 0; i < max_sub_layers_minus1; i++)
+    {
+        if (ptl->sub_layer_profile_present_flag[i])
+        {
+
+        }
+        if (ptl->sub_layer_level_present_flag[i])
+        {
+            ptl->sub_layer_level_idc[i] = bs_read_u8(b);
+        }
+    }
+}
+
+// E.2.3  Sub-layer HRD parameters syntax 
+void h265_parse_sub_layer_hrd_parameters(sub_layer_hrd_parameters_t* subhrd, bs_t* b, int sub_pic_hrd_params_present_flag, int CpbCnt)
+{
+    // E.3.3  The variable CpbCnt is set equal to cpb_cnt_minus1[ subLayerId ]. 
+    for (int i = 0; i <= CpbCnt; i++)
+    {
+        subhrd->bit_rate_value_minus1[i] = bs_read_ue(b);
+        subhrd->cpb_size_value_minus1[i] = bs_read_ue(b);
+        if (sub_pic_hrd_params_present_flag)
+        {
+            subhrd->cpb_size_du_value_minus1[i] = bs_read_ue(b);
+            subhrd->bit_rate_du_value_minus1[i] = bs_read_ue(b);
+        }
+        subhrd->cbr_flag[i] = bs_read_u1(b);
+    }
+}
+
+// E.2.2  HRD parameters syntax 
+void h265_parse_hrd_parameters(hrd_parameters_t* hrd, bs_t* b, int commonInfPresentFlag, int maxNumSubLayersMinus1)
+{
+    if(commonInfPresentFlag)
+    {
+         hrd->nal_hrd_parameters_present_flag = bs_read_u1(b);
+         hrd->vcl_hrd_parameters_present_flag = bs_read_u1(b);
+         if (hrd->nal_hrd_parameters_present_flag ||
+             hrd->vcl_hrd_parameters_present_flag)
+         {
+            hrd->sub_pic_hrd_params_present_flag = bs_read_u1(b);
+            if (hrd->sub_pic_hrd_params_present_flag)
+            {
+                hrd->tick_divisor_minus2 = bs_read_u8(b);
+                hrd->du_cpb_removal_delay_increment_length_minus1 = bs_read_u(b, 5);
+                hrd->sub_pic_cpb_params_in_pic_timing_sei_flag    = bs_read_u1(b);
+                hrd->dpb_output_delay_du_length_minus1            = bs_read_u(b, 5);
+            }
+            hrd->bit_rate_scale  = bs_read_u(b, 4);
+            hrd->cpb_size_scale  = bs_read_u(b, 4);
+            if (hrd->sub_pic_hrd_params_present_flag)
+            {
+                hrd->cpb_size_du_scale = bs_read_u(b, 4);
+            }
+            hrd->initial_cpb_removal_delay_length_minus1 = bs_read_u(b, 5);
+            hrd->au_cpb_removal_delay_length_minus1      = bs_read_u(b, 5);
+            hrd->dpb_output_delay_length_minus1          = bs_read_u(b, 5);
+         }
+    }
+    for (int i = 0; i <= maxNumSubLayersMinus1; i++)
+    {
+        hrd->fixed_pic_rate_general_flag[i] = bs_read_u1(b);
+        if (!hrd->fixed_pic_rate_general_flag[i])
+        {
+            hrd->fixed_pic_rate_within_cvs_flag[i] = bs_read_u1(b);
+        }
+        if (hrd->fixed_pic_rate_within_cvs_flag[i])
+        {
+            hrd->elemental_duration_in_tc_minus1[i] = bs_read_ue(b);
+        }
+        else
+        {
+            hrd->low_delay_hrd_flag[i] = bs_read_u1(b);
+        }
+        if (!hrd->low_delay_hrd_flag[i])
+        {
+            hrd->cpb_cnt_minus1[i] = bs_read_u1(b);
+        }
+        if(hrd->nal_hrd_parameters_present_flag)
+        {
+            h265_parse_sub_layer_hrd_parameters(&(hrd->sub_layer_hrd_parameters), b, hrd->sub_pic_hrd_params_present_flag, hrd->cpb_cnt_minus1[i]);
+        }
+        if(hrd->vcl_hrd_parameters_present_flag)
+        {
+            h265_parse_sub_layer_hrd_parameters(&(hrd->sub_layer_hrd_parameters_v), b, hrd->sub_pic_hrd_params_present_flag, hrd->cpb_cnt_minus1[i]);
+        }
+    }
+}
+
+// E.2.1  VUI parameters syntax 
+void h265_read_vui_parameters(vui_parameters_t* vui, bs_t* b, int maxNumSubLayersMinus1)
+{
+    vui->aspect_ratio_info_present_flag = bs_read_u1(b);
+    if (vui->aspect_ratio_info_present_flag)
+    {
+        vui->aspect_ratio_idc  = bs_read_u8(b);
+        if (vui->aspect_ratio_idc == H265_SAR_Extended)
+        {
+            vui->sar_width  = bs_read_u(b, 16);
+            vui->sar_height = bs_read_u(b, 16);
+        }
+    }
+    vui->overscan_info_present_flag = bs_read_u1(b);
+    if (vui->overscan_info_present_flag)
+    {
+        vui->overscan_appropriate_flag  = bs_read_u1(b);
+    }
+    vui->video_signal_type_present_flag = bs_read_u1(b);
+    if (vui->video_signal_type_present_flag)
+    {
+        vui->video_format          = bs_read_u(b, 3);
+        vui->video_full_range_flag = bs_read_u1(b);
+        vui->colour_description_present_flag = bs_read_u1(b);
+        if (vui->colour_description_present_flag)
+        {
+            vui->colour_primaries  = bs_read_u8(b);
+            vui->transfer_characteristics = bs_read_u8(b);
+            vui->matrix_coeffs     = bs_read_u8(b);
+        }
+    }
+    vui->chroma_loc_info_present_flag = bs_read_u1(b);
+    if (vui->chroma_loc_info_present_flag)
+    {
+        vui->chroma_sample_loc_type_top_field    = bs_read_ue(b);
+        vui->chroma_sample_loc_type_bottom_field = bs_read_ue(b);
+    }
+    vui->neutral_chroma_indication_flag = bs_read_u1(b);
+    vui->field_seq_flag                 = bs_read_u1(b);
+    vui->frame_field_info_present_flag  = bs_read_u1(b);
+    vui->default_display_window_flag    = bs_read_u1(b);
+    if (vui->default_display_window_flag)
+    {
+        vui->def_disp_win_left_offset   = bs_read_ue(b);
+        vui->def_disp_win_right_offset  = bs_read_ue(b);
+        vui->def_disp_win_top_offset    = bs_read_ue(b);
+        vui->def_disp_win_bottom_offset = bs_read_ue(b);
+    }
+    vui->vui_timing_info_present_flag   = bs_read_u1(b);
+    if (vui->vui_timing_info_present_flag)
+    {
+        vui->vui_num_units_in_tick     = bs_read_u(b, 32);
+        vui->vui_time_scale            = bs_read_u(b, 32);
+        vui->vui_poc_proportional_to_timing_flag = bs_read_u1(b);
+        if (vui->vui_poc_proportional_to_timing_flag)
+        {
+            vui->vui_num_ticks_poc_diff_one_minus1 = bs_read_ue(b);
+        }
+        vui->vui_hrd_parameters_present_flag = bs_read_u1(b);
+        if (vui->vui_hrd_parameters_present_flag)
+        {
+            h265_parse_hrd_parameters(&vui->hrd_parameters, b, 1, maxNumSubLayersMinus1);
+        }
+    }
+    vui->bitstream_restriction_flag = bs_read_u1(b);
+    if (vui->bitstream_restriction_flag)
+    {
+        vui->tiles_fixed_structure_flag     = bs_read_u1(b);
+        vui->motion_vectors_over_pic_boundaries_flag = bs_read_u1(b);
+        vui->restricted_ref_pic_lists_flag  = bs_read_u1(b);
+        vui->min_spatial_segmentation_idc   = bs_read_ue(b);
+        vui->max_bytes_per_pic_denom        = bs_read_ue(b);
+        vui->max_bits_per_min_cu_denom      = bs_read_ue(b);
+        vui->log2_max_mv_length_horizontal  = bs_read_ue(b);
+        vui->log2_max_mv_length_vertical    = bs_read_ue(b);
+    }
+}
+
+void h265_read_scaling_list(scaling_list_data_t* sld, bs_t* b)
+{
+    int sizeId = 0;
+    int matrixId = 0;
+
+    for( sizeId = 0; sizeId < 4; sizeId++ )
+    {
+        for( matrixId = 0; matrixId < 6; matrixId += ( sizeId == 3 ) ? 3 : 1)
+        {
+            sld->scaling_list_pred_mode_flag[sizeId][matrixId] = bs_read_u1(b);
+            if (!sld->scaling_list_pred_mode_flag[sizeId][matrixId])
+            {
+                sld->scaling_list_pred_matrix_id_delta[sizeId][matrixId] = bs_read_ue(b);
+            }
+            else
+            {
+                int nextCoef = 8;
+                int coefNum = min(64, (1 << (4 + (sizeId << 1))));
+                if (sizeId > 1)
+                {
+                    sld->scaling_list_dc_coef_minus8[sizeId - 2][matrixId] = bs_read_se(b);
+                    nextCoef = sld->scaling_list_dc_coef_minus8[sizeId - 2][matrixId] + 8;
+                }
+                for (int i = 0; i < coefNum; i++)
+                {
+                    int scaling_list_delta_coef = bs_read_se(b);
+                    nextCoef = (nextCoef + scaling_list_delta_coef + 256) % 256;
+                    sld->ScalingList[sizeId][matrixId][i] = nextCoef;
+                }
+            }
+        }
+    }
+}
+
 // tbd:VPS是否只有一个？
 void  h265_read_vps_rbsp(h265_stream_t* h, bs_t* b)
 {
     int i = 0;
     int j = 0;
-    // NOTE 不能直接赋值给vps，因为还未知是哪一个vps。
 
     int vps_video_parameter_set_id  = bs_read_u(b, 4);
     // 选择正确的sps表
@@ -250,7 +517,7 @@ void  h265_read_vps_rbsp(h265_stream_t* h, bs_t* b)
     vps->vps_reserved_0xffff_16bits    = bs_read_u(b, 16);
 
     // profile tier level...
-    // parse_ptl();
+    h265_parse_ptl(&vps->profile_tier_level, b, 1, vps->vps_max_sub_layers_minus1);
 
     vps->vps_sub_layer_ordering_info_present_flag = bs_read_u1(b);
     for (i = (vps->vps_sub_layer_ordering_info_present_flag ? 0 : vps->vps_max_sub_layers_minus1); 
@@ -287,7 +554,8 @@ void  h265_read_vps_rbsp(h265_stream_t* h, bs_t* b)
             {
                 vps->cprms_present_flag[i] = bs_read_u1(b);
             }
-            // todo hrd_parameters(()
+            //  hrd_parameters()
+            h265_parse_hrd_parameters(&(vps->hrd_parameters), b, vps->cprms_present_flag[i], vps->vps_max_sub_layers_minus1);
         }
     }
     vps->vps_extension_flag  = bs_read_u1(b);
@@ -300,6 +568,7 @@ void  h265_read_vps_rbsp(h265_stream_t* h, bs_t* b)
     }
     h265_read_rbsp_trailing_bits(b);
 }
+
 //7.3.2.1 Sequence parameter set RBSP syntax
 void  h265_read_sps_rbsp(h265_stream_t* h, bs_t* b)
 {
@@ -311,19 +580,24 @@ void  h265_read_sps_rbsp(h265_stream_t* h, bs_t* b)
     int sps_max_sub_layers_minus1 = 0;
     int sps_temporal_id_nesting_flag = 0;
     int sps_seq_parameter_set_id = 0;
+    profile_tier_level_t profile_tier_level;
 
     sps_video_parameter_set_id = bs_read_u(b, 4);
     sps_max_sub_layers_minus1 = bs_read_u(b, 3);
     sps_temporal_id_nesting_flag = bs_read_u1(b);
 
     // profile tier level...
-    // parse_ptl();
+    memset(&profile_tier_level, '\0', sizeof(profile_tier_level_t));
+
+    h265_parse_ptl(&profile_tier_level, b, 1, sps_max_sub_layers_minus1);
 
     sps_seq_parameter_set_id = bs_read_ue(b);
     // 选择正确的sps表
     h->sps = h->sps_table[sps_seq_parameter_set_id];
     h265_sps_t* sps = h->sps;
     memset(sps, 0, sizeof(h265_sps_t));
+
+    memcpy(&(sps->profile_tier_level), &profile_tier_level, sizeof(profile_tier_level_t));
 
     sps->chroma_format_idc  = bs_read_ue(b);
     if (sps->chroma_format_idc == 3)
@@ -409,7 +683,7 @@ void  h265_read_sps_rbsp(h265_stream_t* h, bs_t* b)
     sps->vui_parameters_present_flag = bs_read_u1(b);
     if (sps->vui_parameters_present_flag)
     {
-        // todo parse_vui_parameters();
+        h265_read_vui_parameters(&(sps->vui_parameters), b, sps->sps_max_sub_layers_minus1);
     }
 
     sps->sps_extension_present_flag = bs_read_u1(b);
@@ -462,7 +736,6 @@ void h265_read_pps_rbsp(h265_stream_t* h, bs_t* b)
     memset(pps, 0, sizeof(h265_pps_t));
 
     int i;
-    int i_group;
 
     pps->pps_pic_parameter_set_id      = pps_pic_parameter_set_id;
     pps->pps_seq_parameter_set_id      = bs_read_ue(b);
@@ -592,25 +865,25 @@ void h265_read_aud_rbsp(h265_stream_t* h, bs_t* b)
      h265_read_rbsp_trailing_bits(b);
 }
 
-//7.3.2.3 Supplemental enhancement information RBSP syntax
+int __read_ff_coded_number(bs_t* b)
+{
+    int n1 = 0;
+    int n2;
+    do 
+    {
+        n2 = bs_read_u8(b);
+        n1 += n2;
+    } while (n2 == 0xff);
+    return n1;
+}
+//7.3.2.4 Supplemental enhancement information RBSP syntax
+// to check
 void h265_read_sei_rbsp(h265_stream_t* h, bs_t* b)
 {
+    h->sei->payloadType = __read_ff_coded_number(b);
+    h->sei->payloadSize = __read_ff_coded_number(b);
+    h265_read_sei_payload(h, b, h->sei->payloadType, h->sei->payloadSize);
     h265_read_rbsp_trailing_bits(b);
-}
-
-void h265_read_scaling_list( bs_t* b, int* scalingList )
-{
-
-}
-
-void h265_read_vui_parameters( h265_stream_t* h, bs_t* b )
-{
-
-}
-
-void h265_read_hrd_parameters( h265_stream_t* h, bs_t* b )
-{
-
 }
 
 int h265_more_rbsp_trailing_data(bs_t* b) { return !bs_eof(b); }
