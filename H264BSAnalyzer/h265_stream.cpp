@@ -9,8 +9,6 @@
 #include "h265_stream.h"
 #include "h265_sei.h"
 
-
-
 FILE* h265_dbgfile = NULL;
 
 #define printf(...) fprintf((h265_dbgfile == NULL ? stdout : h265_dbgfile), __VA_ARGS__)
@@ -122,12 +120,12 @@ int h265_read_nal_unit(h265_stream_t* h, uint8_t* buf, int size)
         case NAL_UNIT_PREFIX_SEI:
             h265_read_sei_rbsp(h, b);
             nal->parsed = h->sei;
-            nal->sizeof_parsed = sizeof(h265_slice_header_t);
+            nal->sizeof_parsed = sizeof(h265_sei_t);
             break;
         case NAL_UNIT_SUFFIX_SEI: // todo
             h265_read_sei_rbsp(h, b);
             nal->parsed = h->sei;
-            nal->sizeof_parsed = sizeof(h265_slice_header_t);
+            nal->sizeof_parsed = sizeof(h265_sei_t);
             break;
         case NAL_UNIT_AUD:     
             h265_read_aud_rbsp(h, b); 
@@ -140,23 +138,23 @@ int h265_read_nal_unit(h265_stream_t* h, uint8_t* buf, int size)
         case NAL_UNIT_EOB:
             h265_read_end_of_stream_rbsp(h, b);
             break;
-        case NAL_UNIT_CODED_SLICE_TRAIL_R:
         case NAL_UNIT_CODED_SLICE_TRAIL_N:
-        case NAL_UNIT_CODED_SLICE_TSA_R:
+        case NAL_UNIT_CODED_SLICE_TRAIL_R:
         case NAL_UNIT_CODED_SLICE_TSA_N:
-        case NAL_UNIT_CODED_SLICE_STSA_R:
+        case NAL_UNIT_CODED_SLICE_TSA_R:
         case NAL_UNIT_CODED_SLICE_STSA_N:
+        case NAL_UNIT_CODED_SLICE_STSA_R:
+        case NAL_UNIT_CODED_SLICE_RADL_N:
+        case NAL_UNIT_CODED_SLICE_RADL_R:
+        case NAL_UNIT_CODED_SLICE_RASL_N:
+        case NAL_UNIT_CODED_SLICE_RASL_R:
         case NAL_UNIT_CODED_SLICE_BLA_W_LP:
         case NAL_UNIT_CODED_SLICE_BLA_W_RADL:
         case NAL_UNIT_CODED_SLICE_BLA_N_LP:
         case NAL_UNIT_CODED_SLICE_IDR_W_RADL:
         case NAL_UNIT_CODED_SLICE_IDR_N_LP:
         case NAL_UNIT_CODED_SLICE_CRA:
-        case NAL_UNIT_CODED_SLICE_RADL_N:
-        case NAL_UNIT_CODED_SLICE_RADL_R:
-        case NAL_UNIT_CODED_SLICE_RASL_N:
-        case NAL_UNIT_CODED_SLICE_RASL_R:
-            //h265_read_slice_layer_rbsp(h, b);
+            h265_read_slice_layer_rbsp(h, b);
             nal->parsed = h->sh;
             nal->sizeof_parsed = sizeof(h265_slice_header_t);
             break;
@@ -308,10 +306,10 @@ void h265_parse_ptl(profile_tier_level_t* ptl, bs_t* b, int profilePresentFlag, 
     }
 }
 
-// E.2.3  Sub-layer HRD parameters syntax 
+// E.2.3  Sub-layer HRD parameters syntax
+// E.3.3  The variable CpbCnt is set equal to cpb_cnt_minus1[ subLayerId ].
 void h265_parse_sub_layer_hrd_parameters(sub_layer_hrd_parameters_t* subhrd, bs_t* b, int sub_pic_hrd_params_present_flag, int CpbCnt)
 {
-    // E.3.3  The variable CpbCnt is set equal to cpb_cnt_minus1[ subLayerId ]. 
     for (int i = 0; i <= CpbCnt; i++)
     {
         subhrd->bit_rate_value_minus1[i] = bs_read_ue(b);
@@ -462,6 +460,7 @@ void h265_read_vui_parameters(vui_parameters_t* vui, bs_t* b, int maxNumSubLayer
     }
 }
 
+// 7.3.4  Scaling list data syntax
 void h265_read_scaling_list(scaling_list_data_t* sld, bs_t* b)
 {
     int sizeId = 0;
@@ -645,7 +644,8 @@ void  h265_read_sps_rbsp(h265_stream_t* h, bs_t* b)
         sps->sps_scaling_list_data_present_flag = bs_read_u1(b);
         if (sps->sps_scaling_list_data_present_flag)
         {
-            //parse_scaling_list();
+            // scaling_list_data()
+            h265_read_scaling_list(&(sps->scaling_list_data), b);
         }
     }
 
@@ -735,8 +735,6 @@ void h265_read_pps_rbsp(h265_stream_t* h, bs_t* b)
 
     memset(pps, 0, sizeof(h265_pps_t));
 
-    int i;
-
     pps->pps_pic_parameter_set_id      = pps_pic_parameter_set_id;
     pps->pps_seq_parameter_set_id      = bs_read_ue(b);
     pps->dependent_slice_segments_enabled_flag  = bs_read_u1(b);
@@ -767,11 +765,11 @@ void h265_read_pps_rbsp(h265_stream_t* h, bs_t* b)
         pps->uniform_spacing_flag    = bs_read_u1(b);
         if (!pps->uniform_spacing_flag)
         {
-            for (i = 0; i < pps->num_tile_columns_minus1; i++)
+            for (int i = 0; i < pps->num_tile_columns_minus1; i++)
             {
                 pps->column_width_minus1[i] = bs_read_ue(b);
             }
-            for (i = 0; i < pps->num_tile_rows_minus1; i++)
+            for (int i = 0; i < pps->num_tile_rows_minus1; i++)
             {
                 pps->row_height_minus1[i]   = bs_read_ue(b);
             }
@@ -795,7 +793,8 @@ void h265_read_pps_rbsp(h265_stream_t* h, bs_t* b)
     pps->pps_scaling_list_data_present_flag = bs_read_u1(b);
     if (pps->pps_scaling_list_data_present_flag)
     {
-        // todo...scaling_list_data()
+        // scaling_list_data()
+        h265_read_scaling_list(&(pps->scaling_list_data), b);
     }
 
     pps->lists_modification_present_flag  = bs_read_u1(b);
@@ -821,7 +820,7 @@ void h265_read_pps_rbsp(h265_stream_t* h, bs_t* b)
         {
             pps->pps_range_extension.diff_cu_chroma_qp_offset_depth   = bs_read_ue(b);
             pps->pps_range_extension.chroma_qp_offset_list_len_minus1 = bs_read_ue(b);
-            for (i = 0; i < pps->pps_range_extension.chroma_qp_offset_list_len_minus1; i++)
+            for (int i = 0; i < pps->pps_range_extension.chroma_qp_offset_list_len_minus1; i++)
             {
                  pps->pps_range_extension.cb_qp_offset_list[i] = bs_read_se(b);
                  pps->pps_range_extension.cr_qp_offset_list[i] = bs_read_se(b);
@@ -848,6 +847,230 @@ void h265_read_pps_rbsp(h265_stream_t* h, bs_t* b)
     h265_read_rbsp_trailing_bits(b);
 }
 
+//7.3.6.1  General slice segment header syntax
+void h265_read_slice_header(h265_stream_t* h, bs_t* b)
+{
+    h265_slice_header_t* hrd = h->sh;
+    h265_sps_t* sps = NULL;
+    h265_pps_t* pps = NULL;
+    int nal_unit_type = h->nal->nal_unit_type;
+
+    hrd->first_slice_segment_in_pic_flag  = bs_read_u1(b);
+
+    if (nal_unit_type >= NAL_UNIT_CODED_SLICE_BLA_W_LP && nal_unit_type <= NAL_UNIT_RESERVED_IRAP_VCL23)
+    {
+        hrd->no_output_of_prior_pics_flag = bs_read_u1(b);
+    }
+    hrd->slice_pic_parameter_set_id       = bs_read_ue(b);
+    // tocheck
+    pps = h->pps = h->pps_table[hrd->slice_pic_parameter_set_id];
+    sps = h->sps = h->sps_table[pps->pps_seq_parameter_set_id];
+
+    if (!hrd->first_slice_segment_in_pic_flag)
+    {
+        if (pps->dependent_slice_segments_enabled_flag)
+        {
+            hrd->dependent_slice_segment_flag = bs_read_u1(b);
+        }
+        hrd->slice_segment_address = bs_read_u1(b); // todo u(v)
+    }
+    if (!hrd->dependent_slice_segment_flag)
+    {
+        for (int i = 0; i < pps->num_extra_slice_header_bits; i++)
+        {
+            hrd->slice_reserved_flag[i] = bs_read_u1(b);
+        }
+        hrd->slice_type = bs_read_ue(b);
+        if (pps->output_flag_present_flag)
+        {
+            hrd->pic_output_flag = bs_read_u1(b);
+        }
+        if (sps->separate_colour_plane_flag == 1)
+        {
+            hrd->colour_plane_id = bs_read_u(b, 2);
+        }
+        if (nal_unit_type == NAL_UNIT_CODED_SLICE_IDR_W_RADL || nal_unit_type == NAL_UNIT_CODED_SLICE_IDR_N_LP)
+        {
+            hrd->slice_pic_order_cnt_lsb = bs_read_u1(b); // todo u(v)
+            hrd->short_term_ref_pic_set_sps_flag = bs_read_u1(b);
+            if (!hrd->short_term_ref_pic_set_sps_flag)
+            {
+                // todo st_ref_pic_set( num_short_term_ref_pic_sets ) 
+            }
+            else if (sps->num_short_term_ref_pic_sets)
+            {
+                hrd->short_term_ref_pic_set_idx = bs_read_u1(b); // todo u(v)
+            }
+            if (sps->long_term_ref_pics_present_flag)
+            {
+                if (sps->num_long_term_ref_pics_sps > 0)
+                {
+                    hrd->num_long_term_sps = bs_read_ue(b);
+                }
+                hrd->num_long_term_pics = bs_read_ue(b);
+                for (int i = 0; i < hrd->num_long_term_sps + hrd->num_long_term_pics; i++)
+                {
+                    if (i < hrd->num_long_term_sps)
+                    {
+                        if (sps->num_long_term_ref_pics_sps > 1)
+                        {
+                            hrd->lt_idx_sps[i] = bs_read_ue(b);// todo u(v)
+                        }
+                    }
+                    else
+                    {
+                        hrd->poc_lsb_lt[i] = bs_read_ue(b);// todo u(v)
+                        hrd->used_by_curr_pic_lt_flag[i] = bs_read_u1(b);
+                    }
+                    hrd->delta_poc_msb_present_flag[i] = bs_read_u1(b);
+                    if(hrd->delta_poc_msb_present_flag[i])
+                    {
+                        hrd->delta_poc_msb_cycle_lt[i] = bs_read_ue(b);
+                    }
+                }
+            }
+            if(sps->sps_temporal_mvp_enabled_flag)
+            {
+                hrd->slice_temporal_mvp_enabled_flag = bs_read_u1(b);
+            }
+        }
+        if(sps->sample_adaptive_offset_enabled_flag)
+        {
+            hrd->slice_sao_luma_flag = bs_read_u1(b);
+            bool ChromaArrayType = (sps->chroma_format_idc != CHROMA_400);
+            if (ChromaArrayType != 0)
+            {
+                hrd->slice_sao_chroma_flag = bs_read_u1(b);
+            }
+        }
+        if (hrd->slice_type == H265_SH_SLICE_TYPE_P || hrd->slice_type == H265_SH_SLICE_TYPE_B)
+        {
+            hrd->num_ref_idx_active_override_flag = bs_read_u1(b);
+            if (hrd->num_ref_idx_active_override_flag)
+            {
+                hrd->num_ref_idx_l0_active_minus1 = bs_read_ue(b);
+                if (hrd->slice_type == H265_SH_SLICE_TYPE_B)
+                {
+                    hrd->num_ref_idx_l1_active_minus1 = bs_read_u1(b);
+                }
+            }
+            // todo
+            //if(sps->lists_modification_present_flag  &&  NumPicTotalCurr > 1 ) 
+            {
+                // ref_pic_lists_modification( ) 
+            }
+            if (hrd->slice_type == H265_SH_SLICE_TYPE_B)
+            {
+                hrd->mvd_l1_zero_flag = bs_read_u1(b);
+            }
+            if (pps->cabac_init_present_flag)
+            {
+                hrd->cabac_init_flag = bs_read_u1(b);
+            }
+            if (hrd->slice_temporal_mvp_enabled_flag)
+            {
+                if (hrd->slice_type == H265_SH_SLICE_TYPE_B)
+                {
+                    hrd->collocated_from_l0_flag = bs_read_u1(b);
+                }
+                if ((hrd->collocated_from_l0_flag && hrd->num_ref_idx_l0_active_minus1 > 0) ||
+                    (!hrd->collocated_from_l0_flag && hrd->num_ref_idx_l1_active_minus1 > 0))
+                {
+                    hrd->collocated_ref_idx = bs_read_ue(b);
+                }
+            }
+            if ((pps->weighted_pred_flag && hrd->slice_type == H265_SH_SLICE_TYPE_P) ||
+                (pps->weighted_pred_flag && hrd->slice_type == H265_SH_SLICE_TYPE_B))
+            {
+                // todo pred_weight_table( ) 
+            }
+            hrd->five_minus_max_num_merge_cand = bs_read_ue(b);
+        }
+        hrd->slice_qp_delta = bs_read_se(b);
+        if (pps->pps_slice_chroma_qp_offsets_present_flag)
+        {
+            hrd->slice_qp_delta = bs_read_se(b);
+            hrd->slice_qp_delta = bs_read_se(b);
+        }
+        if (pps->pps_range_extension.chroma_qp_offset_list_enabled_flag)
+        {
+            hrd->cu_chroma_qp_offset_enabled_flag = bs_read_u1(b);
+        }
+        if (pps->deblocking_filter_override_enabled_flag)
+        {
+            hrd->deblocking_filter_override_flag  = bs_read_u1(b);
+        }
+        if (hrd->deblocking_filter_override_flag)
+        {
+            hrd->slice_deblocking_filter_disabled_flag = bs_read_u1(b);
+            if (!hrd->slice_deblocking_filter_disabled_flag)
+            {
+                hrd->slice_beta_offset_div2 = bs_read_se(b);
+                hrd->slice_tc_offset_div2   = bs_read_se(b);
+            }
+        }
+        if (pps-> pps_loop_filter_across_slices_enabled_flag &&
+            (hrd->slice_sao_luma_flag || hrd->slice_sao_chroma_flag ||
+            !hrd->slice_deblocking_filter_disabled_flag))
+        {
+            hrd->slice_loop_filter_across_slices_enabled_flag = bs_read_u1(b);
+        }
+    }
+    if (pps->tiles_enabled_flag || pps->entropy_coding_sync_enabled_flag)
+    {
+        hrd->num_entry_point_offsets = bs_read_ue(b);
+        if (hrd->num_entry_point_offsets > 0)
+        {
+            hrd->offset_len_minus1   = bs_read_ue(b);
+            for (int i = 0; i < hrd->num_entry_point_offsets; i++)
+            {
+                hrd->entry_point_offset_minus1[i] = bs_read_u1(b);// u(v)
+            }
+        }
+    }
+    if (pps->slice_segment_header_extension_present_flag)
+    {
+        hrd->slice_segment_header_extension_length = bs_read_ue(b);
+        for (int i = 0; i < hrd->slice_segment_header_extension_length; i++)
+        {
+            hrd->slice_segment_header_extension_data_byte[i] = bs_read_u8(b);
+        }
+    }
+    // byte_alignment()
+}
+
+void h265_read_slice_layer_rbsp(h265_stream_t* h, bs_t* b)
+{
+    h265_read_slice_header(h, b);
+#if 0
+    
+    slice_data_rbsp_t* slice_data = h->slice_data;
+
+    if ( slice_data != NULL )
+    {
+        if ( slice_data->rbsp_buf != NULL ) free( slice_data->rbsp_buf ); 
+        uint8_t *sptr = b->p + (!!b->bits_left); // CABAC-specific: skip alignment bits, if there are any
+        slice_data->rbsp_size = b->end - sptr;
+
+        slice_data->rbsp_buf = (uint8_t*)malloc(slice_data->rbsp_size);
+        memcpy( slice_data->rbsp_buf, sptr, slice_data->rbsp_size );
+        // ugly hack: since next NALU starts at byte border, we are going to be padded by trailing_bits;
+        return;
+    }
+
+    // FIXME should read or skip data
+    //slice_data( ); /* all categories of slice_data( ) syntax */
+    read_rbsp_slice_trailing_bits(h, b);
+#endif
+}
+
+//7.3.2.4 Access unit delimiter RBSP syntax
+void h265_read_aud_rbsp(h265_stream_t* h, bs_t* b)
+{
+    h->aud->pic_type = bs_read_u(b,3);
+     h265_read_rbsp_trailing_bits(b);
+}
+
 //7.3.2.5 End of sequence RBSP syntax
 void h265_read_end_of_seq_rbsp(h265_stream_t* h, bs_t* b)
 {
@@ -856,13 +1079,6 @@ void h265_read_end_of_seq_rbsp(h265_stream_t* h, bs_t* b)
 //7.3.2.6 End of stream RBSP syntax
 void h265_read_end_of_stream_rbsp(h265_stream_t* h, bs_t* b)
 {
-}
-
-//7.3.2.4 Access unit delimiter RBSP syntax
-void h265_read_aud_rbsp(h265_stream_t* h, bs_t* b)
-{
-    h->aud->pic_type = bs_read_u(b,3);
-     h265_read_rbsp_trailing_bits(b);
 }
 
 int __read_ff_coded_number(bs_t* b)

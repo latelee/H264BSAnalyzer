@@ -1,7 +1,8 @@
 /* 
 H.265 ver:
 3.0  ITU-T H.265 (V3)  2015-04-29 
- */
+ref: HM16.6 source code
+*/
 
 #ifndef _H265_STREAM_H
 #define _H265_STREAM_H        1
@@ -11,6 +12,10 @@ H.265 ver:
 #include <assert.h>
 
 #include "bs.h"
+
+#ifndef min
+#define min(a, b) (((a) < (b)) ? (a) : (b))
+#endif
 
 #include <vector>
 using std::vector;
@@ -441,7 +446,7 @@ typedef struct
         int colour_plane_id;
         int slice_pic_order_cnt_lsb;
         int short_term_ref_pic_set_sps_flag;
-        // st_ref_pic_set
+        // st_ref_pic_set_t st_ref_pic_set
         int short_term_ref_pic_set_idx;
         int num_long_term_sps;
         int num_long_term_pics;
@@ -457,7 +462,7 @@ typedef struct
     int num_ref_idx_l0_active_minus1;
     int num_ref_idx_l1_active_minus1;
     int mvd_l1_zero_flag;
-    int cabac_init_fla;
+    int cabac_init_flag;
     int collocated_from_l0_flag;
     int collocated_ref_idx;
     int five_minus_max_num_merge_cand;
@@ -520,9 +525,9 @@ void h265_read_sps_rbsp(h265_stream_t* h, bs_t* b);
 void h265_read_pps_rbsp(h265_stream_t* h, bs_t* b);
 void h265_read_sei_rbsp(h265_stream_t* h, bs_t* b);
 void h265_read_aud_rbsp(h265_stream_t* h, bs_t* b);
+void h265_read_slice_layer_rbsp(h265_stream_t* h, bs_t* b);
 void h265_read_end_of_seq_rbsp(h265_stream_t* h, bs_t* b);
 void h265_read_end_of_stream_rbsp(h265_stream_t* h, bs_t* b);
-
 void h265_read_rbsp_trailing_bits(bs_t* b);
 int h265_more_rbsp_trailing_data(bs_t* b);
 
@@ -637,6 +642,15 @@ enum NalUnitType
                                           // 17..254           Reserved
 #define H265_SAR_Extended  255        // Extended_SAR
 
+/// chroma formats (according to semantics of chroma_format_idc)
+enum ChromaFormat
+{
+  CHROMA_400        = 0,
+  CHROMA_420        = 1,
+  CHROMA_422        = 2,
+  CHROMA_444        = 3,
+  NUM_CHROMA_FORMAT = 4
+};
 
 // file handle for debug output
 extern FILE* h265_dbgfile;
