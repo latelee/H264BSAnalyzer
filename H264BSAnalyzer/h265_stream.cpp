@@ -226,7 +226,7 @@ int h265_read_nal_unit(h265_stream_t* h, uint8_t* buf, int size)
     return nal_size;
 }
 
-void h265_parse_ptl(profile_tier_level_t* ptl, bs_t* b, int profilePresentFlag, int max_sub_layers_minus1)
+void h265_read_ptl(profile_tier_level_t* ptl, bs_t* b, int profilePresentFlag, int max_sub_layers_minus1)
 {
     int i = 0;
     if (profilePresentFlag)
@@ -308,7 +308,7 @@ void h265_parse_ptl(profile_tier_level_t* ptl, bs_t* b, int profilePresentFlag, 
 
 // E.2.3  Sub-layer HRD parameters syntax
 // E.3.3  The variable CpbCnt is set equal to cpb_cnt_minus1[ subLayerId ].
-void h265_parse_sub_layer_hrd_parameters(sub_layer_hrd_parameters_t* subhrd, bs_t* b, int sub_pic_hrd_params_present_flag, int CpbCnt)
+void h265_read_sub_layer_hrd_parameters(sub_layer_hrd_parameters_t* subhrd, bs_t* b, int sub_pic_hrd_params_present_flag, int CpbCnt)
 {
     for (int i = 0; i <= CpbCnt; i++)
     {
@@ -324,7 +324,7 @@ void h265_parse_sub_layer_hrd_parameters(sub_layer_hrd_parameters_t* subhrd, bs_
 }
 
 // E.2.2  HRD parameters syntax 
-void h265_parse_hrd_parameters(hrd_parameters_t* hrd, bs_t* b, int commonInfPresentFlag, int maxNumSubLayersMinus1)
+void h265_read_hrd_parameters(hrd_parameters_t* hrd, bs_t* b, int commonInfPresentFlag, int maxNumSubLayersMinus1)
 {
     if(commonInfPresentFlag)
     {
@@ -373,11 +373,11 @@ void h265_parse_hrd_parameters(hrd_parameters_t* hrd, bs_t* b, int commonInfPres
         }
         if(hrd->nal_hrd_parameters_present_flag)
         {
-            h265_parse_sub_layer_hrd_parameters(&(hrd->sub_layer_hrd_parameters), b, hrd->sub_pic_hrd_params_present_flag, hrd->cpb_cnt_minus1[i]);
+            h265_read_sub_layer_hrd_parameters(&(hrd->sub_layer_hrd_parameters), b, hrd->sub_pic_hrd_params_present_flag, hrd->cpb_cnt_minus1[i]);
         }
         if(hrd->vcl_hrd_parameters_present_flag)
         {
-            h265_parse_sub_layer_hrd_parameters(&(hrd->sub_layer_hrd_parameters_v), b, hrd->sub_pic_hrd_params_present_flag, hrd->cpb_cnt_minus1[i]);
+            h265_read_sub_layer_hrd_parameters(&(hrd->sub_layer_hrd_parameters_v), b, hrd->sub_pic_hrd_params_present_flag, hrd->cpb_cnt_minus1[i]);
         }
     }
 }
@@ -443,7 +443,7 @@ void h265_read_vui_parameters(vui_parameters_t* vui, bs_t* b, int maxNumSubLayer
         vui->vui_hrd_parameters_present_flag = bs_read_u1(b);
         if (vui->vui_hrd_parameters_present_flag)
         {
-            h265_parse_hrd_parameters(&vui->hrd_parameters, b, 1, maxNumSubLayersMinus1);
+            h265_read_hrd_parameters(&vui->hrd_parameters, b, 1, maxNumSubLayersMinus1);
         }
     }
     vui->bitstream_restriction_flag = bs_read_u1(b);
@@ -463,12 +463,9 @@ void h265_read_vui_parameters(vui_parameters_t* vui, bs_t* b, int maxNumSubLayer
 // 7.3.4  Scaling list data syntax
 void h265_read_scaling_list(scaling_list_data_t* sld, bs_t* b)
 {
-    int sizeId = 0;
-    int matrixId = 0;
-
-    for( sizeId = 0; sizeId < 4; sizeId++ )
+    for(int sizeId = 0; sizeId < 4; sizeId++)
     {
-        for( matrixId = 0; matrixId < 6; matrixId += ( sizeId == 3 ) ? 3 : 1)
+        for(int matrixId = 0; matrixId < 6; matrixId += ( sizeId == 3 ) ? 3 : 1)
         {
             sld->scaling_list_pred_mode_flag[sizeId][matrixId] = bs_read_u1(b);
             if (!sld->scaling_list_pred_mode_flag[sizeId][matrixId])
@@ -489,6 +486,78 @@ void h265_read_scaling_list(scaling_list_data_t* sld, bs_t* b)
                     int scaling_list_delta_coef = bs_read_se(b);
                     nextCoef = (nextCoef + scaling_list_delta_coef + 256) % 256;
                     sld->ScalingList[sizeId][matrixId][i] = nextCoef;
+                }
+            }
+        }
+    }
+}
+
+// st_ref_pic_set
+// ref_pic_lists_modification
+void h265_read_pred_weight_table(h265_stream_t* h, bs_t* b)
+{
+    pred_weight_table_t* pwt = &h->sh->pred_weight_table;
+    h265_sps_t* sps = h->sps;
+
+    pwt->luma_log2_weight_denom = bs_read_ue(b);
+    if (h->sps->chroma_format_idc != 0)
+    {
+        pwt->delta_chroma_log2_weight_denom = bs_read_se(b);
+    }
+    for (int i = 0; i <= h->sh->num_ref_idx_l0_active_minus1; i++)
+    {
+        pwt->luma_weight_l0_flag[i] = bs_read_u1(b);
+    }
+    if (h->sps->chroma_format_idc != 0)
+    {
+        for (int i = 0; i <= h->sh->num_ref_idx_l0_active_minus1; i++)
+        {
+            pwt->chroma_weight_l0_flag[i] = bs_read_u1(b);
+        }
+    }
+    for (int i = 0; i <= h->sh->num_ref_idx_l0_active_minus1; i++)
+    {
+        if (pwt->luma_weight_l0_flag[i])
+        {
+            pwt->delta_luma_weight_l0[i] = bs_read_se(b);
+            pwt->luma_offset_l0[i] = bs_read_se(b);
+        }
+        if (pwt->chroma_weight_l0_flag[i])
+        {
+            for (int j = 0; j < 2; j++)
+            {
+                pwt->delta_chroma_weight_l0[i][j] = bs_read_se(b);
+                pwt->delta_chroma_offset_l0[i][j] = bs_read_se(b);
+            }
+        }
+    }
+
+    if (h->sh->slice_type = H265_SH_SLICE_TYPE_B)
+    {
+        for (int i = 0; i <= h->sh->num_ref_idx_l1_active_minus1; i++)
+        {
+            pwt->luma_weight_l1_flag[i] = bs_read_u1(b);
+        }
+        if (h->sps->chroma_format_idc != 0)
+        {
+            for (int i = 0; i <= h->sh->num_ref_idx_l1_active_minus1; i++)
+            {
+                pwt->chroma_weight_l1_flag[i] = bs_read_u1(b);
+            }
+        }
+        for (int i = 0; i <= h->sh->num_ref_idx_l1_active_minus1; i++)
+        {
+            if (pwt->luma_weight_l1_flag[i])
+            {
+                pwt->delta_luma_weight_l1[i] = bs_read_se(b);
+                pwt->luma_offset_l1[i] = bs_read_se(b);
+            }
+            if (pwt->chroma_weight_l1_flag[i])
+            {
+                for (int j = 0; j < 2; j++)
+                {
+                    pwt->delta_chroma_weight_l1[i][j] = bs_read_se(b);
+                    pwt->delta_chroma_offset_l1[i][j] = bs_read_se(b);
                 }
             }
         }
@@ -516,7 +585,7 @@ void  h265_read_vps_rbsp(h265_stream_t* h, bs_t* b)
     vps->vps_reserved_0xffff_16bits    = bs_read_u(b, 16);
 
     // profile tier level...
-    h265_parse_ptl(&vps->profile_tier_level, b, 1, vps->vps_max_sub_layers_minus1);
+    h265_read_ptl(&vps->profile_tier_level, b, 1, vps->vps_max_sub_layers_minus1);
 
     vps->vps_sub_layer_ordering_info_present_flag = bs_read_u1(b);
     for (i = (vps->vps_sub_layer_ordering_info_present_flag ? 0 : vps->vps_max_sub_layers_minus1); 
@@ -554,7 +623,7 @@ void  h265_read_vps_rbsp(h265_stream_t* h, bs_t* b)
                 vps->cprms_present_flag[i] = bs_read_u1(b);
             }
             //  hrd_parameters()
-            h265_parse_hrd_parameters(&(vps->hrd_parameters), b, vps->cprms_present_flag[i], vps->vps_max_sub_layers_minus1);
+            h265_read_hrd_parameters(&(vps->hrd_parameters), b, vps->cprms_present_flag[i], vps->vps_max_sub_layers_minus1);
         }
     }
     vps->vps_extension_flag  = bs_read_u1(b);
@@ -588,7 +657,7 @@ void  h265_read_sps_rbsp(h265_stream_t* h, bs_t* b)
     // profile tier level...
     memset(&profile_tier_level, '\0', sizeof(profile_tier_level_t));
 
-    h265_parse_ptl(&profile_tier_level, b, 1, sps_max_sub_layers_minus1);
+    h265_read_ptl(&profile_tier_level, b, 1, sps_max_sub_layers_minus1);
 
     sps_seq_parameter_set_id = bs_read_ue(b);
     // 选择正确的sps表
@@ -982,7 +1051,7 @@ void h265_read_slice_header(h265_stream_t* h, bs_t* b)
             if ((pps->weighted_pred_flag && hrd->slice_type == H265_SH_SLICE_TYPE_P) ||
                 (pps->weighted_pred_flag && hrd->slice_type == H265_SH_SLICE_TYPE_B))
             {
-                // todo pred_weight_table( ) 
+                h265_read_pred_weight_table(h, b);
             }
             hrd->five_minus_max_num_merge_cand = bs_read_ue(b);
         }

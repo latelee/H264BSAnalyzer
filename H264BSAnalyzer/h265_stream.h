@@ -268,6 +268,28 @@ typedef struct
 } vui_parameters_t;
 
 /**
+   Weighted prediction table
+   @see 7.3.6.3  Weighted prediction parameters syntax
+*/
+typedef struct
+{
+    int luma_log2_weight_denom;
+    int delta_chroma_log2_weight_denom;
+    int luma_weight_l0_flag[256];
+    int chroma_weight_l0_flag[256];
+    int delta_luma_weight_l0[256];
+    int luma_offset_l0[256];
+    int delta_chroma_weight_l0[256][2];
+    int delta_chroma_offset_l0[256][2];
+    int luma_weight_l1_flag[256];
+    int chroma_weight_l1_flag[256];
+    int delta_luma_weight_l1[256];
+    int luma_offset_l1[256];
+    int delta_chroma_weight_l1[256][2];
+    int delta_chroma_offset_l1[256][2];
+} pred_weight_table_t;
+
+/**
    Video Parameter Set
    @see 7.3.2.1 Video parameter set RBSP syntax
 */
@@ -465,6 +487,7 @@ typedef struct
     int cabac_init_flag;
     int collocated_from_l0_flag;
     int collocated_ref_idx;
+    pred_weight_table_t pred_weight_table;
     int five_minus_max_num_merge_cand;
     int slice_qp_delta;
     int slice_cb_qp_offset;
