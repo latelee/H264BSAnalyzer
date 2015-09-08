@@ -267,7 +267,7 @@ int CH264BSAnalyzerDlg::ShowNLInfo(NALU_t* nalu)
             m_nSliceIndex++;
             break;
         case 6:
-            strNalUnitType.Format(_T("SEI"));
+            strNalUnitType.Format(_T("Supplemental enhancement information"));
             strNalInfo.Format(_T("SEI"));
             break;
         case 7:
@@ -347,7 +347,7 @@ int CH264BSAnalyzerDlg::ShowNLInfo(NALU_t* nalu)
             break;
         case NAL_UNIT_PREFIX_SEI:
         case NAL_UNIT_SUFFIX_SEI:
-            strNalUnitType.Format(_T("SEI"));
+            strNalUnitType.Format(_T("Supplemental enhancement information"));
             strNalInfo.Format(_T("SEI"));
             break;
         case NAL_UNIT_VPS:

@@ -1,6 +1,6 @@
-/* 
+/*
 H.265 ver:
-3.0  ITU-T H.265 (V3)  2015-04-29 
+3.0  ITU-T H.265 (V3)  2015-04-29
 ref: HM16.6 source code
 */
 
@@ -19,10 +19,6 @@ ref: HM16.6 source code
 
 #include <vector>
 using std::vector;
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /**
    Network Abstraction Layer (NAL) unit
@@ -50,8 +46,8 @@ typedef struct
 } h265_sei_t;
 
 /**
-   Profile, tier and level 
-   @see 7.3.3 Profile, tier and level syntax 
+   Profile, tier and level
+   @see 7.3.3 Profile, tier and level syntax
 */
 /*
 vector<int> sub_layer_profile_present_flag;
@@ -131,7 +127,7 @@ typedef struct
 
 } profile_tier_level_t;
 
-typedef struct 
+typedef struct
 {
     int bit_rate_value_minus1[256];
     int cpb_size_value_minus1[256];
@@ -141,9 +137,9 @@ typedef struct
 } sub_layer_hrd_parameters_t;
 
 /**
-E.2.2  HRD parameters syntax 
+E.2.2  HRD parameters syntax
 */
-typedef struct 
+typedef struct
 {
     int nal_hrd_parameters_present_flag;
     int vcl_hrd_parameters_present_flag;
@@ -169,9 +165,9 @@ typedef struct
 
 /**
 sps_range_extension
-@see 7.3.2.3.1  General picture parameter set RBSP syntax 
+@see 7.3.2.3.1  General picture parameter set RBSP syntax
 */
-typedef struct 
+typedef struct
 {
     int transform_skip_rotation_enabled_flag;
     int transform_skip_context_enabled_flag;
@@ -210,7 +206,7 @@ typedef struct
 } pps_range_extension_t;
 
 /**
-7.3.4  Scaling list data syntax 
+7.3.4  Scaling list data syntax
 */
 typedef struct
 {
@@ -221,7 +217,7 @@ typedef struct
 } scaling_list_data_t;
 
 /**
-E.2.1  VUI parameters syntax 
+E.2.1  VUI parameters syntax
 */
 typedef struct
 {
@@ -289,6 +285,44 @@ typedef struct
     int delta_chroma_offset_l1[256][2];
 } pred_weight_table_t;
 
+typedef struct 
+{
+    uint8_t inter_ref_pic_set_prediction_flag;
+    int delta_idx_minus1;
+    uint8_t delta_rps_sign;
+    int abs_delta_rps_minus1;
+    vector<uint8_t> used_by_curr_pic_flag;
+    vector<uint8_t> use_delta_flag;
+    int num_negative_pics;
+    int num_positive_pics;
+    vector<int> delta_poc_s0_minus1;
+    vector<uint8_t> used_by_curr_pic_s0_flag;
+    vector<int> delta_poc_s1_minus1;
+    vector<uint8_t> used_by_curr_pic_s1_flag;
+} st_ref_pic_set_t;
+
+#define MAX_NUM_REF_PICS 16 ///< max. number of pictures used for reference
+
+typedef struct
+{
+    int m_numberOfPictures;
+    int m_numberOfNegativePictures;
+    int m_numberOfPositivePictures;
+    int m_numberOfLongtermPictures;
+    int m_deltaPOC[MAX_NUM_REF_PICS];
+    int m_POC[MAX_NUM_REF_PICS];
+    int m_used[MAX_NUM_REF_PICS];
+    int m_interRPSPrediction;
+    int m_deltaRIdxMinus1;
+    int m_deltaRPS;
+    int m_numRefIdc;
+    int m_refIdc[MAX_NUM_REF_PICS+1];
+    int m_bCheckLTMSB[MAX_NUM_REF_PICS];
+    int m_pocLSBLT[MAX_NUM_REF_PICS];
+    int m_deltaPOCMSBCycleLT[MAX_NUM_REF_PICS];
+    int m_deltaPocMSBPresentFlag[MAX_NUM_REF_PICS];
+} referencePictureSets_t;
+
 /**
    Video Parameter Set
    @see 7.3.2.1 Video parameter set RBSP syntax
@@ -296,13 +330,12 @@ typedef struct
 typedef struct
 {
     int vps_video_parameter_set_id; // u(4)
-    // note: vps_base_layer_available_flag + vps_base_layer_internal_flag = vps_reserved_three_2bits 
     int vps_base_layer_internal_flag; // u(1)
-    int vps_base_layer_available_flag; // u(1) 
-    int vps_max_layers_minus1; // u(6) 
-    int vps_max_sub_layers_minus1; // u(3) 
-    int vps_temporal_id_nesting_flag; // u(1) 
-    int vps_reserved_0xffff_16bits; // u(16) 
+    int vps_base_layer_available_flag; // u(1)
+    int vps_max_layers_minus1; // u(6)
+    int vps_max_sub_layers_minus1; // u(3)
+    int vps_temporal_id_nesting_flag; // u(1)
+    int vps_reserved_0xffff_16bits; // u(16)
     profile_tier_level_t profile_tier_level;
     int vps_sub_layer_ordering_info_present_flag;
     // Sublayers
@@ -372,7 +405,8 @@ typedef struct
       int log2_diff_max_min_pcm_luma_coding_block_size;
       int pcm_loop_filter_disabled_flag;
     int num_short_term_ref_pic_sets;
-    //st_ref_pic_set_t st_ref_pic_set;
+    vector<st_ref_pic_set_t> st_ref_pic_set;
+    vector<referencePictureSets_t> m_RPSList; // store
     int long_term_ref_pics_present_flag;
       int num_long_term_ref_pics_sps;
       int lt_ref_pic_poc_lsb_sps[256]; // todo
@@ -391,14 +425,13 @@ typedef struct
     //sps_3d_extension_t sps_3d_extension;
     //int sps_extension_data_flag; // no need
     // rbsp_trailing_bits()...
-    
 } h265_sps_t;
 
 /**
    Picture Parameter Set
    @see 7.3.2.3.1 General picture parameter set RBSP syntax
 */
-typedef struct 
+typedef struct
 {
     int pps_pic_parameter_set_id;
     int pps_seq_parameter_set_id;
@@ -453,7 +486,7 @@ typedef struct
 
 /**
   Slice Header
-  @see 7.3.6.1  General slice segment header syntax 
+  @see 7.3.6.1  General slice segment header syntax
 */
 typedef struct
 {
@@ -468,7 +501,9 @@ typedef struct
         int colour_plane_id;
         int slice_pic_order_cnt_lsb;
         int short_term_ref_pic_set_sps_flag;
-        // st_ref_pic_set_t st_ref_pic_set
+        st_ref_pic_set_t st_ref_pic_set;
+        referencePictureSets_t* m_pRPS;
+        referencePictureSets_t m_localRPS;
         int short_term_ref_pic_set_idx;
         int num_long_term_sps;
         int num_long_term_pics;
@@ -514,9 +549,9 @@ typedef struct
 
 /**
    H265 stream
-   Contains data structures for all NAL types that can be handled by this library.  
-   When reading, data is read into those, and when writing it is written from those.  
-   The reason why they are all contained in one place is that some of them depend on others, we need to 
+   Contains data structures for all NAL types that can be handled by this library.
+   When reading, data is read into those, and when writing it is written from those.
+   The reason why they are all contained in one place is that some of them depend on others, we need to
    have all of them available to read or write correctly.
  */
 typedef struct
@@ -526,16 +561,15 @@ typedef struct
     h265_sps_t* sps;
     h265_pps_t* pps;
     h265_aud_t* aud;
-    h265_sei_t* sei; //This is a TEMP pointer at whats in h->seis...    
+    h265_sei_t* sei; //This is a TEMP pointer at whats in h->seis...
     int num_seis;
     h265_slice_header_t* sh;
     h265_slice_data_rbsp_t* slice_data;
 
-    h265_vps_t* vps_table[32];   // todo 码流文件中不知有多少个
+    h265_vps_t* vps_table[16];   // --checked
     h265_sps_t* sps_table[32];
     h265_pps_t* pps_table[256];
     h265_sei_t** seis;
-
 } h265_stream_t;
 
 h265_stream_t* h265_new();
@@ -543,8 +577,8 @@ void h265_free(h265_stream_t* h);
 
 int h265_read_nal_unit(h265_stream_t* h, uint8_t* buf, int size);
 
-void h265_read_vps_rbsp(h265_stream_t* h, bs_t* b); 
-void h265_read_sps_rbsp(h265_stream_t* h, bs_t* b); 
+void h265_read_vps_rbsp(h265_stream_t* h, bs_t* b);
+void h265_read_sps_rbsp(h265_stream_t* h, bs_t* b);
 void h265_read_pps_rbsp(h265_stream_t* h, bs_t* b);
 void h265_read_sei_rbsp(h265_stream_t* h, bs_t* b);
 void h265_read_aud_rbsp(h265_stream_t* h, bs_t* b);
@@ -554,7 +588,7 @@ void h265_read_end_of_stream_rbsp(h265_stream_t* h, bs_t* b);
 void h265_read_rbsp_trailing_bits(bs_t* b);
 int h265_more_rbsp_trailing_data(bs_t* b);
 
-//Table 7-1 NAL unit type codes and NAL unit type classes 
+//Table 7-1 NAL unit type codes and NAL unit type classes
 enum NalUnitType
 {
     NAL_UNIT_CODED_SLICE_TRAIL_N = 0, // 0
@@ -634,12 +668,15 @@ enum NalUnitType
     NAL_UNIT_INVALID,
 };
 
-// Table 7-7 – Name association to slice_type --check
-#define H265_SH_SLICE_TYPE_B        0        // P (P slice)
-#define H265_SH_SLICE_TYPE_P        1        // B (B slice)
-#define H265_SH_SLICE_TYPE_I        2        // I (I slice)
+// Table 7-7 – Name association to slice_type --checked
+enum SliceType
+{
+    H265_SH_SLICE_TYPE_B = 0,        // P (P slice)
+    H265_SH_SLICE_TYPE_P = 1,        // B (B slice)
+    H265_SH_SLICE_TYPE_I = 2,        // I (I slice)
+};
 
-//7.4.3.5 Table 7-2 – Interpretation of pic_type --check
+//7.4.3.5 Table 7-2 – Interpretation of pic_type --checked
 #define H265_AUD_PRIMARY_PIC_TYPE_I       0                // I
 #define H265_AUD_PRIMARY_PIC_TYPE_IP      1                // P, I
 #define H265_AUD_PRIMARY_PIC_TYPE_IPB     2                // B, P, I
@@ -675,11 +712,43 @@ enum ChromaFormat
   NUM_CHROMA_FORMAT = 4
 };
 
+enum ProfileName
+{
+    PROFILE_NONE = 0,
+    PROFILE_MAIN = 1,
+    PROFILE_MAIN10 = 2,
+    PROFILE_MAINSTILLPICTURE = 3,
+    PROFILE_MAINREXT = 4,
+    PROFILE_HIGHTHROUGHPUTREXT = 5
+};
+
+enum Tier
+{
+    TIER_MAIN = 0,
+    TIER_HIGH = 1,
+};
+
+enum Level
+{
+    // code = (level * 30)
+    LEVEL_NONE     = 0,
+    LEVEL1   = 30,
+    LEVEL2   = 60,
+    LEVEL2_1 = 63,
+    LEVEL3   = 90,
+    LEVEL3_1 = 93,
+    LEVEL4   = 120,
+    LEVEL4_1 = 123,
+    LEVEL5   = 150,
+    LEVEL5_1 = 153,
+    LEVEL5_2 = 156,
+    LEVEL6   = 180,
+    LEVEL6_1 = 183,
+    LEVEL6_2 = 186,
+    LEVEL8_5 = 255,
+};
+
 // file handle for debug output
 extern FILE* h265_dbgfile;
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif

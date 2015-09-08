@@ -8,10 +8,6 @@
 #include "bs.h"
 #include "h265_stream.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 h265_sei_t* h265_sei_new();
 void h265_sei_free(h265_sei_t* s);
 void h265_read_sei_payload(h265_stream_t* h, bs_t* b, int payloadType, int payloadSize);
@@ -39,9 +35,5 @@ void h265_read_sei_payload(h265_stream_t* h, bs_t* b, int payloadType, int paylo
 #define H265_SEI_TYPE_FILM_GRAIN_CHARACTERISTICS  19
 #define H265_SEI_TYPE_DEBLOCKING_FILTER_DISPLAY_PREFERENCE  20
 #define H265_SEI_TYPE_STEREO_VIDEO_INFO  21
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif

@@ -493,6 +493,72 @@ void h265_read_scaling_list(scaling_list_data_t* sld, bs_t* b)
 }
 
 // st_ref_pic_set
+// 7.3.7  Short-term reference picture set syntax
+void h265_read_short_term_ref_pic_set(bs_t* b, h265_sps_t* sps, st_ref_pic_set_t*st, referencePictureSets_t* rps, int stRpsIdx)
+{
+    st->inter_ref_pic_set_prediction_flag = 0;
+    if (stRpsIdx != 0)
+    {
+        st->inter_ref_pic_set_prediction_flag = bs_read_u1(b);
+    }
+    if (st->inter_ref_pic_set_prediction_flag)
+    {
+        if (stRpsIdx == sps->m_RPSList.size())
+        {
+            st->delta_idx_minus1 = bs_read_ue(b);
+        }
+        int rIdx = stRpsIdx - 1 - st->delta_idx_minus1;
+        referencePictureSets_t* rpsRef = &sps->m_RPSList[rIdx];
+
+        st->delta_rps_sign       = bs_read_u1(b);
+        st->abs_delta_rps_minus1 = bs_read_ue(b);
+        int deltaRPS = (1 - 2 * st->delta_rps_sign) * (st->abs_delta_rps_minus1 + 1); // delta_RPS
+        st->used_by_curr_pic_flag.resize(rpsRef->m_numberOfPictures+1);
+        st->use_delta_flag.resize(rpsRef->m_numberOfPictures+1);
+        for (int j = 0; j < rpsRef->m_numberOfPictures; j++)
+        {
+            st->used_by_curr_pic_flag[j] = bs_read_u1(b);
+            int refIdc = st->used_by_curr_pic_flag[j];
+            if (!st->used_by_curr_pic_flag[j])
+            {
+                st->use_delta_flag[j] = bs_read_u1(b);
+                refIdc = st->use_delta_flag[j] << 1; //second bit is "1" if refIdc is 2, "0" if refIdc = 0.
+            }
+            // todo furture
+            if (refIdc == 1 || refIdc == 2)
+            {
+
+            }
+        }
+    }
+    else
+    {
+        st->num_negative_pics = bs_read_ue(b);
+        st->num_positive_pics = bs_read_ue(b);
+
+        rps->m_numberOfNegativePictures = st->num_negative_pics;
+        rps->m_numberOfPositivePictures = st->num_positive_pics;
+
+        st->delta_poc_s0_minus1.resize(st->num_negative_pics);
+        st->used_by_curr_pic_s0_flag.resize(st->num_negative_pics);
+        for (int i = 0; i < st->num_negative_pics; i++)
+        {
+            st->delta_poc_s0_minus1[i] = bs_read_ue(b);
+            st->used_by_curr_pic_s0_flag[i] = bs_read_u1(b);
+            rps->m_used[i] = st->used_by_curr_pic_s0_flag[i];
+        }
+        st->delta_poc_s1_minus1.resize(st->num_positive_pics);
+        st->used_by_curr_pic_s1_flag.resize(st->num_positive_pics);
+        for (int i = 0; i < st->num_positive_pics; i++)
+        {
+            st->delta_poc_s1_minus1[i] = bs_read_ue(b);
+            st->used_by_curr_pic_s1_flag[i] = bs_read_u1(b);
+            rps->m_used[i + st->num_negative_pics] = st->used_by_curr_pic_s1_flag[i];
+        }
+        rps->m_numberOfPictures = rps->m_numberOfNegativePictures + rps->m_numberOfPositivePictures;
+    }
+}
+
 // ref_pic_lists_modification
 void h265_read_pred_weight_table(h265_stream_t* h, bs_t* b)
 {
@@ -640,8 +706,6 @@ void  h265_read_vps_rbsp(h265_stream_t* h, bs_t* b)
 //7.3.2.1 Sequence parameter set RBSP syntax
 void  h265_read_sps_rbsp(h265_stream_t* h, bs_t* b)
 {
-    int i;
-
     // NOTE 不能直接赋值给sps，因为还未知是哪一个sps。
 
     int sps_video_parameter_set_id = 0;
@@ -692,7 +756,7 @@ void  h265_read_sps_rbsp(h265_stream_t* h, bs_t* b)
     sps->log2_max_pic_order_cnt_lsb_minus4 = bs_read_ue(b);
 
     sps->sps_sub_layer_ordering_info_present_flag = bs_read_u1(b);
-    for (i = (sps->sps_sub_layer_ordering_info_present_flag ? 0 : sps->sps_max_sub_layers_minus1); 
+    for (int i = (sps->sps_sub_layer_ordering_info_present_flag ? 0 : sps->sps_max_sub_layers_minus1); 
         i <= sps->sps_max_sub_layers_minus1; i++ )
     {
         sps->sps_max_dec_pic_buffering_minus1[i] = bs_read_ue(b);
@@ -731,16 +795,23 @@ void  h265_read_sps_rbsp(h265_stream_t* h, bs_t* b)
     }
 
     sps->num_short_term_ref_pic_sets = bs_read_ue(b);
-    for (i = 0; i < sps->num_short_term_ref_pic_sets; i++)
+    // 根据num_short_term_ref_pic_sets创建数组
+    sps->st_ref_pic_set.resize(sps->num_short_term_ref_pic_sets);
+    sps->m_RPSList.resize(sps->num_short_term_ref_pic_sets); // 确定一共有多少个RPS列表
+    referencePictureSets_t* rps = NULL;
+    st_ref_pic_set_t* st = NULL;
+    for (int i = 0; i < sps->num_short_term_ref_pic_sets; i++)
     {
-        // todo
+        st = &sps->st_ref_pic_set[i];
+        rps = &sps->m_RPSList[i];
+        h265_read_short_term_ref_pic_set(b, sps, st, rps, i);
     }
 
     sps->long_term_ref_pics_present_flag = bs_read_u1(b);
     if (sps->long_term_ref_pics_present_flag)
     {
         sps->num_long_term_ref_pics_sps = bs_read_ue(b);
-        for (i = 0; i < sps->num_long_term_ref_pics_sps; i++)
+        for (int i = 0; i < sps->num_long_term_ref_pics_sps; i++)
         {
             sps->lt_ref_pic_poc_lsb_sps[i] = bs_read_u1(b); // todo u(v)
             sps->used_by_curr_pic_lt_sps_flag[i] = bs_read_u1(b);
@@ -958,17 +1029,45 @@ void h265_read_slice_header(h265_stream_t* h, bs_t* b)
         {
             hrd->colour_plane_id = bs_read_u(b, 2);
         }
+        // IDR
         if (nal_unit_type == NAL_UNIT_CODED_SLICE_IDR_W_RADL || nal_unit_type == NAL_UNIT_CODED_SLICE_IDR_N_LP)
         {
-            hrd->slice_pic_order_cnt_lsb = bs_read_u1(b); // todo u(v)
+            referencePictureSets_t* rps = &hrd->m_localRPS;
+            memset(rps, '\0', sizeof(referencePictureSets_t));
+            rps->m_numberOfPictures = 0;
+            rps->m_numberOfNegativePictures = 0;
+            rps->m_numberOfPositivePictures = 0;
+            hrd->m_pRPS = rps;
+        }
+        //if (nal_unit_type != NAL_UNIT_CODED_SLICE_IDR_W_RADL && nal_unit_type != NAL_UNIT_CODED_SLICE_IDR_N_LP)
+        else
+        {
+            hrd->slice_pic_order_cnt_lsb = bs_read_u1(b); // todo u(v) // poc
             hrd->short_term_ref_pic_set_sps_flag = bs_read_u1(b);
             if (!hrd->short_term_ref_pic_set_sps_flag)
             {
-                // todo st_ref_pic_set( num_short_term_ref_pic_sets ) 
+                referencePictureSets_t* rps = &hrd->m_localRPS;
+                hrd->m_pRPS = &hrd->m_localRPS;
+
+                // st_ref_pic_set(num_short_term_ref_pic_sets) 
+                h265_read_short_term_ref_pic_set(b, sps, &hrd->st_ref_pic_set, rps, sps->num_short_term_ref_pic_sets);
             }
-            else if (sps->num_short_term_ref_pic_sets)
+            // sps->num_short_term_ref_pic_set实际等于ssps->m_RPSList.size() 下同
+            else if (sps->num_short_term_ref_pic_sets > 1)
             {
-                hrd->short_term_ref_pic_set_idx = bs_read_u1(b); // todo u(v)
+                uint32_t numBits = 0;
+                while ((1 << numBits) < sps->num_short_term_ref_pic_sets)
+                {
+                    numBits++;
+                }
+                if (numBits)
+                {
+                    hrd->short_term_ref_pic_set_idx = bs_read_u(b, numBits);
+                }
+                else
+                {
+                    hrd->short_term_ref_pic_set_idx = 0;
+                }
             }
             if (sps->long_term_ref_pics_present_flag)
             {
