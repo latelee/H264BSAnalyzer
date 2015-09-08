@@ -323,6 +323,14 @@ typedef struct
     int m_deltaPocMSBPresentFlag[MAX_NUM_REF_PICS];
 } referencePictureSets_t;
 
+typedef struct  
+{
+    uint8_t ref_pic_list_modification_flag_l0;
+    uint32_t list_entry_l0[32]; // according to HM16.6 source code
+    uint8_t ref_pic_list_modification_flag_l1;
+    uint32_t list_entry_l1[32];
+} ref_pic_lists_modification_t;
+
 /**
    Video Parameter Set
    @see 7.3.2.1 Video parameter set RBSP syntax
@@ -421,7 +429,7 @@ typedef struct
       int sps_3d_extension_flag;
       int sps_extension_5bits;
     sps_range_extension_t sps_range_extension;
-    //sps_multilayer_extension_t sps_multilayer_extension;
+    uint8_t inter_view_mv_vert_constraint_flag ; //sps_multilayer_extension_t sps_multilayer_extension;
     //sps_3d_extension_t sps_3d_extension;
     //int sps_extension_data_flag; // no need
     // rbsp_trailing_bits()...
@@ -518,6 +526,7 @@ typedef struct
     int num_ref_idx_active_override_flag;
     int num_ref_idx_l0_active_minus1;
     int num_ref_idx_l1_active_minus1;
+    ref_pic_lists_modification_t ref_pic_lists_modification;
     int mvd_l1_zero_flag;
     int cabac_init_flag;
     int collocated_from_l0_flag;
@@ -546,6 +555,11 @@ typedef struct
   int rbsp_size;
   uint8_t* rbsp_buf;
 } h265_slice_data_rbsp_t;
+
+typedef struct  
+{
+
+} mySPS_t;
 
 /**
    H265 stream

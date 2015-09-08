@@ -559,7 +559,89 @@ void h265_read_short_term_ref_pic_set(bs_t* b, h265_sps_t* sps, st_ref_pic_set_t
     }
 }
 
+
+static int getNumRpsCurrTempList(h265_slice_header_t *hrd)
+{
+    int numRpsCurrTempList = 0;
+
+    if (hrd->slice_type == H265_SH_SLICE_TYPE_I) 
+    {
+        return 0;
+    }
+
+    for (int i = 0;
+        i < hrd->m_pRPS->m_numberOfNegativePictures + hrd->m_pRPS->m_numberOfPositivePictures + hrd->m_pRPS->m_numberOfLongtermPictures;
+        i++)
+    {
+        if (hrd->m_pRPS->m_used[i])
+        {
+            numRpsCurrTempList++;
+        }
+    }
+
+    return numRpsCurrTempList;
+}
+
 // ref_pic_lists_modification
+// 7.3.6.2  Reference picture list modification syntax
+void h265_read_ref_pic_lists_modification(bs_t* b, h265_slice_header_t* hrd)
+{
+    hrd->ref_pic_lists_modification.ref_pic_list_modification_flag_l0 = bs_read_u1(b);
+    if (hrd->ref_pic_lists_modification.ref_pic_list_modification_flag_l0)
+    {
+        int numRpsCurrTempList0 = getNumRpsCurrTempList(hrd);
+        if (numRpsCurrTempList0 > 1)
+        {
+            int length = 1;
+            numRpsCurrTempList0--;
+            while (numRpsCurrTempList0 >>= 1)
+            {
+                length++;
+            }
+            for (int i = 0; i <= hrd->num_ref_idx_l0_active_minus1; i++) // 注意有等号，同时要注册边界
+            {
+                hrd->ref_pic_lists_modification.list_entry_l0[i] = bs_read_u(b, length);
+            }
+        }
+        else
+        {
+            for (int i = 0; i <= hrd->num_ref_idx_l0_active_minus1; i ++)
+            {
+                hrd->ref_pic_lists_modification.list_entry_l0[i] = 0;
+            }
+        }
+    }
+    if (hrd->slice_type == H265_SH_SLICE_TYPE_B)
+    {
+        hrd->ref_pic_lists_modification.ref_pic_list_modification_flag_l1 = bs_read_u1(b);
+        if (hrd->ref_pic_lists_modification.ref_pic_list_modification_flag_l1)
+        {
+            int numRpsCurrTempList1 = getNumRpsCurrTempList(hrd);
+            if (numRpsCurrTempList1 > 1)
+            {
+                int length = 1;
+                numRpsCurrTempList1--;
+                while (numRpsCurrTempList1 >>= 1)
+                {
+                    length++;
+                }
+                for (int i = 0; i <= hrd->num_ref_idx_l1_active_minus1; i++) // 注意有等号，同时要注册边界
+                {
+                    hrd->ref_pic_lists_modification.list_entry_l1[i] = bs_read_u(b, length);
+                }
+            }
+            else
+            {
+                for (int i = 0; i <= hrd->num_ref_idx_l1_active_minus1; i ++)
+                {
+                    hrd->ref_pic_lists_modification.list_entry_l1[i] = 0;
+                }
+            }
+        }
+    }
+}
+
+// 7.3.6.3  Weighted prediction parameters syntax
 void h265_read_pred_weight_table(h265_stream_t* h, bs_t* b)
 {
     pred_weight_table_t* pwt = &h->sh->pred_weight_table;
@@ -849,7 +931,8 @@ void  h265_read_sps_rbsp(h265_stream_t* h, bs_t* b)
     }
     if (sps->sps_multilayer_extension_flag)
     {
-        // todo sps_multilayer_extension( ) 
+        // sps_multilayer_extension()
+        sps->inter_view_mv_vert_constraint_flag = bs_read_u1(b);
     }
     if (sps->sps_3d_extension_flag)
     {
@@ -892,8 +975,8 @@ void h265_read_pps_rbsp(h265_stream_t* h, bs_t* b)
         pps->cu_qp_delta_enabled_flag   = bs_read_ue(b);
     }
     
-    pps->pps_cb_qp_offset  = bs_read_se(b);
-    pps->pps_cr_qp_offset  = bs_read_se(b);
+    pps->pps_cb_qp_offset   = bs_read_se(b);
+    pps->pps_cr_qp_offset   = bs_read_se(b);
     pps->pps_slice_chroma_qp_offsets_present_flag = bs_read_u1(b);
     pps->transquant_bypass_enabled_flag           = bs_read_u1(b);
     pps->tiles_enabled_flag = bs_read_u1(b);
@@ -1042,7 +1125,7 @@ void h265_read_slice_header(h265_stream_t* h, bs_t* b)
         //if (nal_unit_type != NAL_UNIT_CODED_SLICE_IDR_W_RADL && nal_unit_type != NAL_UNIT_CODED_SLICE_IDR_N_LP)
         else
         {
-            hrd->slice_pic_order_cnt_lsb = bs_read_u1(b); // todo u(v) // poc
+            hrd->slice_pic_order_cnt_lsb = bs_read_u(b, sps->log2_max_pic_order_cnt_lsb_minus4 + 4); // poc
             hrd->short_term_ref_pic_set_sps_flag = bs_read_u1(b);
             if (!hrd->short_term_ref_pic_set_sps_flag)
             {
@@ -1087,7 +1170,7 @@ void h265_read_slice_header(h265_stream_t* h, bs_t* b)
                     }
                     else
                     {
-                        hrd->poc_lsb_lt[i] = bs_read_ue(b);// todo u(v)
+                        hrd->poc_lsb_lt[i] = bs_read_u(b, sps->log2_max_pic_order_cnt_lsb_minus4+4);
                         hrd->used_by_curr_pic_lt_flag[i] = bs_read_u1(b);
                     }
                     hrd->delta_poc_msb_present_flag[i] = bs_read_u1(b);
@@ -1123,9 +1206,10 @@ void h265_read_slice_header(h265_stream_t* h, bs_t* b)
                 }
             }
             // todo
-            //if(sps->lists_modification_present_flag  &&  NumPicTotalCurr > 1 ) 
+            int NumPicTotalCurr = getNumRpsCurrTempList(hrd);
+            if(pps->lists_modification_present_flag  &&  NumPicTotalCurr > 1) 
             {
-                // ref_pic_lists_modification( ) 
+                h265_read_ref_pic_lists_modification(b, hrd);
             }
             if (hrd->slice_type == H265_SH_SLICE_TYPE_B)
             {
