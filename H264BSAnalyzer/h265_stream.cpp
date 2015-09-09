@@ -269,7 +269,7 @@ void h265_read_ptl(profile_tier_level_t* ptl, bs_t* b, int profilePresentFlag, i
         if ((ptl->general_profile_idc>=1 && ptl->general_profile_idc<=5) ||
             ptl->general_profile_compatibility_flag[1] || ptl->general_profile_compatibility_flag[2] ||
             ptl->general_profile_compatibility_flag[3] || ptl->general_profile_compatibility_flag[4] ||
-            ptl->general_profile_compatibility_flag[4])
+            ptl->general_profile_compatibility_flag[5])
         {
             ptl->general_inbld_flag = bs_read_u1(b);
         }
@@ -279,10 +279,12 @@ void h265_read_ptl(profile_tier_level_t* ptl, bs_t* b, int profilePresentFlag, i
         }
     }
     ptl->general_level_idc = bs_read_u8(b);
+    ptl->sub_layer_profile_present_flag.resize(ptl->general_level_idc);
+    ptl->sub_layer_level_present_flag.resize(ptl->general_level_idc);
     for (i = 0; i < max_sub_layers_minus1; i++)
     {
         ptl->sub_layer_profile_present_flag[i] = bs_read_u1(b);
-        ptl->sub_layer_level_present_flag[i] = bs_read_u1(b);
+        ptl->sub_layer_level_present_flag[i]   = bs_read_u1(b);
     }
     if (max_sub_layers_minus1 > 0)
     {
@@ -292,12 +294,88 @@ void h265_read_ptl(profile_tier_level_t* ptl, bs_t* b, int profilePresentFlag, i
         }
     }
 
-    // todo
+    ptl->sub_layer_profile_present_flag.resize(max_sub_layers_minus1);
+    ptl->sub_layer_profile_space.resize(max_sub_layers_minus1);
+    ptl->sub_layer_tier_flag.resize(max_sub_layers_minus1);
+    ptl->sub_layer_profile_idc.resize(max_sub_layers_minus1);
+    ptl->sub_layer_profile_compatibility_flag.resize(max_sub_layers_minus1);
+    for (int j = 0; j < 32; j++)
+    {
+        ptl->sub_layer_profile_compatibility_flag[j].resize(j);
+    }
+    ptl->sub_layer_progressive_source_flag.resize(max_sub_layers_minus1);
+    ptl->sub_layer_interlaced_source_flag.resize(max_sub_layers_minus1);
+    ptl->sub_layer_non_packed_constraint_flag.resize(max_sub_layers_minus1);
+    ptl->sub_layer_frame_only_constraint_flag.resize(max_sub_layers_minus1);
+    ptl->sub_layer_max_12bit_constraint_flag.resize(max_sub_layers_minus1);
+    ptl->sub_layer_max_10bit_constraint_flag.resize(max_sub_layers_minus1);
+    ptl->sub_layer_max_8bit_constraint_flag.resize(max_sub_layers_minus1);
+    ptl->sub_layer_max_422chroma_constraint_flag.resize(max_sub_layers_minus1);
+    ptl->sub_layer_max_420chroma_constraint_flag.resize(max_sub_layers_minus1);
+    ptl->sub_layer_max_monochrome_constraint_flag.resize(max_sub_layers_minus1);
+    ptl->sub_layer_intra_constraint_flag.resize(max_sub_layers_minus1);
+    ptl->sub_layer_one_picture_only_constraint_flag.resize(max_sub_layers_minus1);
+    ptl->sub_layer_lower_bit_rate_constraint_flag.resize(max_sub_layers_minus1);
+    ptl->sub_layer_reserved_zero_34bits.resize(max_sub_layers_minus1);
+    ptl->sub_layer_reserved_zero_43bits.resize(max_sub_layers_minus1);
+    ptl->sub_layer_inbld_flag.resize(max_sub_layers_minus1);
+    ptl->sub_layer_reserved_zero_bit.resize(max_sub_layers_minus1);
+    ptl->sub_layer_level_idc.resize(max_sub_layers_minus1);
     for (i = 0; i < max_sub_layers_minus1; i++)
     {
         if (ptl->sub_layer_profile_present_flag[i])
         {
-
+            ptl->sub_layer_profile_space[i] = bs_read_u(b, 2);
+            ptl->sub_layer_tier_flag[i]     = bs_read_u1(b);
+            ptl->sub_layer_profile_idc[i]   = bs_read_u(b, 5);
+            for (int j = 0; j < 32; j++)
+            {
+                ptl->sub_layer_profile_compatibility_flag[i][j] = bs_read_u1(b);
+            }
+            ptl->sub_layer_progressive_source_flag[i]    = bs_read_u1(b);
+            ptl->sub_layer_interlaced_source_flag[i]     = bs_read_u1(b);
+            ptl->sub_layer_non_packed_constraint_flag[i] = bs_read_u1(b);
+            ptl->sub_layer_frame_only_constraint_flag[i] = bs_read_u1(b);
+            if (ptl->sub_layer_profile_idc[i]==4 || ptl->sub_layer_profile_compatibility_flag[i][4] ||
+                ptl->sub_layer_profile_idc[i]==5 || ptl->sub_layer_profile_compatibility_flag[i][5] ||
+                ptl->sub_layer_profile_idc[i]==6 || ptl->sub_layer_profile_compatibility_flag[i][6] ||
+                ptl->sub_layer_profile_idc[i]==7 || ptl->sub_layer_profile_compatibility_flag[i][7])
+            {
+                ptl->sub_layer_max_12bit_constraint_flag[i]        = bs_read_u1(b);
+                ptl->sub_layer_max_10bit_constraint_flag[i]        = bs_read_u1(b);
+                ptl->sub_layer_max_8bit_constraint_flag[i]         = bs_read_u1(b);
+                ptl->sub_layer_max_422chroma_constraint_flag[i]    = bs_read_u1(b);
+                ptl->sub_layer_max_420chroma_constraint_flag[i]    = bs_read_u1(b);
+                ptl->sub_layer_max_monochrome_constraint_flag[i]   = bs_read_u1(b);
+                ptl->sub_layer_intra_constraint_flag[i] = bs_read_u1(b);
+                ptl->sub_layer_one_picture_only_constraint_flag[i] = bs_read_u1(b);
+                ptl->sub_layer_lower_bit_rate_constraint_flag[i]   = bs_read_u1(b);
+                uint64_t tmp1 = bs_read_u(b, 32);
+                uint64_t tmp2 = bs_read_u(b, 2);
+                ptl->sub_layer_reserved_zero_34bits[i] = tmp1+tmp2;
+            }
+            else
+            {
+                uint64_t tmp1 = bs_read_u(b, 32);
+                uint64_t tmp2 = bs_read_u(b, 12);
+                ptl->sub_layer_reserved_zero_34bits[i] = tmp1+tmp2;
+            }
+            /* error...
+            if ((ptl->sub_layer_profile_idc[i]>=1 && ptl->sub_layer_profile_idc[i]<=5) ||
+                ptl->sub_layer_profile_compatibility_flag[1] || 
+                ptl->sub_layer_profile_compatibility_flag[2] || 
+                ptl->sub_layer_profile_compatibility_flag[3] || 
+                ptl->sub_layer_profile_compatibility_flag[4] || 
+                ptl->sub_layer_profile_compatibility_flag[5])
+            */
+            if (0)
+            {
+                ptl->sub_layer_inbld_flag[i] = bs_read_u1(b);
+            }
+            else
+            {
+                ptl->sub_layer_reserved_zero_bit[i] = bs_read_u1(b);
+            }
         }
         if (ptl->sub_layer_level_present_flag[i])
         {
@@ -352,6 +430,11 @@ void h265_read_hrd_parameters(hrd_parameters_t* hrd, bs_t* b, int commonInfPrese
             hrd->dpb_output_delay_length_minus1          = bs_read_u(b, 5);
          }
     }
+    hrd->fixed_pic_rate_general_flag.resize(maxNumSubLayersMinus1+1);
+    hrd->fixed_pic_rate_within_cvs_flag.resize(maxNumSubLayersMinus1+1);
+    hrd->elemental_duration_in_tc_minus1.resize(maxNumSubLayersMinus1+1);
+    hrd->low_delay_hrd_flag.resize(maxNumSubLayersMinus1+1);
+    hrd->cpb_cnt_minus1.resize(maxNumSubLayersMinus1+1);
     for (int i = 0; i <= maxNumSubLayersMinus1; i++)
     {
         hrd->fixed_pic_rate_general_flag[i] = bs_read_u1(b);
@@ -745,6 +828,11 @@ void  h265_read_vps_rbsp(h265_stream_t* h, bs_t* b)
     }
     vps->vps_max_layer_id           = bs_read_u(b, 6);
     vps->vps_num_layer_sets_minus1  = bs_read_ue(b);
+    vps->layer_id_included_flag.resize(vps->vps_num_layer_sets_minus1+1);
+    for (i = 1; i <= vps->vps_num_layer_sets_minus1; i++)
+    {
+        vps->layer_id_included_flag[i].resize(vps->vps_num_layer_sets_minus1+1);
+    }
     for (i = 1; i <= vps->vps_num_layer_sets_minus1; i++)
     {
         for (j = 0; j <= vps->vps_max_layer_id; j++)
@@ -762,7 +850,9 @@ void  h265_read_vps_rbsp(h265_stream_t* h, bs_t* b)
         {
             vps->vps_num_ticks_poc_diff_one_minus1 = bs_read_ue(b);
         }
-        vps->vps_num_hrd_parameters  = bs_read_u1(b);
+        vps->vps_num_hrd_parameters  = bs_read_ue(b);
+        vps->hrd_layer_set_idx.resize(vps->vps_num_hrd_parameters);
+        vps->cprms_present_flag.resize(vps->vps_num_hrd_parameters);
         for (i = 0; i < vps->vps_num_hrd_parameters; i++)
         {
             vps->hrd_layer_set_idx[i] = bs_read_ue(b);
@@ -1043,6 +1133,8 @@ void h265_read_pps_rbsp(h265_stream_t* h, bs_t* b)
         {
             pps->pps_range_extension.diff_cu_chroma_qp_offset_depth   = bs_read_ue(b);
             pps->pps_range_extension.chroma_qp_offset_list_len_minus1 = bs_read_ue(b);
+            pps->pps_range_extension.cb_qp_offset_list.resize(pps->pps_range_extension.chroma_qp_offset_list_len_minus1);
+            pps->pps_range_extension.cr_qp_offset_list.resize(pps->pps_range_extension.chroma_qp_offset_list_len_minus1);
             for (int i = 0; i < pps->pps_range_extension.chroma_qp_offset_list_len_minus1; i++)
             {
                  pps->pps_range_extension.cb_qp_offset_list[i] = bs_read_se(b);

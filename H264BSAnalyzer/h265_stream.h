@@ -77,53 +77,53 @@ vector<uint64_t> sub_layer_reserved_zero_43bits;
 */
 typedef struct
 {
-    int general_profile_space;
-    int general_tier_flag;
-    int general_profile_idc;
-    int general_profile_compatibility_flag[32];
-    int general_progressive_source_flag;
-    int general_interlaced_source_flag;
-    int general_non_packed_constraint_flag;
-    int general_frame_only_constraint_flag;
-    int general_max_12bit_constraint_flag;
-    int general_max_10bit_constraint_flag;
-    int general_max_8bit_constraint_flag;
-    int general_max_422chroma_constraint_flag;
-    int general_max_420chroma_constraint_flag;
-    int general_max_monochrome_constraint_flag;
-    int general_intra_constraint_flag;
-    int general_one_picture_only_constraint_flag;
-    int general_lower_bit_rate_constraint_flag;
+    uint8_t general_profile_space;
+    uint8_t general_tier_flag;
+    uint8_t general_profile_idc;
+    uint8_t general_profile_compatibility_flag[32];
+    uint8_t general_progressive_source_flag;
+    uint8_t general_interlaced_source_flag;
+    uint8_t general_non_packed_constraint_flag;
+    uint8_t general_frame_only_constraint_flag;
+    uint8_t general_max_12bit_constraint_flag;
+    uint8_t general_max_10bit_constraint_flag;
+    uint8_t general_max_8bit_constraint_flag;
+    uint8_t general_max_422chroma_constraint_flag;
+    uint8_t general_max_420chroma_constraint_flag;
+    uint8_t general_max_monochrome_constraint_flag;
+    uint8_t general_intra_constraint_flag;
+    uint8_t general_one_picture_only_constraint_flag;
+    uint8_t general_lower_bit_rate_constraint_flag;
     uint64_t general_reserved_zero_34bits; // todo
     uint64_t general_reserved_zero_43bits; // todo
-    int general_inbld_flag;
-    int general_reserved_zero_bit;
-    int general_level_idc;
-    int sub_layer_profile_present_flag[256];
-    int sub_layer_level_present_flag[256];
-    int reserved_zero_2bits[256];
-    int sub_layer_profile_space[256];
-    int sub_layer_tier_flag[256];
-    int sub_layer_profile_idc[256];
-    int sub_layer_profile_compatibility_flag[256][32];
-    int sub_layer_progressive_source_flag[256];
-    int sub_layer_interlaced_source_flag[256];
-    int sub_layer_non_packed_constraint_flag[256];
-    int sub_layer_frame_only_constraint_flag[256];
-    int sub_layer_max_12bit_constraint_flag[32];
-    int sub_layer_max_10bit_constraint_flag[32];
-    int sub_layer_max_8bit_constraint_flag[32];
-    int sub_layer_max_422chroma_constraint_flag[32];
-    int sub_layer_max_420chroma_constraint_flag[32];
-    int sub_layer_max_monochrome_constraint_flag[32];
-    int sub_layer_intra_constraint_flag[32];
-    int sub_layer_one_picture_only_constraint_flag[32];
-    int sub_layer_lower_bit_rate_constraint_flag[32];
-    uint64_t sub_layer_reserved_zero_34bits[32];
-    uint64_t sub_layer_reserved_zero_43bits[32];
-    int sub_layer_inbld_flag[32];
-    int sub_layer_reserved_zero_bit[32];
-    int sub_layer_level_idc[32];
+    uint8_t general_inbld_flag;
+    uint8_t general_reserved_zero_bit;
+    uint8_t general_level_idc;
+    vector<uint8_t> sub_layer_profile_present_flag;
+    vector<uint8_t> sub_layer_level_present_flag;
+    uint8_t reserved_zero_2bits[8];
+    vector<uint8_t> sub_layer_profile_space;
+    vector<uint8_t> sub_layer_tier_flag;
+    vector<uint8_t> sub_layer_profile_idc;
+    vector<vector<uint8_t> > sub_layer_profile_compatibility_flag;
+    vector<uint8_t> sub_layer_progressive_source_flag;
+    vector<uint8_t> sub_layer_interlaced_source_flag;
+    vector<uint8_t> sub_layer_non_packed_constraint_flag;
+    vector<uint8_t> sub_layer_frame_only_constraint_flag;
+    vector<uint8_t> sub_layer_max_12bit_constraint_flag;
+    vector<uint8_t> sub_layer_max_10bit_constraint_flag;
+    vector<uint8_t> sub_layer_max_8bit_constraint_flag;
+    vector<uint8_t> sub_layer_max_422chroma_constraint_flag;
+    vector<uint8_t> sub_layer_max_420chroma_constraint_flag;
+    vector<uint8_t> sub_layer_max_monochrome_constraint_flag;
+    vector<uint8_t> sub_layer_intra_constraint_flag;
+    vector<uint8_t> sub_layer_one_picture_only_constraint_flag;
+    vector<uint8_t> sub_layer_lower_bit_rate_constraint_flag;
+    vector<uint64_t> sub_layer_reserved_zero_34bits;
+    vector<uint64_t> sub_layer_reserved_zero_43bits;
+    vector<uint8_t> sub_layer_inbld_flag;
+    vector<uint8_t> sub_layer_reserved_zero_bit;
+    vector<uint8_t> sub_layer_level_idc;
 
 } profile_tier_level_t;
 
@@ -154,11 +154,11 @@ typedef struct
       int initial_cpb_removal_delay_length_minus1;
       int au_cpb_removal_delay_length_minus1;
       int dpb_output_delay_length_minus1;
-    int fixed_pic_rate_general_flag[256];
-    int fixed_pic_rate_within_cvs_flag[256];
-    int elemental_duration_in_tc_minus1[256];
-    int low_delay_hrd_flag[256];
-    int cpb_cnt_minus1[256];
+    vector<uint8_t> fixed_pic_rate_general_flag;
+    vector<uint8_t> fixed_pic_rate_within_cvs_flag;
+    vector<int> elemental_duration_in_tc_minus1;
+    vector<uint8_t> low_delay_hrd_flag;
+    vector<int> cpb_cnt_minus1;
     sub_layer_hrd_parameters_t sub_layer_hrd_parameters;
     sub_layer_hrd_parameters_t sub_layer_hrd_parameters_v;
 } hrd_parameters_t;
@@ -186,7 +186,7 @@ typedef struct
 */
 typedef struct
 {
-    int pic_type;
+    uint8_t pic_type;
 } h265_aud_t;
 
 /**
@@ -195,12 +195,12 @@ typedef struct
 typedef struct
 {
     int log2_max_transform_skip_block_size_minus2;
-    int cross_component_prediction_enabled_flag;
-    int chroma_qp_offset_list_enabled_flag;
+    uint8_t cross_component_prediction_enabled_flag;
+    uint8_t chroma_qp_offset_list_enabled_flag;
       int diff_cu_chroma_qp_offset_depth;
       int chroma_qp_offset_list_len_minus1;
-      int cb_qp_offset_list[256];
-      int cr_qp_offset_list[256];
+      vector<int> cb_qp_offset_list;
+      vector<int> cr_qp_offset_list;
     int log2_sao_offset_scale_luma;
     int log2_sao_offset_scale_chroma;
 } pps_range_extension_t;
@@ -221,41 +221,41 @@ E.2.1  VUI parameters syntax
 */
 typedef struct
 {
-    int aspect_ratio_info_present_flag;
-      int aspect_ratio_idc;
+    uint8_t aspect_ratio_info_present_flag;
+      uint8_t aspect_ratio_idc;
       int sar_width;
       int sar_height;
-    int overscan_info_present_flag;
-      int overscan_appropriate_flag;
-    int video_signal_type_present_flag;
-      int video_format;
-      int video_full_range_flag;
-      int colour_description_present_flag;
-        int colour_primaries;
-        int transfer_characteristics;
-        int matrix_coeffs;
-    int chroma_loc_info_present_flag;
+    uint8_t overscan_info_present_flag;
+      uint8_t overscan_appropriate_flag;
+    uint8_t video_signal_type_present_flag;
+      uint8_t video_format;
+      uint8_t video_full_range_flag;
+      uint8_t colour_description_present_flag;
+        uint8_t colour_primaries;
+        uint8_t transfer_characteristics;
+        uint8_t matrix_coeffs;
+    uint8_t chroma_loc_info_present_flag;
       int chroma_sample_loc_type_top_field;
       int chroma_sample_loc_type_bottom_field;
-    int neutral_chroma_indication_flag;
-    int field_seq_flag;
-    int frame_field_info_present_flag;
-    int default_display_window_flag;
+    uint8_t neutral_chroma_indication_flag;
+    uint8_t field_seq_flag;
+    uint8_t frame_field_info_present_flag;
+    uint8_t default_display_window_flag;
       int def_disp_win_left_offset;
       int def_disp_win_right_offset;
       int def_disp_win_top_offset;
       int def_disp_win_bottom_offset;
-    int vui_timing_info_present_flag;
-      int vui_num_units_in_tick;
-      int vui_time_scale;
-      int vui_poc_proportional_to_timing_flag;
+    uint8_t vui_timing_info_present_flag;
+      uint32_t vui_num_units_in_tick;
+      uint32_t vui_time_scale;
+      uint8_t vui_poc_proportional_to_timing_flag;
         int vui_num_ticks_poc_diff_one_minus1;
-      int vui_hrd_parameters_present_flag;
+      uint8_t vui_hrd_parameters_present_flag;
       hrd_parameters_t hrd_parameters;
-    int bitstream_restriction_flag;
-      int tiles_fixed_structure_flag;
-      int motion_vectors_over_pic_boundaries_flag;
-      int restricted_ref_pic_lists_flag;
+    uint8_t bitstream_restriction_flag;
+      uint8_t tiles_fixed_structure_flag;
+      uint8_t motion_vectors_over_pic_boundaries_flag;
+      uint8_t restricted_ref_pic_lists_flag;
       int min_spatial_segmentation_idc;
       int max_bytes_per_pic_denom;
       int max_bits_per_min_cu_denom;
@@ -337,30 +337,30 @@ typedef struct
 */
 typedef struct
 {
-    int vps_video_parameter_set_id; // u(4)
-    int vps_base_layer_internal_flag; // u(1)
-    int vps_base_layer_available_flag; // u(1)
-    int vps_max_layers_minus1; // u(6)
-    int vps_max_sub_layers_minus1; // u(3)
-    int vps_temporal_id_nesting_flag; // u(1)
+    uint8_t vps_video_parameter_set_id; // u(4)
+    uint8_t vps_base_layer_internal_flag; // u(1)
+    uint8_t vps_base_layer_available_flag; // u(1)
+    uint8_t vps_max_layers_minus1; // u(6)
+    uint8_t vps_max_sub_layers_minus1; // u(3)
+    uint8_t vps_temporal_id_nesting_flag; // u(1)
     int vps_reserved_0xffff_16bits; // u(16)
     profile_tier_level_t profile_tier_level;
-    int vps_sub_layer_ordering_info_present_flag;
+    uint8_t vps_sub_layer_ordering_info_present_flag;
     // Sublayers
     int vps_max_dec_pic_buffering_minus1[8]; // max u(3)
     int vps_max_num_reorder_pics[8];
     int vps_max_latency_increase_plus1[8];
-    int vps_max_layer_id;
+    uint8_t vps_max_layer_id;
     int vps_num_layer_sets_minus1;
-    int layer_id_included_flag[64][256];
-    int vps_timing_info_present_flag;
+    vector<vector<uint8_t> > layer_id_included_flag;
+    uint8_t vps_timing_info_present_flag;
       int vps_num_units_in_tick;
       int vps_time_scale;
-      int vps_poc_proportional_to_timing_flag;
+      uint8_t vps_poc_proportional_to_timing_flag;
         int vps_num_ticks_poc_diff_one_minus1;
       int vps_num_hrd_parameters;
-      int hrd_layer_set_idx[256];
-      int cprms_present_flag[256];
+      vector<int> hrd_layer_set_idx;
+      vector<uint8_t> cprms_present_flag;
       hrd_parameters_t hrd_parameters;
     int vps_extension_flag;
       int vps_extension_data_flag;
