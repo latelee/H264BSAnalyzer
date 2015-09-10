@@ -226,6 +226,7 @@ int rbsp_to_nal(const uint8_t* rbsp_buf, const int* rbsp_size, uint8_t* nal_buf,
    The size of rbsp_buf must be the same as size of the nal_buf to guarantee the output will fit.
    If that is not true, output may be truncated and an error will be returned. 
    Additionally, certain byte sequences in the input nal_buf are not allowed in the spec and also cause the conversion to fail and an error to be returned.
+   @param[in] nal_header_size the nal header
    @param[in] nal_buf   the nal data
    @param[in,out] nal_size  as input, pointer to the size of the nal data; as output, filled in with the actual size of the nal data
    @param[in,out] rbsp_buf   allocated memory in which to put the rbsp data
@@ -234,13 +235,13 @@ int rbsp_to_nal(const uint8_t* rbsp_buf, const int* rbsp_size, uint8_t* nal_buf,
  */
 // 7.3.1 NAL unit syntax
 // 7.4.1.1 Encapsulation of an SODB within an RBSP
-int nal_to_rbsp(const uint8_t* nal_buf, int* nal_size, uint8_t* rbsp_buf, int* rbsp_size)
+int nal_to_rbsp(const int nal_header_size, const uint8_t* nal_buf, int* nal_size, uint8_t* rbsp_buf, int* rbsp_size)
 {
     int i;
     int j     = 0;
     int count = 0;
   
-    for( i = 1; i < *nal_size; i++ )
+    for( i = nal_header_size; i < *nal_size; i++ )
     { 
         // in NAL unit, 0x000000, 0x000001 or 0x000002 shall not occur at any byte-aligned position
         if( ( count == 2 ) && ( nal_buf[i] < 0x03) ) 
@@ -317,7 +318,7 @@ int read_nal_unit(h264_stream_t* h, uint8_t* buf, int size)
     int rbsp_size = size;
     uint8_t* rbsp_buf = (uint8_t*)malloc(rbsp_size);
  
-    int rc = nal_to_rbsp(buf, &nal_size, rbsp_buf, &rbsp_size);
+    int rc = nal_to_rbsp(1, buf, &nal_size, rbsp_buf, &rbsp_size);
 
     if (rc < 0) { free(rbsp_buf); return -1; } // handle conversion error
 

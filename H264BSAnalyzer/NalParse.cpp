@@ -12,6 +12,8 @@
 FILE *g_fpBitStream = NULL;                //!< the bit stream file
 #define MAX_NAL_SIZE (1*1024*1024)
 
+int g_type = 0;
+
 //static bool flag = true;
 //static int info2=0, info3=0;
 
@@ -303,7 +305,7 @@ int h264_nal_probe(char *fileurl, vector<NALU_t>& vNal, int num)
 
     memset(&n, '\0', sizeof(NALU_t));
 
-    n.type = 1; // h.265
+    n.type = g_type; // h.265
 
     int tmp = find_first_nal();
 
@@ -341,7 +343,8 @@ char outputstr[100000]={'\0'};
 int h264_nal_parse(char* filename,int data_offset,int data_lenth,LPVOID lparam)
 {
     int nal_start,nal_end;
-    h265_stream_t* h = NULL;
+    h264_stream_t* h = NULL;
+    h265_stream_t* h1 = NULL;
 
     //清空字符串-----------------
     memset(outputstr,'\0',100000);
@@ -367,13 +370,20 @@ int h264_nal_parse(char* filename,int data_offset,int data_lenth,LPVOID lparam)
 
     printf("test\n");
 
-    h = h265_new();
-    find_nal_unit(nal_temp, data_lenth, &nal_start, &nal_end);
-    //read_nal_unit(h, &nal_temp[nal_start], nal_end - nal_start);
-    h265_read_nal_unit(h, &nal_temp[nal_start], nal_end - nal_start);
-
-    //h264_debug_nal(h,h->nal);    // 打印到outputstr中
-    h265_debug_nal(h, h->nal);
+    if (g_type == 1)
+    {
+        h1 = h265_new();
+        find_nal_unit(nal_temp, data_lenth, &nal_start, &nal_end);
+        h265_read_nal_unit(h1, &nal_temp[nal_start], nal_end - nal_start);
+        h265_debug_nal(h1,h1->nal);    // 打印到outputstr中
+    }
+    else
+    {
+        h = h264_new();
+        find_nal_unit(nal_temp, data_lenth, &nal_start, &nal_end);
+        read_nal_unit(h, &nal_temp[nal_start], nal_end - nal_start);
+        h264_debug_nal(h, h->nal);  // 打印到outputstr中
+    }
     dlg->m_h264NalInfo.SetWindowText(outputstr);    // 把NAL详细信息显示到界面上
 
     //dump_hex((char*)nal_temp, data_offset, data_lenth);
@@ -390,7 +400,10 @@ int h264_nal_parse(char* filename,int data_offset,int data_lenth,LPVOID lparam)
         nal_temp = NULL;
     }
     // 必须调用，否则不释放内存
-    h265_free(h);
+    if (g_type == 1)
+        h265_free(h1);
+    else
+        h264_free(h);
 
     fclose(fp);
     return 0;

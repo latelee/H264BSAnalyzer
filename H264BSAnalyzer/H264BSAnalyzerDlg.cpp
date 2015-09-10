@@ -13,6 +13,7 @@
 #define new DEBUG_NEW
 #endif
 
+extern int g_type;
 // CAboutDlg dialog used for App About
 
 class CAboutDlg : public CDialogEx
@@ -885,7 +886,6 @@ void CH264BSAnalyzerDlg::OnNMCustomdrawH264Nallist(NMHDR *pNMHDR, LRESULT *pResu
 // 主界面需要设置Accept Files为TRUE
 void CH264BSAnalyzerDlg::OnDropFiles(HDROP hDropInfo)
 {
-    // TODO: Add your message handler code here and/or call default
     CDialogEx::OnDropFiles(hDropInfo);
 
     char* pFilePathName =(char *)malloc(MAX_URL_LENGTH);
@@ -896,17 +896,22 @@ void CH264BSAnalyzerDlg::OnDropFiles(HDROP hDropInfo)
     ::DragFinish(hDropInfo);   // 注意这个不能少，它用于释放Windows 为处理文件拖放而分配的内存
     free(pFilePathName);
 
+    char szExt[16] = {0};
+    _splitpath(m_strFileUrl, NULL, NULL, NULL, szExt);
+    if (!strcmp(&szExt[1], "h265") || !strcmp(&szExt[1], "265") ||
+        !strcmp(&szExt[1], "hevc"))
+    {
+        g_type = 1;
+    }
     OnBnClickedH264InputurlOpen();
 }
 
 void CH264BSAnalyzerDlg::OnFileOpen()
 {
-    // TODO: Add your command handler code here
-
     CString strFilePath;
-    char szFilter[] = "H.264 Files(*.h264;*.264)|*.h264;*.264|All Files(*.*)|*.*||";
+    char szFilter[] = "H.264 or H.265 Files(*.h264;*.264;*.h265;*.265)|*.h264;*.264;*.h265;*.265|All Files(*.*)|*.*||";
     CFileDialog fileDlg(TRUE, "H.264", NULL, OFN_HIDEREADONLY | OFN_NOCHANGEDIR | OFN_FILEMUSTEXIST, szFilter);
-    fileDlg.GetOFN().lpstrTitle = _T("选择H.264码流文件");   // 标题
+    fileDlg.GetOFN().lpstrTitle = _T("选择H.264或H.265码流文件");   // 标题
     if (fileDlg.DoModal() != IDOK)
     {
         return;
@@ -915,6 +920,15 @@ void CH264BSAnalyzerDlg::OnFileOpen()
     m_strFileUrl = fileDlg.GetPathName();
 
     m_edFileUrl.SetWindowTextA(m_strFileUrl);
+
+    char szExt[16] = {0};
+    _splitpath(m_strFileUrl, NULL, NULL, NULL, szExt);
+    if (!strcmp(&szExt[1], "h265") || !strcmp(&szExt[1], "265") ||
+        !strcmp(&szExt[1], "hevc"))
+    {
+        g_type = 1;
+    }
+    OnBnClickedH264InputurlOpen();
 }
 
 void CH264BSAnalyzerDlg::OnHelpAbout()

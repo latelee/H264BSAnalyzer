@@ -99,7 +99,7 @@ int h265_read_nal_unit(h265_stream_t* h, uint8_t* buf, int size)
     int rbsp_size = size;
     uint8_t* rbsp_buf = (uint8_t*)malloc(rbsp_size);
 
-    int rc = nal_to_rbsp(buf, &nal_size, rbsp_buf, &rbsp_size);
+    int rc = nal_to_rbsp(2, buf, &nal_size, rbsp_buf, &rbsp_size);
 
     if (rc < 0) { free(rbsp_buf); return -1; } // handle conversion error
 
