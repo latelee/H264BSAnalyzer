@@ -24,7 +24,7 @@ h265_stream_t* h265_new()
     h->nal = (h265_nal_t*)calloc(1, sizeof(h265_nal_t));
 
     // initialize tables
-    for ( int i = 0; i < 32; i++ ) { h->vps_table[i] = (h265_vps_t*)calloc(1, sizeof(h265_vps_t)); }
+    for ( int i = 0; i < 16; i++ ) { h->vps_table[i] = (h265_vps_t*)calloc(1, sizeof(h265_vps_t)); }
     for ( int i = 0; i < 32; i++ ) { h->sps_table[i] = (h265_sps_t*)calloc(1, sizeof(h265_sps_t)); }
     for ( int i = 0; i < 256; i++ ) { h->pps_table[i] = (h265_pps_t*)calloc(1, sizeof(h265_pps_t)); }
 
@@ -47,11 +47,15 @@ h265_stream_t* h265_new()
 void h265_free(h265_stream_t* h)
 {
     free(h->nal);
-    for ( int i = 0; i < 32; i++ ) { free( h->vps_table[i] ); }
-    for ( int i = 0; i < 32; i++ ) { free( h->sps_table[i] ); }
-    for ( int i = 0; i < 256; i++ ) { free( h->pps_table[i] ); }
+    for ( int i = 0; i < 16; i++ ) { if (h->vps_table[i]!=NULL) free( h->vps_table[i] ); }
+    for ( int i = 0; i < 32; i++ ) { if (h->sps_table[i]!=NULL) free( h->sps_table[i] ); }
+    for ( int i = 0; i < 256; i++ ) { if (h->pps_table[i]!=NULL) free( h->pps_table[i] ); }
 
-    free(h->aud);
+    if (h->aud != NULL)
+    {
+        free(h->aud);
+    }
+
     if(h->seis != NULL)
     {
         for( int i = 0; i < h->num_seis; i++ )
@@ -118,9 +122,9 @@ int h265_read_nal_unit(h265_stream_t* h, uint8_t* buf, int size)
             nal->sizeof_parsed = sizeof(h265_pps_t);
             break;
         case NAL_UNIT_PREFIX_SEI:
-            h265_read_sei_rbsp(h, b);
-            nal->parsed = h->sei;
-            nal->sizeof_parsed = sizeof(h265_sei_t);
+            //h265_read_sei_rbsp(h, b);
+            //nal->parsed = h->sei;
+            //nal->sizeof_parsed = sizeof(h265_sei_t);
             break;
         case NAL_UNIT_SUFFIX_SEI: // todo
             h265_read_sei_rbsp(h, b);
@@ -279,8 +283,8 @@ void h265_read_ptl(profile_tier_level_t* ptl, bs_t* b, int profilePresentFlag, i
         }
     }
     ptl->general_level_idc = bs_read_u8(b);
-    ptl->sub_layer_profile_present_flag.resize(ptl->general_level_idc);
-    ptl->sub_layer_level_present_flag.resize(ptl->general_level_idc);
+    ptl->sub_layer_profile_present_flag.resize(max_sub_layers_minus1);
+    ptl->sub_layer_level_present_flag.resize(max_sub_layers_minus1);
     for (i = 0; i < max_sub_layers_minus1; i++)
     {
         ptl->sub_layer_profile_present_flag[i] = bs_read_u1(b);
@@ -293,15 +297,13 @@ void h265_read_ptl(profile_tier_level_t* ptl, bs_t* b, int profilePresentFlag, i
             ptl->reserved_zero_2bits[i] = bs_read_u(b, 2);
         }
     }
-
-    ptl->sub_layer_profile_present_flag.resize(max_sub_layers_minus1);
     ptl->sub_layer_profile_space.resize(max_sub_layers_minus1);
     ptl->sub_layer_tier_flag.resize(max_sub_layers_minus1);
     ptl->sub_layer_profile_idc.resize(max_sub_layers_minus1);
     ptl->sub_layer_profile_compatibility_flag.resize(max_sub_layers_minus1);
-    for (int j = 0; j < 32; j++)
+    for (int j = 0; j < max_sub_layers_minus1; j++)
     {
-        ptl->sub_layer_profile_compatibility_flag[j].resize(j);
+        ptl->sub_layer_profile_compatibility_flag[j].resize(32);
     }
     ptl->sub_layer_progressive_source_flag.resize(max_sub_layers_minus1);
     ptl->sub_layer_interlaced_source_flag.resize(max_sub_layers_minus1);
@@ -358,17 +360,15 @@ void h265_read_ptl(profile_tier_level_t* ptl, bs_t* b, int profilePresentFlag, i
             {
                 uint64_t tmp1 = bs_read_u(b, 32);
                 uint64_t tmp2 = bs_read_u(b, 12);
-                ptl->sub_layer_reserved_zero_34bits[i] = tmp1+tmp2;
+                ptl->sub_layer_reserved_zero_43bits[i] = tmp1+tmp2;
             }
-            /* error...
+            // to check
             if ((ptl->sub_layer_profile_idc[i]>=1 && ptl->sub_layer_profile_idc[i]<=5) ||
-                ptl->sub_layer_profile_compatibility_flag[1] ||
-                ptl->sub_layer_profile_compatibility_flag[2] ||
-                ptl->sub_layer_profile_compatibility_flag[3] ||
-                ptl->sub_layer_profile_compatibility_flag[4] ||
-                ptl->sub_layer_profile_compatibility_flag[5])
-            */
-            if (0)
+                !ptl->sub_layer_profile_compatibility_flag[1].empty() ||
+                !ptl->sub_layer_profile_compatibility_flag[2].empty() ||
+                !ptl->sub_layer_profile_compatibility_flag[3].empty() ||
+                !ptl->sub_layer_profile_compatibility_flag[4].empty() ||
+                !ptl->sub_layer_profile_compatibility_flag[5].empty())
             {
                 ptl->sub_layer_inbld_flag[i] = bs_read_u1(b);
             }
@@ -847,7 +847,7 @@ void  h265_read_vps_rbsp(h265_stream_t* h, bs_t* b)
     vps->vps_reserved_0xffff_16bits    = bs_read_u(b, 16);
 
     // profile tier level...
-    h265_read_ptl(&vps->profile_tier_level, b, 1, vps->vps_max_sub_layers_minus1);
+    h265_read_ptl(&vps->ptl, b, 1, vps->vps_max_sub_layers_minus1);
 
     vps->vps_sub_layer_ordering_info_present_flag = bs_read_u1(b);
     for (i = (vps->vps_sub_layer_ordering_info_present_flag ? 0 : vps->vps_max_sub_layers_minus1);
@@ -938,7 +938,7 @@ void  h265_read_sps_rbsp(h265_stream_t* h, bs_t* b)
     h265_sps_t* sps = h->sps;
     memset(sps, 0, sizeof(h265_sps_t));
 
-    memcpy(&(sps->profile_tier_level), &profile_tier_level, sizeof(profile_tier_level_t));
+    memcpy(&(sps->ptl), &profile_tier_level, sizeof(profile_tier_level_t));
 
     sps->chroma_format_idc  = bs_read_ue(b);
     if (sps->chroma_format_idc == 3)

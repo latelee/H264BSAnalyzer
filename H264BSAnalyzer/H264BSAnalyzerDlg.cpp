@@ -895,6 +895,8 @@ void CH264BSAnalyzerDlg::OnDropFiles(HDROP hDropInfo)
     m_strFileUrl.Format(_T("%s"), pFilePathName);
     ::DragFinish(hDropInfo);   // 注意这个不能少，它用于释放Windows 为处理文件拖放而分配的内存
     free(pFilePathName);
+
+    OnBnClickedH264InputurlOpen();
 }
 
 void CH264BSAnalyzerDlg::OnFileOpen()

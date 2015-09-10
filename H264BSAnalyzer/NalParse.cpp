@@ -328,7 +328,7 @@ int h264_nal_probe(char *fileurl, vector<NALU_t>& vNal, int num)
 }
 
 static void h264_debug_nal(h264_stream_t* h, nal_t* nal);
-static void h265_debug_nal(h265_stream_t* h, nal_t* nal);
+static void h265_debug_nal(h265_stream_t* h, h265_nal_t* nal);
 void dump_hex(const char *buffer, int offset, int len);
 
 // todo：不使用这种写死空间的做法
@@ -341,7 +341,7 @@ char outputstr[100000]={'\0'};
 int h264_nal_parse(char* filename,int data_offset,int data_lenth,LPVOID lparam)
 {
     int nal_start,nal_end;
-    h264_stream_t* h = NULL;
+    h265_stream_t* h = NULL;
 
     //清空字符串-----------------
     memset(outputstr,'\0',100000);
@@ -367,11 +367,13 @@ int h264_nal_parse(char* filename,int data_offset,int data_lenth,LPVOID lparam)
 
     printf("test\n");
 
-    h = h264_new();
+    h = h265_new();
     find_nal_unit(nal_temp, data_lenth, &nal_start, &nal_end);
-    read_nal_unit(h, &nal_temp[nal_start], nal_end - nal_start);
+    //read_nal_unit(h, &nal_temp[nal_start], nal_end - nal_start);
+    h265_read_nal_unit(h, &nal_temp[nal_start], nal_end - nal_start);
 
-    h264_debug_nal(h,h->nal);    // 打印到outputstr中
+    //h264_debug_nal(h,h->nal);    // 打印到outputstr中
+    h265_debug_nal(h, h->nal);
     dlg->m_h264NalInfo.SetWindowText(outputstr);    // 把NAL详细信息显示到界面上
 
     //dump_hex((char*)nal_temp, data_offset, data_lenth);
@@ -388,7 +390,7 @@ int h264_nal_parse(char* filename,int data_offset,int data_lenth,LPVOID lparam)
         nal_temp = NULL;
     }
     // 必须调用，否则不释放内存
-    h264_free(h);
+    h265_free(h);
 
     fclose(fp);
     return 0;
@@ -860,26 +862,195 @@ static void debug_bytes(uint8_t* buf, int len)
 }
 
 ////////////////////////////////////////////////////////
-
-static void h265_debug_nal(h265_stream_t* h, nal_t* nal)
+static void h265_debug_ptl(profile_tier_level_t* ptl, int profilePresentFlag, int max_sub_layers_minus1)
 {
-    my_printf("==================== NAL1 ====================\n");
-    my_printf(" forbidden_zero_bit : %d \n", nal->forbidden_zero_bit );
-    my_printf(" nal_ref_idc : %d \n", nal->nal_ref_idc );
+    if (profilePresentFlag)
+    {
+        my_printf("  general_profile_space: %d\n", ptl->general_profile_space);
+        my_printf("  general_tier_flag: %d\n", ptl->general_tier_flag);
+        my_printf("  general_profile_idc: %d\n", ptl->general_profile_idc);
+        for (int i = 0; i < 32; i++)
+        {
+            my_printf("  general_profile_compatibility_flag[%d]: %d\n", i, ptl->general_profile_compatibility_flag[i]);
+        }
+        my_printf("  general_progressive_source_flag: %d\n", ptl->general_progressive_source_flag);
+        my_printf("  general_interlaced_source_flag: %d\n", ptl->general_interlaced_source_flag);
+        my_printf("  general_non_packed_constraint_flag: %d\n", ptl->general_non_packed_constraint_flag);
+        my_printf("  general_frame_only_constraint_flag: %d\n", ptl->general_frame_only_constraint_flag);
+        if (ptl->general_profile_idc==4 || ptl->general_profile_compatibility_flag[4] ||
+            ptl->general_profile_idc==5 || ptl->general_profile_compatibility_flag[5] ||
+            ptl->general_profile_idc==6 || ptl->general_profile_compatibility_flag[6] ||
+            ptl->general_profile_idc==7 || ptl->general_profile_compatibility_flag[7])
+        {
+            my_printf("  general_max_12bit_constraint_flag: %d\n", ptl->general_max_12bit_constraint_flag);
+            my_printf("  general_max_10bit_constraint_flag: %d\n", ptl->general_max_10bit_constraint_flag);
+            my_printf("  general_max_8bit_constraint_flag: %d\n", ptl->general_max_8bit_constraint_flag);
+            my_printf("  general_max_422chroma_constraint_flag: %d\n", ptl->general_max_422chroma_constraint_flag);
+            my_printf("  general_max_420chroma_constraint_flag: %d\n", ptl->general_max_420chroma_constraint_flag);
+            my_printf("  general_max_monochrome_constraint_flag: %d\n", ptl->general_max_monochrome_constraint_flag);
+            my_printf("  general_intra_constraint_flag: %d\n", ptl->general_intra_constraint_flag);
+            my_printf("  general_one_picture_only_constraint_flag: %d\n", ptl->general_one_picture_only_constraint_flag);
+            my_printf("  general_lower_bit_rate_constraint_flag: %d\n", ptl->general_lower_bit_rate_constraint_flag);
+            my_printf("  general_reserved_zero_34bits: %u\n", ptl->general_reserved_zero_34bits);// todo
+        }
+        else
+        {
+            my_printf("  general_reserved_zero_43bits: %u\n", ptl->general_reserved_zero_43bits);// todo
+        }
+        if ((ptl->general_profile_idc>=1 && ptl->general_profile_idc<=5) ||
+            ptl->general_profile_compatibility_flag[1] || ptl->general_profile_compatibility_flag[2] ||
+            ptl->general_profile_compatibility_flag[3] || ptl->general_profile_compatibility_flag[4] ||
+            ptl->general_profile_compatibility_flag[5])
+        {
+            my_printf("  general_inbld_flag: %d\n", ptl->general_inbld_flag);
+        }
+        else
+        {
+            my_printf("  general_reserved_zero_bit: %d\n", ptl->general_reserved_zero_bit);
+        }
+    }
+        
+    my_printf("  general_level_idc: %d\n", ptl->general_level_idc);
+    for (int i = 0; i < max_sub_layers_minus1; i++)
+    {
+        my_printf("  sub_layer_profile_present_flag[%d]: %d\n", i, ptl->sub_layer_profile_present_flag[i]);
+        my_printf("  sub_layer_level_present_flag[%d]: %d\n", i, ptl->sub_layer_level_present_flag[i]);
+    }
+    if (max_sub_layers_minus1 > 0)
+    {
+        for (int i = max_sub_layers_minus1; i < 8; i++)
+        {
+            my_printf("  reserved_zero_2bits[%d]: %d\n", i, ptl->reserved_zero_2bits[i]);
+        }
+    }
+    for (int i = 0; i < max_sub_layers_minus1; i++)
+    {
+        if (ptl->sub_layer_profile_present_flag[i])
+        {
+            my_printf("  sub_layer_profile_space[%d]: %d\n", i, ptl->sub_layer_profile_space[i]);
+            my_printf("  sub_layer_tier_flag[%d]: %d\n", i, ptl->sub_layer_tier_flag[i]);
+            my_printf("  sub_layer_profile_idc[%d]: %d\n", i, ptl->sub_layer_profile_idc[i]);
+            for (int j = 0; j < 32; j++)
+            {
+                my_printf("  sub_layer_profile_compatibility_flag[%d][%d]: %d\n", i, j, ptl->sub_layer_profile_compatibility_flag[i][j]);
+            }
+            my_printf("  sub_layer_progressive_source_flag[%d]: %d\n", i, ptl->sub_layer_progressive_source_flag[i]);
+            my_printf("  sub_layer_interlaced_source_flag[%d]: %d\n", i, ptl->sub_layer_interlaced_source_flag[i]);
+            my_printf("  sub_layer_non_packed_constraint_flag[%d]: %d\n", i, ptl->sub_layer_non_packed_constraint_flag[i]);
+            my_printf("  sub_layer_frame_only_constraint_flag[%d]: %d\n", i, ptl->sub_layer_frame_only_constraint_flag[i]);
+            if (ptl->sub_layer_profile_idc[i]==4 || ptl->sub_layer_profile_compatibility_flag[i][4] ||
+                ptl->sub_layer_profile_idc[i]==5 || ptl->sub_layer_profile_compatibility_flag[i][5] ||
+                ptl->sub_layer_profile_idc[i]==6 || ptl->sub_layer_profile_compatibility_flag[i][6] ||
+                ptl->sub_layer_profile_idc[i]==7 || ptl->sub_layer_profile_compatibility_flag[i][7])
+            {
+                my_printf("  sub_layer_max_12bit_constraint_flag[%d]: %d\n", i, ptl->sub_layer_max_12bit_constraint_flag[i]);
+                my_printf("  sub_layer_max_10bit_constraint_flag[%d]: %d\n", i, ptl->sub_layer_max_10bit_constraint_flag[i]);
+                my_printf("  sub_layer_max_8bit_constraint_flag[%d]: %d\n", i, ptl->sub_layer_max_8bit_constraint_flag[i]);
+                my_printf("  sub_layer_max_422chroma_constraint_flag[%d]: %d\n", i, ptl->sub_layer_max_422chroma_constraint_flag[i]);
+                my_printf("  sub_layer_max_420chroma_constraint_flag[%d]: %d\n", i, ptl->sub_layer_max_420chroma_constraint_flag[i]);
+                my_printf("  sub_layer_max_monochrome_constraint_flag[%d]: %d\n", i, ptl->sub_layer_max_monochrome_constraint_flag[i]);
+                my_printf("  sub_layer_intra_constraint_flag[%d]: %d\n", i, ptl->sub_layer_intra_constraint_flag[i]);
+                my_printf("  sub_layer_one_picture_only_constraint_flag[%d]: %d\n", i, ptl->sub_layer_one_picture_only_constraint_flag[i]);
+                my_printf("  sub_layer_lower_bit_rate_constraint_flag[%d]: %d\n", i, ptl->sub_layer_lower_bit_rate_constraint_flag[i]);
+                my_printf("  sub_layer_reserved_zero_34bits[%d]: %ul\n", i, ptl->sub_layer_reserved_zero_34bits[i]);// todo
+            }
+            else
+            {
+                my_printf("  sub_layer_reserved_zero_43bits: %ul\n", ptl->sub_layer_reserved_zero_43bits);// todo
+            }
+            // to check
+            if ((ptl->sub_layer_profile_idc[i]>=1 && ptl->sub_layer_profile_idc[i]<=5) ||
+                !ptl->sub_layer_profile_compatibility_flag[1].empty() ||
+                !ptl->sub_layer_profile_compatibility_flag[2].empty() ||
+                !ptl->sub_layer_profile_compatibility_flag[3].empty() ||
+                !ptl->sub_layer_profile_compatibility_flag[4].empty() ||
+                !ptl->sub_layer_profile_compatibility_flag[5].empty())
+            {
+                my_printf("  sub_layer_inbld_flag[%d]: %d\n", i, ptl->sub_layer_inbld_flag[i]);
+            }
+            else
+            {
+                my_printf("  sub_layer_reserved_zero_bit[%d]: %d\n", i, ptl->sub_layer_reserved_zero_bit[i]);
+            }
+        }
+        if (ptl->sub_layer_level_present_flag[i])
+        {
+            my_printf("  sub_layer_level_idc[%d]: %d\n", i, ptl->sub_layer_level_idc[i]);
+        }
+    }
+    
+}
+// vps
+static void h265_debug_vps(h265_vps_t* vps)
+{
+    my_printf("======= HEVC VPS =======\n");
+    my_printf(" vps_video_parameter_set_id: %d\n", vps->vps_video_parameter_set_id);
+    my_printf(" vps_base_layer_internal_flag: %d\n", vps->vps_base_layer_internal_flag);
+    my_printf(" vps_base_layer_available_flag: %d\n", vps->vps_base_layer_available_flag);
+    my_printf(" vps_max_layers_minus1: %d\n", vps->vps_max_layers_minus1);
+    my_printf(" vps_max_sub_layers_minus1: %d\n", vps->vps_max_sub_layers_minus1);
+    my_printf(" vps_temporal_id_nesting_flag: %d\n", vps->vps_temporal_id_nesting_flag);
+    my_printf(" vps_reserved_0xffff_16bits: %d\n", vps->vps_reserved_0xffff_16bits);
+    // ptl
+    my_printf(" profile_tier_level()\n");
+    h265_debug_ptl(&vps->ptl, 1, vps->vps_max_layers_minus1);
+    
+    my_printf("  vps_sub_layer_ordering_info_present_flag: %d\n", vps->vps_sub_layer_ordering_info_present_flag);
+    
+    
+    
+}
+
+// sps
+static void h265_debug_sps(h265_sps_t* sps)
+{
+    my_printf("======= HEVC SPS =======\n");
+}
+
+// pps
+static void h265_debug_pps(h265_pps_t* pps)
+{
+    my_printf("======= HEVC PPS =======\n");
+}
+
+// aud
+static void h265_debug_aud(h265_aud_t* aud)
+{
+    my_printf("======= HEVC AUD =======\n");
+}
+// sei
+static void h265_debug_sei(h265_stream_t* h)
+{
+    my_printf("======= HEVC SEI =======\n");
+}
+
+static void h265_debug_slice_header(h265_slice_header_t* hrd)
+{
+    my_printf("======= HEVC Slice Header =======\n");
+}
+
+static void h265_debug_nal(h265_stream_t* h, h265_nal_t* nal)
+{
+    int my_nal_type = -1;
+
     const char* nal_unit_type_name;
     switch (nal->nal_unit_type)
     {
     case NAL_UNIT_VPS:
         nal_unit_type_name = "Video parameter set";
+        my_nal_type = 0;
         break;
     case NAL_UNIT_SPS:
         nal_unit_type_name = "Sequence parameter set";
+        my_nal_type = 1;
         break;
     case NAL_UNIT_PPS:
         nal_unit_type_name = "Picture parameter set";
+        my_nal_type = 2;
         break;
     case NAL_UNIT_AUD:
         nal_unit_type_name = "Access unit delimiter";
+        my_nal_type = 3;
         break;
     case NAL_UNIT_EOS:
         nal_unit_type_name = "End of sequence";
@@ -893,31 +1064,38 @@ static void h265_debug_nal(h265_stream_t* h, nal_t* nal)
     case NAL_UNIT_PREFIX_SEI:
     case NAL_UNIT_SUFFIX_SEI:
         nal_unit_type_name = "Supplemental enhancement information";
+        my_nal_type = 4;
         break;
     case NAL_UNIT_CODED_SLICE_TRAIL_N:
     case NAL_UNIT_CODED_SLICE_TRAIL_R:
         nal_unit_type_name = "Coded slice segment of a non-TSA, non-STSA trailing picture";
+        my_nal_type = 5;
         break;
     case NAL_UNIT_CODED_SLICE_TSA_N:
     case NAL_UNIT_CODED_SLICE_TSA_R:
         nal_unit_type_name = "Coded slice segment of a TSA picture";
+        my_nal_type = 5;
         break;
     case NAL_UNIT_CODED_SLICE_STSA_N:
     case NAL_UNIT_CODED_SLICE_STSA_R:
         nal_unit_type_name = "Coded slice segment of an STSA picture";
+        my_nal_type = 5;
         break;
     case NAL_UNIT_CODED_SLICE_RADL_N:
     case NAL_UNIT_CODED_SLICE_RADL_R:
         nal_unit_type_name = "Coded slice segment of a RADL picture";
+        my_nal_type = 5;
         break;
     case NAL_UNIT_CODED_SLICE_RASL_N:
     case NAL_UNIT_CODED_SLICE_RASL_R:
         nal_unit_type_name = "Coded slice segment of a RASL picture";
+        my_nal_type = 5;
         break;
     case NAL_UNIT_RESERVED_VCL_N10:
     case NAL_UNIT_RESERVED_VCL_N12:
     case NAL_UNIT_RESERVED_VCL_N14:
         nal_unit_type_name = "Reserved non-IRAP SLNR VCL NAL unit types";
+        my_nal_type = 5;
         break;
     case NAL_UNIT_RESERVED_VCL_R11:
     case NAL_UNIT_RESERVED_VCL_R13:
@@ -928,10 +1106,12 @@ static void h265_debug_nal(h265_stream_t* h, nal_t* nal)
     case NAL_UNIT_CODED_SLICE_BLA_W_RADL:
     case NAL_UNIT_CODED_SLICE_BLA_N_LP:
         nal_unit_type_name = "Coded slice segment of a BLA picture";
+        my_nal_type = 5;
         break;
     case NAL_UNIT_CODED_SLICE_IDR_W_RADL:
     case NAL_UNIT_CODED_SLICE_IDR_N_LP:
         nal_unit_type_name = "Coded slice segment of an IDR picture";
+        my_nal_type = 5;
         break;
     case NAL_UNIT_CODED_SLICE_CRA:
         nal_unit_type_name = "Coded slice segment of a CRA picture";
@@ -982,5 +1162,24 @@ static void h265_debug_nal(h265_stream_t* h, nal_t* nal)
         nal_unit_type_name = "Unknown";
         break;
     }
-    my_printf(" nal_unit_type : %d ( %s ) \n", nal->nal_unit_type, nal_unit_type_name );
+    // nal header
+    my_printf("==================== HEVC NAL ====================\n");
+    my_printf(" forbidden_zero_bit : %d \n", nal->forbidden_zero_bit);
+    my_printf(" nal_unit_type : %d ( %s ) \n", nal->nal_unit_type, nal_unit_type_name);
+    my_printf(" nal_ref_idc : %d \n", nal->nuh_layer_id);
+    my_printf(" nal_ref_idc : %d \n", nal->nuh_temporal_id_plus1);
+    
+    // nal unit
+    if(my_nal_type == 0)
+        h265_debug_vps(h->vps);
+    else if(my_nal_type == 1)
+        h265_debug_sps(h->sps);
+    else if(my_nal_type == 2)
+        h265_debug_pps(h->pps);
+    else if(my_nal_type == 3)
+        h265_debug_aud(h->aud);
+    else if(my_nal_type == 4)
+        h265_debug_sei(h);
+    else if( nal->nal_unit_type == 5)
+        h265_debug_slice_header(h->sh);
 }

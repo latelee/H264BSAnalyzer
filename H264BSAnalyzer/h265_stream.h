@@ -318,7 +318,7 @@ typedef struct
     uint8_t vps_max_sub_layers_minus1; // u(3)
     uint8_t vps_temporal_id_nesting_flag; // u(1)
     int vps_reserved_0xffff_16bits; // u(16)
-    profile_tier_level_t profile_tier_level;
+    profile_tier_level_t ptl;
     uint8_t vps_sub_layer_ordering_info_present_flag;
     // Sublayers
     int vps_max_dec_pic_buffering_minus1[8]; // max u(3)
@@ -349,7 +349,7 @@ typedef struct
     int sps_video_parameter_set_id;
     int sps_max_sub_layers_minus1;
     int sps_temporal_id_nesting_flag;
-    profile_tier_level_t profile_tier_level;
+    profile_tier_level_t ptl;
     int sps_seq_parameter_set_id;
     int chroma_format_idc;
     int separate_colour_plane_flag;
