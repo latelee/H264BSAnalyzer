@@ -49,32 +49,6 @@ typedef struct
    Profile, tier and level
    @see 7.3.3 Profile, tier and level syntax
 */
-/*
-vector<int> sub_layer_profile_present_flag;
-vector<int> sub_layer_level_present_flag;
-vector<int> reserved_zero_2bits;
-vector<int> sub_layer_profile_space;
-vector<int> sub_layer_tier_flag;
-vector<int> sub_layer_profile_idc;
-//int sub_layer_profile_compatibility_flag[256][32];
-vector<vector <int> > sub_layer_profile_compatibility_flag;
-vector<int> sub_layer_progressive_source_flag;
-vector<int> sub_layer_interlaced_source_flag;
-vector<int> sub_layer_non_packed_constraint_flag;
-vector<int> sub_layer_frame_only_constraint_flag;
-vector<int> sub_layer_max_12bit_constraint_flag;
-vector<int> sub_layer_max_10bit_constraint_flag;
-vector<int> sub_layer_max_8bit_constraint_flag;
-// todo...
-vector<int> sub_layer_max_422chroma_constraint_flag;
-vector<int> sub_layer_max_420chroma_constraint_flag;
-vector<int> sub_layer_max_monochrome_constraint_flag;
-vector<int> sub_layer_intra_constraint_flag;
-vector<int> sub_layer_one_picture_only_constraint_flag;
-vector<int> sub_layer_lower_bit_rate_constraint_flag;
-vector<uint64_t> sub_layer_reserved_zero_34bits;
-vector<uint64_t> sub_layer_reserved_zero_43bits;
-*/
 typedef struct
 {
     uint8_t general_profile_space;
@@ -129,11 +103,11 @@ typedef struct
 
 typedef struct
 {
-    int bit_rate_value_minus1[256];
-    int cpb_size_value_minus1[256];
-    int cpb_size_du_value_minus1[256];
-    int bit_rate_du_value_minus1[256];
-    int cbr_flag[256];
+    vector<int> bit_rate_value_minus1;
+    vector<int> cpb_size_value_minus1;
+    vector<int> cpb_size_du_value_minus1;
+    vector<int> bit_rate_du_value_minus1;
+    vector<uint8_t> cbr_flag;
 } sub_layer_hrd_parameters_t;
 
 /**
@@ -169,15 +143,15 @@ sps_range_extension
 */
 typedef struct
 {
-    int transform_skip_rotation_enabled_flag;
-    int transform_skip_context_enabled_flag;
-    int implicit_rdpcm_enabled_flag;
-    int explicit_rdpcm_enabled_flag;
-    int extended_precision_processing_flag;
-    int intra_smoothing_disabled_flag;
-    int high_precision_offsets_enabled_flag;
-    int persistent_rice_adaptation_enabled_flag;
-    int cabac_bypass_alignment_enabled_flag;
+    uint8_t transform_skip_rotation_enabled_flag;
+    uint8_t transform_skip_context_enabled_flag;
+    uint8_t implicit_rdpcm_enabled_flag;
+    uint8_t explicit_rdpcm_enabled_flag;
+    uint8_t extended_precision_processing_flag;
+    uint8_t intra_smoothing_disabled_flag;
+    uint8_t high_precision_offsets_enabled_flag;
+    uint8_t persistent_rice_adaptation_enabled_flag;
+    uint8_t cabac_bypass_alignment_enabled_flag;
 } sps_range_extension_t;
 
 /**
@@ -271,21 +245,21 @@ typedef struct
 {
     int luma_log2_weight_denom;
     int delta_chroma_log2_weight_denom;
-    int luma_weight_l0_flag[256];
-    int chroma_weight_l0_flag[256];
-    int delta_luma_weight_l0[256];
-    int luma_offset_l0[256];
-    int delta_chroma_weight_l0[256][2];
-    int delta_chroma_offset_l0[256][2];
-    int luma_weight_l1_flag[256];
-    int chroma_weight_l1_flag[256];
-    int delta_luma_weight_l1[256];
-    int luma_offset_l1[256];
-    int delta_chroma_weight_l1[256][2];
-    int delta_chroma_offset_l1[256][2];
+    vector<uint8_t> luma_weight_l0_flag;
+    vector<uint8_t> chroma_weight_l0_flag;
+    vector<int> delta_luma_weight_l0;
+    vector<int> luma_offset_l0;
+    vector<vector <int> > delta_chroma_weight_l0;
+    vector<vector <int> > delta_chroma_offset_l0;
+    vector<uint8_t> luma_weight_l1_flag;
+    vector<uint8_t> chroma_weight_l1_flag;
+    vector<int> delta_luma_weight_l1;
+    vector<int> luma_offset_l1;
+    vector<vector<int> > delta_chroma_weight_l1;
+    vector<vector<int> > delta_chroma_offset_l1;
 } pred_weight_table_t;
 
-typedef struct 
+typedef struct
 {
     uint8_t inter_ref_pic_set_prediction_flag;
     int delta_idx_minus1;
@@ -323,7 +297,7 @@ typedef struct
     int m_deltaPocMSBPresentFlag[MAX_NUM_REF_PICS];
 } referencePictureSets_t;
 
-typedef struct  
+typedef struct
 {
     uint8_t ref_pic_list_modification_flag_l0;
     uint32_t list_entry_l0[32]; // according to HM16.6 source code
@@ -417,8 +391,8 @@ typedef struct
     vector<referencePictureSets_t> m_RPSList; // store
     int long_term_ref_pics_present_flag;
       int num_long_term_ref_pics_sps;
-      int lt_ref_pic_poc_lsb_sps[256]; // todo
-      int used_by_curr_pic_lt_sps_flag[256]; // todo
+      vector<int> lt_ref_pic_poc_lsb_sps;
+      vector<int> used_by_curr_pic_lt_sps_flag;
     int sps_temporal_mvp_enabled_flag;
     int strong_intra_smoothing_enabled_flag;
     int vui_parameters_present_flag;
@@ -466,8 +440,8 @@ typedef struct
       int num_tile_columns_minus1;
       int num_tile_rows_minus1;
       int uniform_spacing_flag;
-        int column_width_minus1[256];
-        int row_height_minus1[256];
+        vector<int> column_width_minus1;
+        vector<int> row_height_minus1;
       int loop_filter_across_tiles_enabled_flag;
     int pps_loop_filter_across_slices_enabled_flag;
     int deblocking_filter_control_present_flag;
@@ -503,7 +477,7 @@ typedef struct
     int slice_pic_parameter_set_id;
       int dependent_slice_segment_flag;
       int slice_segment_address;
-        int slice_reserved_flag[256];
+        vector<uint8_t> slice_reserved_flag;
         int slice_type;
         int pic_output_flag;
         int colour_plane_id;
@@ -515,11 +489,11 @@ typedef struct
         int short_term_ref_pic_set_idx;
         int num_long_term_sps;
         int num_long_term_pics;
-        int lt_idx_sps[256];
-        int poc_lsb_lt[256];
-        int used_by_curr_pic_lt_flag[256];
-        int delta_poc_msb_present_flag[256];
-        int delta_poc_msb_cycle_lt[256];
+        vector<int> lt_idx_sps;
+        vector<int> poc_lsb_lt;
+        vector<uint8_t> used_by_curr_pic_lt_flag;
+        vector<uint8_t> delta_poc_msb_present_flag;
+        vector<int> delta_poc_msb_cycle_lt;
     int slice_temporal_mvp_enabled_flag;
     int slice_sao_luma_flag;
     int slice_sao_chroma_flag;
@@ -544,9 +518,9 @@ typedef struct
     int slice_loop_filter_across_slices_enabled_flag;
     int num_entry_point_offsets;
     int offset_len_minus1;
-    int entry_point_offset_minus1[256];
+    vector<int> entry_point_offset_minus1;
     int slice_segment_header_extension_length;
-    int slice_segment_header_extension_data_byte[256];
+    vector<int> slice_segment_header_extension_data_byte;
     // byte_alignment( )...
 } h265_slice_header_t;
 
@@ -556,7 +530,7 @@ typedef struct
   uint8_t* rbsp_buf;
 } h265_slice_data_rbsp_t;
 
-typedef struct  
+typedef struct
 {
 
 } mySPS_t;
