@@ -267,7 +267,7 @@ void h265_read_ptl(profile_tier_level_t* ptl, bs_t* b, int profilePresentFlag, i
         else
         {
             uint64_t tmp1 = bs_read_u(b, 32);
-            uint64_t tmp2 = bs_read_u(b, 12);
+            uint64_t tmp2 = bs_read_u(b, 11);
             ptl->general_reserved_zero_43bits = tmp1+tmp2;
         }
         if ((ptl->general_profile_idc>=1 && ptl->general_profile_idc<=5) ||
@@ -364,11 +364,11 @@ void h265_read_ptl(profile_tier_level_t* ptl, bs_t* b, int profilePresentFlag, i
             }
             // to check
             if ((ptl->sub_layer_profile_idc[i]>=1 && ptl->sub_layer_profile_idc[i]<=5) ||
-                !ptl->sub_layer_profile_compatibility_flag[1].empty() ||
-                !ptl->sub_layer_profile_compatibility_flag[2].empty() ||
-                !ptl->sub_layer_profile_compatibility_flag[3].empty() ||
-                !ptl->sub_layer_profile_compatibility_flag[4].empty() ||
-                !ptl->sub_layer_profile_compatibility_flag[5].empty())
+                ptl->sub_layer_profile_compatibility_flag[i][1] ||
+                ptl->sub_layer_profile_compatibility_flag[i][2] ||
+                ptl->sub_layer_profile_compatibility_flag[i][3] ||
+                ptl->sub_layer_profile_compatibility_flag[i][4] ||
+                ptl->sub_layer_profile_compatibility_flag[i][5])
             {
                 ptl->sub_layer_inbld_flag[i] = bs_read_u1(b);
             }

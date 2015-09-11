@@ -973,11 +973,11 @@ static void h265_debug_ptl(profile_tier_level_t* ptl, int profilePresentFlag, in
             }
             // to check
             if ((ptl->sub_layer_profile_idc[i]>=1 && ptl->sub_layer_profile_idc[i]<=5) ||
-                !ptl->sub_layer_profile_compatibility_flag[1].empty() ||
-                !ptl->sub_layer_profile_compatibility_flag[2].empty() ||
-                !ptl->sub_layer_profile_compatibility_flag[3].empty() ||
-                !ptl->sub_layer_profile_compatibility_flag[4].empty() ||
-                !ptl->sub_layer_profile_compatibility_flag[5].empty())
+                ptl->sub_layer_profile_compatibility_flag[i][1] ||
+                ptl->sub_layer_profile_compatibility_flag[i][2] ||
+                ptl->sub_layer_profile_compatibility_flag[i][3] ||
+                ptl->sub_layer_profile_compatibility_flag[i][4] ||
+                ptl->sub_layer_profile_compatibility_flag[i][5])
             {
                 my_printf("  sub_layer_inbld_flag[%d]: %d\n", i, ptl->sub_layer_inbld_flag[i]);
             }
@@ -993,9 +993,11 @@ static void h265_debug_ptl(profile_tier_level_t* ptl, int profilePresentFlag, in
     }
     
 }
+
 // vps
 static void h265_debug_vps(h265_vps_t* vps)
 {
+    int i, j;
     my_printf("======= HEVC VPS =======\n");
     my_printf(" vps_video_parameter_set_id: %d\n", vps->vps_video_parameter_set_id);
     my_printf(" vps_base_layer_internal_flag: %d\n", vps->vps_base_layer_internal_flag);
@@ -1008,10 +1010,50 @@ static void h265_debug_vps(h265_vps_t* vps)
     my_printf(" profile_tier_level()\n");
     h265_debug_ptl(&vps->ptl, 1, vps->vps_max_layers_minus1);
     
-    my_printf("  vps_sub_layer_ordering_info_present_flag: %d\n", vps->vps_sub_layer_ordering_info_present_flag);
-    
-    
-    
+    my_printf(" vps_sub_layer_ordering_info_present_flag: %d\n", vps->vps_sub_layer_ordering_info_present_flag);
+    my_printf(" SubLayers\n");
+    for (i = (vps->vps_sub_layer_ordering_info_present_flag ? 0 : vps->vps_max_sub_layers_minus1);
+        i <= vps->vps_max_sub_layers_minus1; i++ )
+    {
+        my_printf("  vps_max_dec_pic_buffering_minus1[%d]: %d\n", i, vps->vps_max_dec_pic_buffering_minus1[i]);
+        my_printf("  vps_max_num_reorder_pics[%d]: %d\n", i, vps->vps_max_num_reorder_pics[i]);
+        my_printf("  vps_max_latency_increase_plus1[%d]: %d\n", i, vps->vps_max_latency_increase_plus1[i]);
+    }
+    my_printf(" vps_max_layer_id: %d\n", vps->vps_max_layer_id);
+    my_printf(" vps_num_layer_sets_minus1: %d\n", vps->vps_num_layer_sets_minus1);
+    for (i = 1; i <= vps->vps_num_layer_sets_minus1; i++)
+    {
+        for (j = 0; j <= vps->vps_max_layer_id; j++)
+        {
+            my_printf("  layer_id_included_flag[%d][%d]: %d\n", i, j, vps->layer_id_included_flag[i][j]);
+        }
+    }
+    my_printf(" vps_timing_info_present_flag: %d\n", vps->vps_timing_info_present_flag);
+    if (vps->vps_timing_info_present_flag)
+    {
+        my_printf("  vps_num_units_in_tick: %d\n", vps->vps_num_units_in_tick);
+        my_printf("  vps_time_scale: %d\n", vps->vps_time_scale);
+        my_printf("  vps_poc_proportional_to_timing_flag: %d\n", vps->vps_poc_proportional_to_timing_flag);
+        if (vps->vps_poc_proportional_to_timing_flag)
+        {
+            my_printf("   vps_num_ticks_poc_diff_one_minus1: %d\n", vps->vps_num_ticks_poc_diff_one_minus1);
+        }
+        for (i = 0; i < vps->vps_num_hrd_parameters; i++)
+        {
+            my_printf("  hrd_layer_set_idx[%d]: %d\n", i, vps->hrd_layer_set_idx[i]);
+            if (i > 0)
+            {
+                my_printf("   cprms_present_flag[%d]: %d\n", i, vps->cprms_present_flag[i]);
+            }
+            //  hrd_parameters()
+            //h265_read_hrd_parameters(&(vps->hrd_parameters), b, vps->cprms_present_flag[i], vps->vps_max_sub_layers_minus1);
+        }
+    }
+    my_printf(" vps_extension_flag: %d\n", vps->vps_extension_flag);
+    if (vps->vps_extension_flag)
+    {
+        // do nothing...
+    }
 }
 
 // sps
