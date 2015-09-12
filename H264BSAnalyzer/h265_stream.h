@@ -115,26 +115,26 @@ E.2.2  HRD parameters syntax
 */
 typedef struct
 {
-    int nal_hrd_parameters_present_flag;
-    int vcl_hrd_parameters_present_flag;
-      int sub_pic_hrd_params_present_flag;
-        int tick_divisor_minus2;
-        int du_cpb_removal_delay_increment_length_minus1;
-        int sub_pic_cpb_params_in_pic_timing_sei_flag;
-        int dpb_output_delay_du_length_minus1;
-      int bit_rate_scale;
-      int cpb_size_scale;
-      int cpb_size_du_scale;
-      int initial_cpb_removal_delay_length_minus1;
-      int au_cpb_removal_delay_length_minus1;
-      int dpb_output_delay_length_minus1;
+    uint8_t nal_hrd_parameters_present_flag;
+    uint8_t vcl_hrd_parameters_present_flag;
+      uint8_t sub_pic_hrd_params_present_flag;
+        uint8_t tick_divisor_minus2;
+        uint8_t du_cpb_removal_delay_increment_length_minus1;
+        uint8_t sub_pic_cpb_params_in_pic_timing_sei_flag;
+        uint8_t dpb_output_delay_du_length_minus1;
+      uint8_t bit_rate_scale;
+      uint8_t cpb_size_scale;
+      uint8_t cpb_size_du_scale;
+      uint8_t initial_cpb_removal_delay_length_minus1;
+      uint8_t au_cpb_removal_delay_length_minus1;
+      uint8_t dpb_output_delay_length_minus1;
     vector<uint8_t> fixed_pic_rate_general_flag;
     vector<uint8_t> fixed_pic_rate_within_cvs_flag;
     vector<int> elemental_duration_in_tc_minus1;
     vector<uint8_t> low_delay_hrd_flag;
     vector<int> cpb_cnt_minus1;
-    sub_layer_hrd_parameters_t sub_layer_hrd_parameters;
-    sub_layer_hrd_parameters_t sub_layer_hrd_parameters_v;
+    sub_layer_hrd_parameters_t sub_layer_hrd_parameters; // nal
+    sub_layer_hrd_parameters_t sub_layer_hrd_parameters_v; // vlc
 } hrd_parameters_t;
 
 /**
@@ -188,6 +188,7 @@ typedef struct
     int scaling_list_pred_matrix_id_delta[4][6];
     int scaling_list_dc_coef_minus8[4][6];
     int ScalingList[4][6][64];
+    int coefNum;
 } scaling_list_data_t;
 
 /**
@@ -532,8 +533,19 @@ typedef struct
 
 typedef struct
 {
-
-} mySPS_t;
+    int init;
+    int profile_idc;
+    int level_idc;
+    int width;
+    int height;
+    int crop_left;
+    int crop_right;
+    int crop_top;
+    int crop_bottom;
+    float max_framerate;  // 由SPS计算得到的帧率，为0表示SPS中没有相应的字段计算
+    int chroma_format_idc;  // YUV颜色空间 0: monochrome 1:420 2:422 3:444
+    int encoding_type;  // 为1表示CABAC 0表示CAVLC
+} h265videoinfo_t;
 
 /**
    H265 stream
@@ -558,6 +570,7 @@ typedef struct
     h265_sps_t* sps_table[32];
     h265_pps_t* pps_table[256];
     h265_sei_t** seis;
+    h265videoinfo_t* info;
 } h265_stream_t;
 
 h265_stream_t* h265_new();

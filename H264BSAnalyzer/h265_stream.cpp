@@ -37,6 +37,8 @@ h265_stream_t* h265_new()
     h->sei = NULL;  //This is a TEMP pointer at whats in h->seis...
     h->sh = (h265_slice_header_t*)calloc(1, sizeof(h265_slice_header_t));
 
+    h->info = (h265videoinfo_t*)calloc(1, sizeof(h265videoinfo_t));
+
     return h;
 }
 
@@ -564,12 +566,13 @@ void h265_read_scaling_list(scaling_list_data_t* sld, bs_t* b)
             {
                 int nextCoef = 8;
                 int coefNum = min(64, (1 << (4 + (sizeId << 1))));
+                sld->coefNum = coefNum; // tmp store
                 if (sizeId > 1)
                 {
                     sld->scaling_list_dc_coef_minus8[sizeId - 2][matrixId] = bs_read_se(b);
                     nextCoef = sld->scaling_list_dc_coef_minus8[sizeId - 2][matrixId] + 8;
                 }
-                for (int i = 0; i < coefNum; i++)
+                for (int i = 0; i < sld->coefNum; i++)
                 {
                     int scaling_list_delta_coef = bs_read_se(b);
                     nextCoef = (nextCoef + scaling_list_delta_coef + 256) % 256;
@@ -591,6 +594,7 @@ void h265_read_short_term_ref_pic_set(bs_t* b, h265_sps_t* sps, st_ref_pic_set_t
     }
     if (st->inter_ref_pic_set_prediction_flag)
     {
+        st->delta_idx_minus1 = 0;
         if (stRpsIdx == sps->m_RPSList.size())
         {
             st->delta_idx_minus1 = bs_read_ue(b);
@@ -603,7 +607,7 @@ void h265_read_short_term_ref_pic_set(bs_t* b, h265_sps_t* sps, st_ref_pic_set_t
         int deltaRPS = (1 - 2 * st->delta_rps_sign) * (st->abs_delta_rps_minus1 + 1); // delta_RPS
         st->used_by_curr_pic_flag.resize(rpsRef->m_numberOfPictures+1);
         st->use_delta_flag.resize(rpsRef->m_numberOfPictures+1);
-        for (int j = 0; j < rpsRef->m_numberOfPictures; j++)
+        for (int j = 0; j <= rpsRef->m_numberOfPictures; j++)
         {
             st->used_by_curr_pic_flag[j] = bs_read_u1(b);
             int refIdc = st->used_by_curr_pic_flag[j];
@@ -938,20 +942,23 @@ void  h265_read_sps_rbsp(h265_stream_t* h, bs_t* b)
     h265_sps_t* sps = h->sps;
     memset(sps, 0, sizeof(h265_sps_t));
 
-    memcpy(&(sps->ptl), &profile_tier_level, sizeof(profile_tier_level_t));
+    sps->sps_video_parameter_set_id   = sps_video_parameter_set_id;
+    sps->sps_max_sub_layers_minus1    = sps_max_sub_layers_minus1;
+    sps->sps_temporal_id_nesting_flag = sps_temporal_id_nesting_flag;
+    
+    memcpy(&(sps->ptl), &profile_tier_level, sizeof(profile_tier_level_t)); // ptl
 
+    sps->sps_seq_parameter_set_id     = sps_seq_parameter_set_id;
     sps->chroma_format_idc  = bs_read_ue(b);
     if (sps->chroma_format_idc == 3)
     {
         sps->separate_colour_plane_flag = bs_read_u1(b);
     }
-    sps->sps_video_parameter_set_id   = sps_video_parameter_set_id;
-    sps->sps_max_sub_layers_minus1    = sps_max_sub_layers_minus1;
-    sps->sps_temporal_id_nesting_flag = sps_temporal_id_nesting_flag;
-    sps->sps_seq_parameter_set_id     = sps_seq_parameter_set_id;
-
     sps->pic_width_in_luma_samples  = bs_read_ue(b);
     sps->pic_height_in_luma_samples = bs_read_ue(b);
+    h->info->width = sps->pic_width_in_luma_samples;
+    h->info->height = sps->pic_height_in_luma_samples;
+
     sps->conformance_window_flag    = bs_read_u1(b);
     if (sps->conformance_window_flag)
     {

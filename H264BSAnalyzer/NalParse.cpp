@@ -879,61 +879,61 @@ static void h265_debug_ptl(profile_tier_level_t* ptl, int profilePresentFlag, in
 {
     if (profilePresentFlag)
     {
-        my_printf("  general_profile_space: %d\n", ptl->general_profile_space);
-        my_printf("  general_tier_flag: %d\n", ptl->general_tier_flag);
-        my_printf("  general_profile_idc: %d\n", ptl->general_profile_idc);
+        my_printf(" general_profile_space: %d\n", ptl->general_profile_space);
+        my_printf(" general_tier_flag: %d\n", ptl->general_tier_flag);
+        my_printf(" general_profile_idc: %d\n", ptl->general_profile_idc);
         for (int i = 0; i < 32; i++)
         {
-            my_printf("  general_profile_compatibility_flag[%d]: %d\n", i, ptl->general_profile_compatibility_flag[i]);
+            my_printf(" general_profile_compatibility_flag[%d]: %d\n", i, ptl->general_profile_compatibility_flag[i]);
         }
-        my_printf("  general_progressive_source_flag: %d\n", ptl->general_progressive_source_flag);
-        my_printf("  general_interlaced_source_flag: %d\n", ptl->general_interlaced_source_flag);
-        my_printf("  general_non_packed_constraint_flag: %d\n", ptl->general_non_packed_constraint_flag);
-        my_printf("  general_frame_only_constraint_flag: %d\n", ptl->general_frame_only_constraint_flag);
+        my_printf(" general_progressive_source_flag: %d\n", ptl->general_progressive_source_flag);
+        my_printf(" general_interlaced_source_flag: %d\n", ptl->general_interlaced_source_flag);
+        my_printf(" general_non_packed_constraint_flag: %d\n", ptl->general_non_packed_constraint_flag);
+        my_printf(" general_frame_only_constraint_flag: %d\n", ptl->general_frame_only_constraint_flag);
         if (ptl->general_profile_idc==4 || ptl->general_profile_compatibility_flag[4] ||
             ptl->general_profile_idc==5 || ptl->general_profile_compatibility_flag[5] ||
             ptl->general_profile_idc==6 || ptl->general_profile_compatibility_flag[6] ||
             ptl->general_profile_idc==7 || ptl->general_profile_compatibility_flag[7])
         {
-            my_printf("  general_max_12bit_constraint_flag: %d\n", ptl->general_max_12bit_constraint_flag);
-            my_printf("  general_max_10bit_constraint_flag: %d\n", ptl->general_max_10bit_constraint_flag);
-            my_printf("  general_max_8bit_constraint_flag: %d\n", ptl->general_max_8bit_constraint_flag);
-            my_printf("  general_max_422chroma_constraint_flag: %d\n", ptl->general_max_422chroma_constraint_flag);
-            my_printf("  general_max_420chroma_constraint_flag: %d\n", ptl->general_max_420chroma_constraint_flag);
-            my_printf("  general_max_monochrome_constraint_flag: %d\n", ptl->general_max_monochrome_constraint_flag);
-            my_printf("  general_intra_constraint_flag: %d\n", ptl->general_intra_constraint_flag);
-            my_printf("  general_one_picture_only_constraint_flag: %d\n", ptl->general_one_picture_only_constraint_flag);
-            my_printf("  general_lower_bit_rate_constraint_flag: %d\n", ptl->general_lower_bit_rate_constraint_flag);
-            my_printf("  general_reserved_zero_34bits: %u\n", ptl->general_reserved_zero_34bits);// todo
+            my_printf(" general_max_12bit_constraint_flag: %d\n", ptl->general_max_12bit_constraint_flag);
+            my_printf(" general_max_10bit_constraint_flag: %d\n", ptl->general_max_10bit_constraint_flag);
+            my_printf(" general_max_8bit_constraint_flag: %d\n", ptl->general_max_8bit_constraint_flag);
+            my_printf(" general_max_422chroma_constraint_flag: %d\n", ptl->general_max_422chroma_constraint_flag);
+            my_printf(" general_max_420chroma_constraint_flag: %d\n", ptl->general_max_420chroma_constraint_flag);
+            my_printf(" general_max_monochrome_constraint_flag: %d\n", ptl->general_max_monochrome_constraint_flag);
+            my_printf(" general_intra_constraint_flag: %d\n", ptl->general_intra_constraint_flag);
+            my_printf(" general_one_picture_only_constraint_flag: %d\n", ptl->general_one_picture_only_constraint_flag);
+            my_printf(" general_lower_bit_rate_constraint_flag: %d\n", ptl->general_lower_bit_rate_constraint_flag);
+            my_printf(" general_reserved_zero_34bits: %u\n", ptl->general_reserved_zero_34bits);// todo
         }
         else
         {
-            my_printf("  general_reserved_zero_43bits: %u\n", ptl->general_reserved_zero_43bits);// todo
+            my_printf(" general_reserved_zero_43bits: %u\n", ptl->general_reserved_zero_43bits);// todo
         }
         if ((ptl->general_profile_idc>=1 && ptl->general_profile_idc<=5) ||
             ptl->general_profile_compatibility_flag[1] || ptl->general_profile_compatibility_flag[2] ||
             ptl->general_profile_compatibility_flag[3] || ptl->general_profile_compatibility_flag[4] ||
             ptl->general_profile_compatibility_flag[5])
         {
-            my_printf("  general_inbld_flag: %d\n", ptl->general_inbld_flag);
+            my_printf(" general_inbld_flag: %d\n", ptl->general_inbld_flag);
         }
         else
         {
-            my_printf("  general_reserved_zero_bit: %d\n", ptl->general_reserved_zero_bit);
+            my_printf(" general_reserved_zero_bit: %d\n", ptl->general_reserved_zero_bit);
         }
     }
         
-    my_printf("  general_level_idc: %d\n", ptl->general_level_idc);
+    my_printf(" general_level_idc: %d\n", ptl->general_level_idc);
     for (int i = 0; i < max_sub_layers_minus1; i++)
     {
-        my_printf("  sub_layer_profile_present_flag[%d]: %d\n", i, ptl->sub_layer_profile_present_flag[i]);
-        my_printf("  sub_layer_level_present_flag[%d]: %d\n", i, ptl->sub_layer_level_present_flag[i]);
+        my_printf(" sub_layer_profile_present_flag[%d]: %d\n", i, ptl->sub_layer_profile_present_flag[i]);
+        my_printf(" sub_layer_level_present_flag[%d]: %d\n", i, ptl->sub_layer_level_present_flag[i]);
     }
     if (max_sub_layers_minus1 > 0)
     {
         for (int i = max_sub_layers_minus1; i < 8; i++)
         {
-            my_printf("  reserved_zero_2bits[%d]: %d\n", i, ptl->reserved_zero_2bits[i]);
+            my_printf(" reserved_zero_2bits[%d]: %d\n", i, ptl->reserved_zero_2bits[i]);
         }
     }
     for (int i = 0; i < max_sub_layers_minus1; i++)
@@ -994,49 +994,117 @@ static void h265_debug_ptl(profile_tier_level_t* ptl, int profilePresentFlag, in
     
 }
 
+void h265_debug_sub_layer_hrd_parameters(sub_layer_hrd_parameters_t* subhrd, int sub_pic_hrd_params_present_flag, int CpbCnt, const char* p)
+{
+    my_printf("  [%s] sub_layer_hrd_parameters(%d)\n", p);
+    for (int i = 0; i <= CpbCnt; i++)
+    {
+        my_printf("   bit_rate_value_minus1[%d]: %d\n", i, subhrd->bit_rate_value_minus1[i]);
+        my_printf("   cpb_size_value_minus1[%d]: %d\n", i, subhrd->cpb_size_value_minus1[i]);
+        if (sub_pic_hrd_params_present_flag)
+        {
+            my_printf("    cpb_size_du_value_minus1[%d]: %d\n", i, subhrd->cpb_size_du_value_minus1[i]);
+            my_printf("    bit_rate_du_value_minus1[%d]: %d\n", i, subhrd->bit_rate_du_value_minus1[i]);
+        }
+        my_printf("   cbr_flag[%d]: %d\n", i, subhrd->cbr_flag[i]);
+    }
+}
+static void h265_debug_hrd_parameters(hrd_parameters_t* hrd, int commonInfPresentFlag, int maxNumSubLayersMinus1)
+{
+    if(commonInfPresentFlag)
+    {
+        my_printf("  nal_hrd_parameters_present_flag: %d\n", hrd->nal_hrd_parameters_present_flag);
+        my_printf("  vcl_hrd_parameters_present_flag: %d\n", hrd->vcl_hrd_parameters_present_flag);
+        if (hrd->nal_hrd_parameters_present_flag ||
+            hrd->vcl_hrd_parameters_present_flag)
+        {
+            
+            my_printf("   sub_pic_hrd_params_present_flag: %d\n", hrd->sub_pic_hrd_params_present_flag);
+            if (hrd->sub_pic_hrd_params_present_flag)
+            {
+                my_printf("    tick_divisor_minus2: %d\n", hrd->tick_divisor_minus2);
+                my_printf("    du_cpb_removal_delay_increment_length_minus1: %d\n", hrd->du_cpb_removal_delay_increment_length_minus1);
+                my_printf("    sub_pic_cpb_params_in_pic_timing_sei_flag: %d\n", hrd->sub_pic_cpb_params_in_pic_timing_sei_flag);
+                my_printf("    dpb_output_delay_du_length_minus1: %d\n", hrd->dpb_output_delay_du_length_minus1);
+            }
+            my_printf("   bit_rate_scale: %d\n", hrd->bit_rate_scale);
+            my_printf("   cpb_size_scale: %d\n", hrd->cpb_size_scale);
+            if (hrd->sub_pic_hrd_params_present_flag)
+                my_printf("    cpb_size_du_scale: %d\n", hrd->cpb_size_du_scale);
+            my_printf("   initial_cpb_removal_delay_length_minus1: %d\n", hrd->initial_cpb_removal_delay_length_minus1);
+            my_printf("   au_cpb_removal_delay_length_minus1: %d\n", hrd->au_cpb_removal_delay_length_minus1);
+            my_printf("   dpb_output_delay_length_minus1: %d\n", hrd->dpb_output_delay_length_minus1);
+        }
+    }
+    for (int i = 0; i <= maxNumSubLayersMinus1; i++)
+    {
+        my_printf("  fixed_pic_rate_general_flag[%d]: %d\n", i, hrd->fixed_pic_rate_general_flag[i]);
+        if (!hrd->fixed_pic_rate_general_flag[i])
+            my_printf("  fixed_pic_rate_general_flag[%d]: %d\n", i, hrd->fixed_pic_rate_general_flag[i]);
+        if (hrd->fixed_pic_rate_within_cvs_flag[i])
+        {
+            my_printf("   elemental_duration_in_tc_minus1[%d]: %d\n", i, hrd->elemental_duration_in_tc_minus1[i]);
+        }
+        else
+        {
+            my_printf("   low_delay_hrd_flag[%d]: %d\n", i, hrd->low_delay_hrd_flag[i]);
+        }
+        if (!hrd->low_delay_hrd_flag[i])
+            my_printf("   cpb_cnt_minus1[%d]: %d\n", i, hrd->cpb_cnt_minus1[i]);
+            
+        if(hrd->nal_hrd_parameters_present_flag)
+        {
+            h265_debug_sub_layer_hrd_parameters(&(hrd->sub_layer_hrd_parameters), hrd->sub_pic_hrd_params_present_flag, hrd->cpb_cnt_minus1[i], "nal");
+        }
+        if(hrd->vcl_hrd_parameters_present_flag)
+        {
+            h265_debug_sub_layer_hrd_parameters(&(hrd->sub_layer_hrd_parameters), hrd->sub_pic_hrd_params_present_flag, hrd->cpb_cnt_minus1[i], "vcl");
+        }
+    }
+}
 // vps
 static void h265_debug_vps(h265_vps_t* vps)
 {
     int i, j;
     my_printf("======= HEVC VPS =======\n");
-    my_printf(" vps_video_parameter_set_id: %d\n", vps->vps_video_parameter_set_id);
-    my_printf(" vps_base_layer_internal_flag: %d\n", vps->vps_base_layer_internal_flag);
-    my_printf(" vps_base_layer_available_flag: %d\n", vps->vps_base_layer_available_flag);
-    my_printf(" vps_max_layers_minus1: %d\n", vps->vps_max_layers_minus1);
-    my_printf(" vps_max_sub_layers_minus1: %d\n", vps->vps_max_sub_layers_minus1);
-    my_printf(" vps_temporal_id_nesting_flag: %d\n", vps->vps_temporal_id_nesting_flag);
-    my_printf(" vps_reserved_0xffff_16bits: %d\n", vps->vps_reserved_0xffff_16bits);
+    my_printf("vps_video_parameter_set_id: %d\n", vps->vps_video_parameter_set_id);
+    my_printf("vps_base_layer_internal_flag: %d\n", vps->vps_base_layer_internal_flag);
+    my_printf("vps_base_layer_available_flag: %d\n", vps->vps_base_layer_available_flag);
+    my_printf("vps_max_layers_minus1: %d\n", vps->vps_max_layers_minus1);
+    my_printf("vps_max_sub_layers_minus1: %d\n", vps->vps_max_sub_layers_minus1);
+    my_printf("vps_temporal_id_nesting_flag: %d\n", vps->vps_temporal_id_nesting_flag);
+    my_printf("vps_reserved_0xffff_16bits: %d\n", vps->vps_reserved_0xffff_16bits);
     // ptl
-    my_printf(" profile_tier_level()\n");
+    my_printf("profile_tier_level()\n");
     h265_debug_ptl(&vps->ptl, 1, vps->vps_max_layers_minus1);
     
-    my_printf(" vps_sub_layer_ordering_info_present_flag: %d\n", vps->vps_sub_layer_ordering_info_present_flag);
-    my_printf(" SubLayers\n");
+    my_printf("vps_sub_layer_ordering_info_present_flag: %d\n", vps->vps_sub_layer_ordering_info_present_flag);
+    my_printf("SubLayers\n");
     for (i = (vps->vps_sub_layer_ordering_info_present_flag ? 0 : vps->vps_max_sub_layers_minus1);
         i <= vps->vps_max_sub_layers_minus1; i++ )
     {
-        my_printf("  vps_max_dec_pic_buffering_minus1[%d]: %d\n", i, vps->vps_max_dec_pic_buffering_minus1[i]);
-        my_printf("  vps_max_num_reorder_pics[%d]: %d\n", i, vps->vps_max_num_reorder_pics[i]);
-        my_printf("  vps_max_latency_increase_plus1[%d]: %d\n", i, vps->vps_max_latency_increase_plus1[i]);
+        my_printf(" vps_max_dec_pic_buffering_minus1[%d]: %d\n", i, vps->vps_max_dec_pic_buffering_minus1[i]);
+        my_printf(" vps_max_num_reorder_pics[%d]: %d\n", i, vps->vps_max_num_reorder_pics[i]);
+        my_printf(" vps_max_latency_increase_plus1[%d]: %d\n", i, vps->vps_max_latency_increase_plus1[i]);
     }
-    my_printf(" vps_max_layer_id: %d\n", vps->vps_max_layer_id);
-    my_printf(" vps_num_layer_sets_minus1: %d\n", vps->vps_num_layer_sets_minus1);
+    my_printf("vps_max_layer_id: %d\n", vps->vps_max_layer_id);
+    my_printf("vps_num_layer_sets_minus1: %d\n", vps->vps_num_layer_sets_minus1);
     for (i = 1; i <= vps->vps_num_layer_sets_minus1; i++)
     {
         for (j = 0; j <= vps->vps_max_layer_id; j++)
         {
-            my_printf("  layer_id_included_flag[%d][%d]: %d\n", i, j, vps->layer_id_included_flag[i][j]);
+            my_printf(" layer_id_included_flag[%d][%d]: %d\n", i, j, vps->layer_id_included_flag[i][j]);
         }
     }
-    my_printf(" vps_timing_info_present_flag: %d\n", vps->vps_timing_info_present_flag);
+    my_printf("vps_timing_info_present_flag: %d\n", vps->vps_timing_info_present_flag);
     if (vps->vps_timing_info_present_flag)
     {
-        my_printf("  vps_num_units_in_tick: %d\n", vps->vps_num_units_in_tick);
-        my_printf("  vps_time_scale: %d\n", vps->vps_time_scale);
-        my_printf("  vps_poc_proportional_to_timing_flag: %d\n", vps->vps_poc_proportional_to_timing_flag);
+        my_printf(" vps_num_units_in_tick: %d\n", vps->vps_num_units_in_tick);
+        my_printf(" vps_time_scale: %d\n", vps->vps_time_scale);
+        my_printf(" vps_poc_proportional_to_timing_flag: %d\n", vps->vps_poc_proportional_to_timing_flag);
         if (vps->vps_poc_proportional_to_timing_flag)
         {
-            my_printf("   vps_num_ticks_poc_diff_one_minus1: %d\n", vps->vps_num_ticks_poc_diff_one_minus1);
+            my_printf("  vps_num_ticks_poc_diff_one_minus1: %d\n", vps->vps_num_ticks_poc_diff_one_minus1);
         }
         for (i = 0; i < vps->vps_num_hrd_parameters; i++)
         {
@@ -1046,26 +1114,283 @@ static void h265_debug_vps(h265_vps_t* vps)
                 my_printf("   cprms_present_flag[%d]: %d\n", i, vps->cprms_present_flag[i]);
             }
             //  hrd_parameters()
-            //h265_read_hrd_parameters(&(vps->hrd_parameters), b, vps->cprms_present_flag[i], vps->vps_max_sub_layers_minus1);
+            h265_debug_hrd_parameters(&(vps->hrd_parameters), vps->cprms_present_flag[i], vps->vps_max_sub_layers_minus1);
         }
     }
-    my_printf(" vps_extension_flag: %d\n", vps->vps_extension_flag);
+    my_printf("vps_extension_flag: %d\n", vps->vps_extension_flag);
     if (vps->vps_extension_flag)
     {
         // do nothing...
     }
 }
 
+static void h265_debug_scaling_list(scaling_list_data_t* sld)
+{
+    for(int sizeId = 0; sizeId < 4; sizeId++)
+    {
+        for(int matrixId = 0; matrixId < 6; matrixId += ( sizeId == 3 ) ? 3 : 1)
+        {
+            my_printf(" scaling_list_pred_mode_flag[%d][%d]: %d\n", sizeId, matrixId, sld->scaling_list_pred_mode_flag[sizeId][matrixId]);
+            if (!sld->scaling_list_pred_mode_flag[sizeId][matrixId])
+            {
+                my_printf("  scaling_list_pred_mode_flag[%d][%d]: %d\n", sizeId, matrixId, sld->scaling_list_pred_matrix_id_delta[sizeId][matrixId]);
+            }
+            else
+            {
+                if (sizeId > 1)
+                {
+                    my_printf("  scaling_list_dc_coef_minus8[%d][%d]: %d\n", sizeId, matrixId, sld->scaling_list_dc_coef_minus8[sizeId - 2][matrixId]);
+                }
+                for (int i = 0; i < sld->coefNum; i++)
+                {
+
+                    my_printf("  ScalingList[%d][%d][%d]: %d\n", sizeId, matrixId, i, sld->ScalingList[sizeId][matrixId][i]);
+                }
+            }
+        }
+    }
+}
+void h265_debug_short_term_ref_pic_set(h265_sps_t* sps, st_ref_pic_set_t*st, referencePictureSets_t* rps, int stRpsIdx)
+{
+    my_printf(" st_ref_pic_set[%d]\n", stRpsIdx);
+
+    my_printf("  inter_ref_pic_set_prediction_flag: %d\n", st->inter_ref_pic_set_prediction_flag);
+    if (st->inter_ref_pic_set_prediction_flag)
+    {
+        my_printf("  delta_idx_minus1: %d\n", st->delta_idx_minus1);
+        my_printf("  delta_rps_sign: %d\n", st->delta_rps_sign);
+        my_printf("  abs_delta_rps_minus1: %d\n", st->abs_delta_rps_minus1);
+        int rIdx = stRpsIdx - 1 - st->delta_idx_minus1;
+        referencePictureSets_t* rpsRef = &sps->m_RPSList[rIdx];
+        for (int j = 0; j <= rpsRef->m_numberOfPictures; j++)
+        {
+            my_printf("  used_by_curr_pic_flag[%d]: %d\n", j, st->used_by_curr_pic_flag[j]);
+            if (!st->used_by_curr_pic_flag[j])
+            {
+                my_printf("  use_delta_flag[%d]: %d\n", j, st->use_delta_flag[j]);
+            }
+        }
+    }
+    else
+    {
+        my_printf("  num_negative_pics: %d\n", st->num_negative_pics);
+        my_printf("  num_positive_pics: %d\n", st->num_positive_pics);
+        for (int i = 0; i < st->num_negative_pics; i++)
+        {
+            my_printf("  delta_poc_s0_minus1[%d]: %d\n", i, st->delta_poc_s0_minus1[i]);
+            my_printf("  used_by_curr_pic_s0_flag[%d]: %d\n", i, st->used_by_curr_pic_s0_flag[i]);
+        }
+        for (int i = 0; i < st->num_positive_pics; i++)
+        {
+            my_printf("  delta_poc_s1_minus1[%d]: %d\n", i, st->delta_poc_s1_minus1[i]);
+            my_printf("  used_by_curr_pic_s1_flag[%d]: %d\n", i, st->used_by_curr_pic_s1_flag[i]);
+        }
+    }
+}
+static void h265_debug_vui_parameters(vui_parameters_t* vui, int maxNumSubLayersMinus1)
+{
+    my_printf(" aspect_ratio_info_present_flag: %d\n", vui->aspect_ratio_info_present_flag);
+    if (vui->aspect_ratio_info_present_flag)
+    {
+        my_printf(" aspect_ratio_idc: %d\n", vui->aspect_ratio_idc);
+        if (vui->aspect_ratio_idc == H265_SAR_Extended)
+        {
+            my_printf("  sar_width: %d\n", vui->sar_width);
+            my_printf("  sar_height: %d\n", vui->sar_height);
+        }
+    }
+    my_printf(" overscan_info_present_flag: %d\n", vui->overscan_info_present_flag);
+    if (vui->overscan_info_present_flag)
+    {
+        my_printf(" overscan_appropriate_flag: %d\n", vui->overscan_appropriate_flag);
+    }
+    my_printf(" video_signal_type_present_flag: %d\n", vui->video_signal_type_present_flag);
+    if (vui->video_signal_type_present_flag)
+    {
+        my_printf("  video_format: %d\n", vui->video_format);
+        my_printf("  video_full_range_flag: %d\n", vui->video_full_range_flag);
+        my_printf("  colour_description_present_flag: %d\n", vui->colour_description_present_flag);
+        if (vui->colour_description_present_flag)
+        {
+            my_printf("   colour_primaries: %d\n", vui->colour_primaries);
+            my_printf("   transfer_characteristics: %d\n", vui->transfer_characteristics);
+            my_printf("   matrix_coeffs: %d\n", vui->matrix_coeffs);
+        }
+    }
+    my_printf(" chroma_loc_info_present_flag: %d\n", vui->chroma_loc_info_present_flag);
+
+    if (vui->chroma_loc_info_present_flag)
+    {
+        my_printf("  chroma_sample_loc_type_top_field: %d\n", vui->chroma_sample_loc_type_top_field);
+        my_printf("  chroma_sample_loc_type_bottom_field: %d\n", vui->chroma_sample_loc_type_bottom_field);
+    }
+    my_printf(" neutral_chroma_indication_flag: %d\n", vui->neutral_chroma_indication_flag);
+    my_printf(" field_seq_flag: %d\n", vui->field_seq_flag);
+    my_printf(" frame_field_info_present_flag: %d\n", vui->frame_field_info_present_flag);
+    my_printf(" default_display_window_flag: %d\n", vui->default_display_window_flag);
+    if (vui->default_display_window_flag)
+    {
+        my_printf("  def_disp_win_left_offset: %d\n", vui->def_disp_win_left_offset);
+        my_printf("  def_disp_win_left_offset: %d\n", vui->def_disp_win_left_offset);
+        my_printf("  def_disp_win_right_offset: %d\n", vui->def_disp_win_right_offset);
+        my_printf("  def_disp_win_bottom_offset: %d\n", vui->def_disp_win_bottom_offset);
+    }
+    my_printf(" vui_timing_info_present_flag: %d\n", vui->vui_timing_info_present_flag);
+    if (vui->vui_timing_info_present_flag)
+    {
+        my_printf("  vui_num_units_in_tick: %d\n", vui->vui_num_units_in_tick);
+        my_printf("  vui_time_scale: %d\n", vui->vui_time_scale);
+        my_printf("  vui_poc_proportional_to_timing_flag: %d\n", vui->vui_poc_proportional_to_timing_flag);
+        if (vui->vui_poc_proportional_to_timing_flag)
+        {
+            my_printf("   vui_num_ticks_poc_diff_one_minus1: %d\n", vui->vui_num_ticks_poc_diff_one_minus1);
+        }
+        my_printf("  vui_hrd_parameters_present_flag: %d\n", vui->vui_hrd_parameters_present_flag);
+        if (vui->vui_hrd_parameters_present_flag)
+        {
+            h265_debug_hrd_parameters(&vui->hrd_parameters, 1, maxNumSubLayersMinus1);
+        }
+    }
+    my_printf(" bitstream_restriction_flag: %d\n", vui->bitstream_restriction_flag);
+    if (vui->bitstream_restriction_flag)
+    {
+        my_printf("  tiles_fixed_structure_flag: %d\n", vui->tiles_fixed_structure_flag);
+        my_printf("  motion_vectors_over_pic_boundaries_flag: %d\n", vui->motion_vectors_over_pic_boundaries_flag);
+        my_printf("  restricted_ref_pic_lists_flag: %d\n", vui->restricted_ref_pic_lists_flag);
+        my_printf("  min_spatial_segmentation_idc: %d\n", vui->min_spatial_segmentation_idc);
+        my_printf("  max_bytes_per_pic_denom: %d\n", vui->max_bytes_per_pic_denom);
+        my_printf("  max_bits_per_min_cu_denom: %d\n", vui->max_bits_per_min_cu_denom);
+        my_printf("  log2_max_mv_length_horizontal: %d\n", vui->log2_max_mv_length_horizontal);
+        my_printf("  log2_max_mv_length_vertical: %d\n", vui->bitstream_restriction_flag);
+    }
+}
 // sps
 static void h265_debug_sps(h265_sps_t* sps)
 {
     my_printf("======= HEVC SPS =======\n");
+    my_printf("sps_video_parameter_set_id: %d\n", sps->sps_video_parameter_set_id);
+    my_printf("sps_max_sub_layers_minus1: %d\n", sps->sps_max_sub_layers_minus1);
+    my_printf("sps_temporal_id_nesting_flag: %d\n", sps->sps_temporal_id_nesting_flag);
+    // ptl
+    my_printf("profile_tier_level()\n");
+    h265_debug_ptl(&sps->ptl, 1, sps->sps_max_sub_layers_minus1);
+
+    my_printf("sps_seq_parameter_set_id: %d\n", sps->sps_seq_parameter_set_id);
+    my_printf("chroma_format_idc: %d\n", sps->chroma_format_idc);
+    if (sps->chroma_format_idc == 3)
+    {
+        my_printf(" separate_colour_plane_flag: %d\n", sps->separate_colour_plane_flag);
+    }
+    my_printf("pic_width_in_luma_samples: %d\n", sps->pic_width_in_luma_samples);
+    my_printf("pic_height_in_luma_samples: %d\n", sps->pic_height_in_luma_samples);
+    my_printf("conformance_window_flag: %d\n", sps->conformance_window_flag);
+    if (sps->conformance_window_flag)
+    {
+        my_printf(" conf_win_left_offset: %d\n", sps->conf_win_left_offset);
+        my_printf(" conf_win_right_offset: %d\n", sps->conf_win_right_offset);
+        my_printf(" conf_win_top_offset: %d\n", sps->conf_win_top_offset);
+        my_printf(" conf_win_bottom_offset: %d\n", sps->conf_win_bottom_offset);
+    }
+    my_printf("bit_depth_luma_minus8: %d\n", sps->bit_depth_luma_minus8);
+    my_printf("bit_depth_chroma_minus8: %d\n", sps->bit_depth_chroma_minus8);
+    my_printf("log2_max_pic_order_cnt_lsb_minus4: %d\n", sps->log2_max_pic_order_cnt_lsb_minus4);
+    my_printf("sps_sub_layer_ordering_info_present_flag: %d\n", sps->sps_sub_layer_ordering_info_present_flag);
+    for (int i = (sps->sps_sub_layer_ordering_info_present_flag ? 0 : sps->sps_max_sub_layers_minus1);
+        i <= sps->sps_max_sub_layers_minus1; i++ )
+    {
+        my_printf(" sps_max_dec_pic_buffering_minus1[%d]: %d\n", i, sps->sps_max_dec_pic_buffering_minus1[i]);
+        my_printf(" sps_max_num_reorder_pics[%d]: %d\n", i, sps->sps_max_num_reorder_pics[i]);
+        my_printf(" sps_max_latency_increase_plus1[%d]: %d\n", i, sps->sps_max_latency_increase_plus1[i]);
+    }
+    my_printf("log2_min_luma_coding_block_size_minus3: %d\n", sps->log2_min_luma_coding_block_size_minus3);
+    my_printf("log2_diff_max_min_luma_coding_block_size: %d\n", sps->log2_diff_max_min_luma_coding_block_size);
+    my_printf("log2_min_luma_transform_block_size_minus2: %d\n", sps->log2_min_luma_transform_block_size_minus2);
+    my_printf("log2_diff_max_min_luma_transform_block_size: %d\n", sps->log2_diff_max_min_luma_transform_block_size);
+    my_printf("max_transform_hierarchy_depth_inter: %d\n", sps->max_transform_hierarchy_depth_inter);
+    my_printf("max_transform_hierarchy_depth_intra: %d\n", sps->max_transform_hierarchy_depth_intra);
+    my_printf("scaling_list_enabled_flag: %d\n", sps->scaling_list_enabled_flag);
+    if (sps->scaling_list_enabled_flag)
+    {
+        my_printf(" sps_scaling_list_data_present_flag: %d\n", sps->sps_scaling_list_data_present_flag);
+        {
+            if (sps->sps_scaling_list_data_present_flag)
+            {
+                h265_debug_scaling_list(&sps->scaling_list_data);
+            }
+        }
+    }
+
+    my_printf("amp_enabled_flag: %d\n", sps->amp_enabled_flag);
+    my_printf("sample_adaptive_offset_enabled_flag: %d\n", sps->sample_adaptive_offset_enabled_flag);
+    my_printf("pcm_enabled_flag: %d\n", sps->pcm_enabled_flag);
+    if (sps->pcm_enabled_flag)
+    {
+        my_printf(" pcm_sample_bit_depth_luma_minus1: %d\n", sps->pcm_sample_bit_depth_luma_minus1);
+        my_printf(" pcm_sample_bit_depth_chroma_minus1: %d\n", sps->pcm_sample_bit_depth_chroma_minus1);
+        my_printf(" log2_min_pcm_luma_coding_block_size_minus3: %d\n", sps->log2_min_pcm_luma_coding_block_size_minus3);
+        my_printf(" log2_diff_max_min_pcm_luma_coding_block_size: %d\n", sps->log2_diff_max_min_pcm_luma_coding_block_size);
+        my_printf(" pcm_loop_filter_disabled_flag: %d\n", sps->pcm_loop_filter_disabled_flag);
+    }
+    my_printf("num_short_term_ref_pic_sets: %d\n", sps->num_short_term_ref_pic_sets);
+    referencePictureSets_t* rps = NULL;
+    st_ref_pic_set_t* st = NULL;
+    for (int i = 0; i < sps->num_short_term_ref_pic_sets; i++)
+    {
+        st = &sps->st_ref_pic_set[i];
+        rps = &sps->m_RPSList[i];
+        h265_debug_short_term_ref_pic_set(sps, st, rps, i);
+    }
+    my_printf("long_term_ref_pics_present_flag: %d\n", sps->long_term_ref_pics_present_flag);
+    if (sps->long_term_ref_pics_present_flag)
+    {
+        my_printf(" num_long_term_ref_pics_sps: %d\n", sps->num_long_term_ref_pics_sps);
+        for (int i = 0; i < sps->num_long_term_ref_pics_sps; i++)
+        {
+            my_printf(" lt_ref_pic_poc_lsb_sps[%d]: %d\n", i, sps->lt_ref_pic_poc_lsb_sps[i]);
+            my_printf(" used_by_curr_pic_lt_sps_flag[%d]: %d\n", i, sps->used_by_curr_pic_lt_sps_flag[i]);
+        }
+    }
+    my_printf("sps_temporal_mvp_enabled_flag: %d\n", sps->sps_temporal_mvp_enabled_flag);
+    my_printf("strong_intra_smoothing_enabled_flag: %d\n", sps->strong_intra_smoothing_enabled_flag);
+    my_printf("vui_parameters_present_flag: %d\n", sps->vui_parameters_present_flag);
+    if (sps->vui_parameters_present_flag)
+    {
+        // vui
+        h265_debug_vui_parameters(&sps->vui_parameters, sps->sps_max_sub_layers_minus1);
+    }
+    my_printf("sps_extension_present_flag: %d\n", sps->sps_extension_present_flag);
+    if (sps->sps_extension_present_flag)
+    {
+        my_printf(" sps_range_extension_flag: %d\n", sps->sps_range_extension_flag);
+        my_printf(" sps_multilayer_extension_flag: %d\n", sps->sps_multilayer_extension_flag);
+        my_printf(" sps_3d_extension_flag: %d\n", sps->sps_3d_extension_flag);
+        my_printf(" sps_extension_5bits: %d\n", sps->sps_extension_5bits);
+    }
+    if (sps->sps_range_extension_flag)
+    {
+        my_printf(" transform_skip_rotation_enabled_flag: %d\n", sps->sps_range_extension.transform_skip_rotation_enabled_flag);
+        my_printf(" transform_skip_context_enabled_flag: %d\n", sps->sps_range_extension.transform_skip_context_enabled_flag);
+        my_printf(" implicit_rdpcm_enabled_flag: %d\n", sps->sps_range_extension.implicit_rdpcm_enabled_flag);
+        my_printf(" explicit_rdpcm_enabled_flag: %d\n", sps->sps_range_extension.explicit_rdpcm_enabled_flag);
+        my_printf(" extended_precision_processing_flag: %d\n", sps->sps_range_extension.extended_precision_processing_flag);
+        my_printf(" intra_smoothing_disabled_flag: %d\n", sps->sps_range_extension.intra_smoothing_disabled_flag);
+        my_printf(" high_precision_offsets_enabled_flag: %d\n", sps->sps_range_extension.high_precision_offsets_enabled_flag);
+        my_printf(" persistent_rice_adaptation_enabled_flag: %d\n", sps->sps_range_extension.persistent_rice_adaptation_enabled_flag);
+        my_printf(" cabac_bypass_alignment_enabled_flag: %d\n", sps->sps_range_extension.cabac_bypass_alignment_enabled_flag);
+    }
+    if (sps->sps_multilayer_extension_flag)
+    {
+        my_printf(" inter_view_mv_vert_constraint_flag: %d\n", sps->inter_view_mv_vert_constraint_flag);
+    }
+    // todo sps_3d_extension_flag
+
 }
 
 // pps
 static void h265_debug_pps(h265_pps_t* pps)
 {
     my_printf("======= HEVC PPS =======\n");
+    my_printf("pps_pic_parameter_set_id: %d\n", pps->pps_pic_parameter_set_id);
 }
 
 // aud
