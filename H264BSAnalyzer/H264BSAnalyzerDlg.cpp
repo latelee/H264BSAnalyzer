@@ -382,7 +382,6 @@ int CH264BSAnalyzerDlg::ShowNLInfo(NALU_t* nalu)
         }
     }
 
-
     // 序号
     strTempIndex.Format(_T("%d"),nalu->num + 1);  // 向量中的序号从0开始
     // 数据偏移
@@ -430,22 +429,6 @@ void CH264BSAnalyzerDlg::OnBnClickedH264InputurlOpen()
     SystemClear();
     UpdateData();
 
-        ////////////////
-    // 测试用
-#if 0
-    //char a[16]={0};
-    char pszBuffer[1000] = "hello world 1234567 you go to hell hahahahahah";
-    m_edHexInfo.SetOptions(1, 1, 1, 1);
-    m_edHexInfo.SetBPR(16);
-    m_edHexInfo.SetData((LPBYTE)pszBuffer, 100, strlen(pszBuffer));
-    m_edHexInfo.SetFocus();
-
-    CString aaa;
-    GetDlgItem(IDC_CB_NAL)->GetWindowTextA(aaa);
-    MessageBox(aaa);
-    return;
-#endif
-
     CString strFilePath;
     CString strSimpleInfo;
     CString strProfileInfo;
@@ -474,98 +457,6 @@ void CH264BSAnalyzerDlg::OnBnClickedH264InputurlOpen()
     strcpy(str_szFileUrl, (char*)m_strFileUrl.GetBuffer());
 
     SetEvent(m_hFileLock);
-#if 0
-    h264_nal_probe(str_szFileUrl, m_vNalTypeVector, nMaxNalNum);
-
-    m_nValTotalNum = m_vNalTypeVector.size();
-
-    for (int i = 0; i < m_nValTotalNum; i++)
-    {
-        // 解析SPS
-        if (m_vNalTypeVector[i].nal_unit_type == 7)
-        {
-            h264_sps_parse(str_szFileUrl, m_vNalTypeVector[i].data_offset, m_vNalTypeVector[i].len, sps);
-        }
-        // 解析PPS
-        if (m_vNalTypeVector[i].nal_unit_type == 8)
-        {
-            h264_pps_parse(str_szFileUrl, m_vNalTypeVector[i].data_offset, m_vNalTypeVector[i].len, pps);
-        }
-        ShowNLInfo(&m_vNalTypeVector[i]);
-    }
-    // profile类型
-    switch (sps.profile_idc)
-    {
-    case 66:
-        strProfileInfo.Format(_T("Baseline"));
-        break;
-    case 77:
-        strProfileInfo.Format(_T("Main"));
-        break;
-    case 88:
-        strProfileInfo.Format(_T("Extended"));
-        break;
-    case 100:
-        strProfileInfo.Format(_T("High"));
-        break;
-    case 110:
-        strProfileInfo.Format(_T("High 10"));
-        break;
-    case 122:
-        strProfileInfo.Format(_T("High 422"));
-        break;
-    case 144:
-        strProfileInfo.Format(_T("High 444"));
-        break;
-    default:
-        strProfileInfo.Format(_T("Unkown"));
-        break;
-    }
-    switch (sps.chroma_format_idc)
-    {
-    case 1:
-        strVideoFormat.Format(_T("YUV420"));
-        break;
-    case 2:
-        strVideoFormat.Format(_T("YUV422"));
-        break;
-    case 3:
-        strVideoFormat.Format(_T("YUV444"));
-        break;
-    case 0:
-        strVideoFormat.Format(_T("monochrome"));
-        break;
-    default:
-        strVideoFormat.Format(_T("Unkown"));
-        break;
-    }
-        
-    // todo
-    /*
-    "Video Format: xxx\r\n"
-    */
-    strSimpleInfo.Format(
-        "File name: %s\r\n"
-        "Picture Size: %dx%d\r\n"
-        " - Cropping Left        : %d\r\n"
-        " - Cropping Right      : %d\r\n"
-        " - Cropping Top        : %d\r\n"
-        " - Cropping Bottom   : %d\r\n"
-        "Video Format: %s\r\n"
-        "Stream Type: %s Profile @ Level %d\r\n"
-        "Encoding Type: %s\r\n"
-        "Max fps: %.03f\r\n",
-        m_strFileUrl,
-        sps.width, sps.height,
-        sps.crop_left, sps.crop_right,
-        sps.crop_top, sps.crop_bottom,
-        strVideoFormat,
-        strProfileInfo, sps.level_idc,
-        pps.encoding_type ? "CABAC" : "CAVLC",
-        sps.max_framerate
-        );
-    GetDlgItem(IDC_EDIT_SIMINFO)->SetWindowText(strSimpleInfo);
-#endif
 }
 
 UINT CH264BSAnalyzerDlg::ThreadFuncReadFile(LPVOID* lpvoid)
@@ -596,6 +487,7 @@ void CH264BSAnalyzerDlg::ReadFile(void)
 
         for (int i = 0; i < m_nValTotalNum; i++)
         {
+            // todelete...
             // 解析SPS
             if (m_vNalTypeVector[i].nal_unit_type == 7)
             {
@@ -903,6 +795,10 @@ void CH264BSAnalyzerDlg::OnDropFiles(HDROP hDropInfo)
     {
         g_type = 1;
     }
+    else
+    {
+        g_type = 0;
+    }
     OnBnClickedH264InputurlOpen();
 }
 
@@ -927,6 +823,10 @@ void CH264BSAnalyzerDlg::OnFileOpen()
         !strcmp(&szExt[1], "hevc"))
     {
         g_type = 1;
+    }
+    else
+    {
+        g_type = 0;
     }
     OnBnClickedH264InputurlOpen();
 }

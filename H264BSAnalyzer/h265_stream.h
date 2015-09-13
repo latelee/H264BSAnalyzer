@@ -576,6 +576,9 @@ typedef struct
 h265_stream_t* h265_new();
 void h265_free(h265_stream_t* h);
 
+int h265_get_nal_type(uint8_t* buf, int size);
+int h265_get_slice_type(uint8_t* buf, int size);
+
 int h265_read_nal_unit(h265_stream_t* h, uint8_t* buf, int size);
 
 void h265_read_vps_rbsp(h265_stream_t* h, bs_t* b);

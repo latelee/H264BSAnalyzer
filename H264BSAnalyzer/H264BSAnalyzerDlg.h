@@ -57,14 +57,7 @@ private:
     int m_nSliceIndex;
     CString m_strFileUrl;
     char str_szFileUrl[MAX_URL_LENGTH];
-    /*
-      //一条Packet记录
-    typedef struct NALInfo{
-        int data_offset;
-        int data_lenth;
-    }NALInfo;
-    vector<NALInfo> m_vNalInfoVector;
-    */
+
     vector<NALU_t> m_vNalTypeVector;
     int m_nValTotalNum; // m_vNalTypeVector有多少个NALU_t
 

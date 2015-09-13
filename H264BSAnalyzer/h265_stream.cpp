@@ -71,6 +71,39 @@ void h265_free(h265_stream_t* h)
     free(h);
 }
 
+int h265_get_nal_type(uint8_t* buf, int size)
+{
+    return (*buf>>1) & 0x3f;// 6 bit
+}
+
+int h265_get_slice_type(uint8_t* buf, int size)
+{
+#if 0
+    h265_nal_t* nal = h->nal;
+
+    bs_t* b = bs_new(buf, size);
+    // nal header
+    nal->forbidden_zero_bit = bs_read_f(b,1);
+    nal->nal_unit_type = bs_read_u(b,6);
+    nal->nuh_layer_id = bs_read_u(b,6);
+    nal->nuh_temporal_id_plus1 = bs_read_u(b,3);
+    nal->parsed = NULL;
+    nal->sizeof_parsed = 0;
+    bs_free(b);
+
+    int nal_size = size;
+    int rbsp_size = size;
+    uint8_t* rbsp_buf = (uint8_t*)malloc(rbsp_size);
+
+    int rc = nal_to_rbsp(2, buf, &nal_size, rbsp_buf, &rbsp_size);
+
+    if (rc < 0) { free(rbsp_buf); return -1; } // handle conversion error
+
+    b = bs_new(rbsp_buf, rbsp_size);
+#endif
+    return 0;
+}
+
 /**
  Read a NAL unit from a byte buffer.
  The buffer must start exactly at the beginning of the nal (after the start prefix).
@@ -86,7 +119,6 @@ int h265_read_nal_unit(h265_stream_t* h, uint8_t* buf, int size)
     h265_nal_t* nal = h->nal;
 
     bs_t* b = bs_new(buf, size);
-
     // nal header
     nal->forbidden_zero_bit = bs_read_f(b,1);
     nal->nal_unit_type = bs_read_u(b,6);
@@ -94,7 +126,6 @@ int h265_read_nal_unit(h265_stream_t* h, uint8_t* buf, int size)
     nal->nuh_temporal_id_plus1 = bs_read_u(b,3);
     nal->parsed = NULL;
     nal->sizeof_parsed = 0;
-
     bs_free(b);
 
     int nal_size = size;
@@ -127,11 +158,11 @@ int h265_read_nal_unit(h265_stream_t* h, uint8_t* buf, int size)
             //h265_read_sei_rbsp(h, b);
             //nal->parsed = h->sei;
             //nal->sizeof_parsed = sizeof(h265_sei_t);
-            break;
+            //break;
         case NAL_UNIT_SUFFIX_SEI: // todo
-            h265_read_sei_rbsp(h, b);
-            nal->parsed = h->sei;
-            nal->sizeof_parsed = sizeof(h265_sei_t);
+            //h265_read_sei_rbsp(h, b);
+            //nal->parsed = h->sei;
+            //nal->sizeof_parsed = sizeof(h265_sei_t);
             break;
         case NAL_UNIT_AUD:
             h265_read_aud_rbsp(h, b);
@@ -660,7 +691,8 @@ static int getNumRpsCurrTempList(h265_slice_header_t *hrd)
     {
         return 0;
     }
-
+    if (hrd->m_pRPS == NULL) return 0; // tmp...
+    // todo error
     for (int i = 0;
         i < hrd->m_pRPS->m_numberOfNegativePictures + hrd->m_pRPS->m_numberOfPositivePictures + hrd->m_pRPS->m_numberOfLongtermPictures;
         i++)
@@ -690,7 +722,7 @@ void h265_read_ref_pic_lists_modification(bs_t* b, h265_slice_header_t* hrd)
             {
                 length++;
             }
-            for (int i = 0; i <= hrd->num_ref_idx_l0_active_minus1; i++) // 注意有等号，同时要注册边界
+            for (int i = 0; i <= hrd->num_ref_idx_l0_active_minus1; i++) // 注意有等号，要注意边界
             {
                 hrd->ref_pic_lists_modification.list_entry_l0[i] = bs_read_u(b, length);
             }
@@ -717,7 +749,7 @@ void h265_read_ref_pic_lists_modification(bs_t* b, h265_slice_header_t* hrd)
                 {
                     length++;
                 }
-                for (int i = 0; i <= hrd->num_ref_idx_l1_active_minus1; i++) // 注意有等号，同时要注册边界
+                for (int i = 0; i <= hrd->num_ref_idx_l1_active_minus1; i++) // 注意有等号，要注意边界
                 {
                     hrd->ref_pic_lists_modification.list_entry_l1[i] = bs_read_u(b, length);
                 }
@@ -1031,7 +1063,7 @@ void  h265_read_sps_rbsp(h265_stream_t* h, bs_t* b)
         sps->used_by_curr_pic_lt_sps_flag.resize(sps->num_long_term_ref_pics_sps);
         for (int i = 0; i < sps->num_long_term_ref_pics_sps; i++)
         {
-            sps->lt_ref_pic_poc_lsb_sps[i] = bs_read_u1(b); // todo u(v)
+            sps->lt_ref_pic_poc_lsb_sps[i] = bs_read_u(b, sps->log2_max_pic_order_cnt_lsb_minus4 + 4); // u(v)
             sps->used_by_curr_pic_lt_sps_flag[i] = bs_read_u1(b);
         }
     }
@@ -1099,24 +1131,27 @@ void h265_read_pps_rbsp(h265_stream_t* h, bs_t* b)
     pps->dependent_slice_segments_enabled_flag  = bs_read_u1(b);
     pps->output_flag_present_flag      = bs_read_u1(b);
     pps->num_extra_slice_header_bits   = bs_read_u(b, 3);
-    pps->sign_data_hiding_enabled_flag = bs_read_ue(b);
-    pps->cabac_init_present_flag       = bs_read_ue(b);
+    pps->sign_data_hiding_enabled_flag = bs_read_u1(b);
+    pps->cabac_init_present_flag       = bs_read_u1(b);
     pps->num_ref_idx_l0_default_active_minus1   = bs_read_ue(b);
     pps->num_ref_idx_l1_default_active_minus1   = bs_read_ue(b);
     pps->init_qp_minus26               = bs_read_se(b);
     pps->constrained_intra_pred_flag   = bs_read_u1(b);
     pps->transform_skip_enabled_flag   = bs_read_u1(b);
-    if (pps->transform_skip_enabled_flag)
+    pps->cu_qp_delta_enabled_flag      = bs_read_u1(b);
+    if (pps->cu_qp_delta_enabled_flag)
     {
-        pps->cu_qp_delta_enabled_flag   = bs_read_ue(b);
+        pps->diff_cu_qp_delta_depth    = bs_read_ue(b);
     }
 
     pps->pps_cb_qp_offset   = bs_read_se(b);
     pps->pps_cr_qp_offset   = bs_read_se(b);
     pps->pps_slice_chroma_qp_offsets_present_flag = bs_read_u1(b);
-    pps->transquant_bypass_enabled_flag           = bs_read_u1(b);
-    pps->tiles_enabled_flag = bs_read_u1(b);
-    pps->entropy_coding_sync_enabled_flag         = bs_read_u1(b);
+    pps->weighted_pred_flag               = bs_read_u1(b);
+    pps->weighted_bipred_flag             = bs_read_u1(b);
+    pps->transquant_bypass_enabled_flag   = bs_read_u1(b);
+    pps->tiles_enabled_flag               = bs_read_u1(b);
+    pps->entropy_coding_sync_enabled_flag = bs_read_u1(b);
     if (pps->tiles_enabled_flag)
     {
         pps->num_tile_columns_minus1 = bs_read_ue(b);
@@ -1211,7 +1246,7 @@ void h265_read_pps_rbsp(h265_stream_t* h, bs_t* b)
 }
 
 //7.3.6.1  General slice segment header syntax
-void h265_read_slice_header(h265_stream_t* h, bs_t* b)
+void h265_read_slice_header(h265_stream_t* h, bs_t* b, int only_slice)
 {
     h265_slice_header_t* hrd = h->sh;
     h265_sps_t* sps = NULL;
@@ -1231,11 +1266,20 @@ void h265_read_slice_header(h265_stream_t* h, bs_t* b)
 
     if (!hrd->first_slice_segment_in_pic_flag)
     {
+        hrd->dependent_slice_segment_flag = 0;
         if (pps->dependent_slice_segments_enabled_flag)
         {
             hrd->dependent_slice_segment_flag = bs_read_u1(b);
         }
-        hrd->slice_segment_address = bs_read_u1(b); // todo u(v)
+        int maxCUWidth = 1<<(sps->log2_min_luma_coding_block_size_minus3+3 + sps->log2_diff_max_min_luma_coding_block_size);
+        int maxCUHeight = maxCUWidth;// to check
+        int numCTUs = ((sps->pic_width_in_luma_samples+maxCUWidth-1)/maxCUWidth)*((sps->pic_height_in_luma_samples+maxCUHeight-1)/maxCUHeight);;
+        int bitsSliceSegmentAddress = 0;
+        while(numCTUs>(1<<bitsSliceSegmentAddress))
+        {
+            bitsSliceSegmentAddress++;
+        }
+        hrd->slice_segment_address = bs_read_u(b, bitsSliceSegmentAddress); // u(v)
     }
     if (!hrd->dependent_slice_segment_flag)
     {
@@ -1245,6 +1289,7 @@ void h265_read_slice_header(h265_stream_t* h, bs_t* b)
             hrd->slice_reserved_flag[i] = bs_read_u1(b);
         }
         hrd->slice_type = bs_read_ue(b);
+        if (only_slice) return;
         if (pps->output_flag_present_flag)
         {
             hrd->pic_output_flag = bs_read_u1(b);
@@ -1299,6 +1344,11 @@ void h265_read_slice_header(h265_stream_t* h, bs_t* b)
                 {
                     hrd->num_long_term_sps = bs_read_ue(b);
                 }
+                uint32_t numLtrpInSPS = 0;
+                while (sps->num_long_term_ref_pics_sps > (1 << numLtrpInSPS))
+                {
+                    numLtrpInSPS++;
+                }
                 hrd->num_long_term_pics = bs_read_ue(b);
                 int cnt = hrd->num_long_term_sps + hrd->num_long_term_pics;
                 hrd->lt_idx_sps.resize(cnt);
@@ -1310,9 +1360,11 @@ void h265_read_slice_header(h265_stream_t* h, bs_t* b)
                 {
                     if (i < hrd->num_long_term_sps)
                     {
-                        if (sps->num_long_term_ref_pics_sps > 1)
+                        //if (sps->num_long_term_ref_pics_sps > 1)
+                        // to confirm...
+                        if (numLtrpInSPS > 0)
                         {
-                            hrd->lt_idx_sps[i] = bs_read_ue(b);// todo u(v)
+                            hrd->lt_idx_sps[i] = bs_read_u(b, numLtrpInSPS); // u(v)
                         }
                     }
                     else
@@ -1352,7 +1404,8 @@ void h265_read_slice_header(h265_stream_t* h, bs_t* b)
                     hrd->num_ref_idx_l1_active_minus1 = bs_read_u1(b);
                 }
             }
-            // todo
+            // to confirm... 
+            int tmp = 0;
             int NumPicTotalCurr = getNumRpsCurrTempList(hrd);
             if(pps->lists_modification_present_flag  &&  NumPicTotalCurr > 1)
             {
@@ -1424,7 +1477,9 @@ void h265_read_slice_header(h265_stream_t* h, bs_t* b)
             hrd->entry_point_offset_minus1.resize(hrd->num_entry_point_offsets);
             for (int i = 0; i < hrd->num_entry_point_offsets; i++)
             {
-                hrd->entry_point_offset_minus1[i] = bs_read_u1(b);// u(v)
+                // to confirm
+                // tocheck entry_point_offset_minus1的值是否要加上1？
+                hrd->entry_point_offset_minus1[i] = bs_read_u(b, hrd->offset_len_minus1+1); // u(v) 
             }
         }
     }
@@ -1442,7 +1497,7 @@ void h265_read_slice_header(h265_stream_t* h, bs_t* b)
 
 void h265_read_slice_layer_rbsp(h265_stream_t* h, bs_t* b)
 {
-    h265_read_slice_header(h, b);
+    h265_read_slice_header(h, b, 0);
 #if 0
 
     slice_data_rbsp_t* slice_data = h->slice_data;
@@ -1465,19 +1520,19 @@ void h265_read_slice_layer_rbsp(h265_stream_t* h, bs_t* b)
 #endif
 }
 
-//7.3.2.4 Access unit delimiter RBSP syntax
+//7.3.2.5 Access unit delimiter RBSP syntax
 void h265_read_aud_rbsp(h265_stream_t* h, bs_t* b)
 {
     h->aud->pic_type = bs_read_u(b,3);
      h265_read_rbsp_trailing_bits(b);
 }
 
-//7.3.2.5 End of sequence RBSP syntax
+//7.3.2.6 End of sequence RBSP syntax
 void h265_read_end_of_seq_rbsp(h265_stream_t* h, bs_t* b)
 {
 }
 
-//7.3.2.6 End of stream RBSP syntax
+//7.3.2.7 End of stream RBSP syntax
 void h265_read_end_of_stream_rbsp(h265_stream_t* h, bs_t* b)
 {
 }

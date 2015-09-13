@@ -223,8 +223,10 @@ got_nal:
     if (nalu->type)
     {
         //nal_header = (Buf[startcodeprefix_len]<<8) | Buf[startcodeprefix_len+1];
+        //nalu->nal_unit_type = h265_get_nal_type((uint8_t*)&nal_header, 2);
         nal_header = Buf[startcodeprefix_len];
-        nalu->nal_unit_type = (nal_header>>1) & 0x3f;// 6 bit
+        nalu->nal_unit_type = h265_get_nal_type((uint8_t*)&nal_header, 1); // ugly
+        
         // todo 读slice_type
 
     }
@@ -514,9 +516,10 @@ int h264_pps_parse(char* filename,int data_offset,int data_lenth, PPSInfo_t& inf
 // 以下代码来自h264_stream.c，单独出来
 /***************************** debug ******************************/
 
-#define my_printf(...) sprintf( tempstr,__VA_ARGS__);\
-    strcat(tempstr,"\r\n");                        \
-    strcat(outputstr,tempstr);
+#define my_printf(...) do { \
+    sprintf( tempstr,__VA_ARGS__);\
+    strcat(tempstr,"\r\n"); \
+    strcat(outputstr,tempstr);} while(0)
 
 static void h264_debug_sps(sps_t* sps)
 {
@@ -904,11 +907,11 @@ static void h265_debug_ptl(profile_tier_level_t* ptl, int profilePresentFlag, in
             my_printf(" general_intra_constraint_flag: %d\n", ptl->general_intra_constraint_flag);
             my_printf(" general_one_picture_only_constraint_flag: %d\n", ptl->general_one_picture_only_constraint_flag);
             my_printf(" general_lower_bit_rate_constraint_flag: %d\n", ptl->general_lower_bit_rate_constraint_flag);
-            my_printf(" general_reserved_zero_34bits: %u\n", ptl->general_reserved_zero_34bits);// todo
+            my_printf(" general_reserved_zero_34bits: %u\n", ptl->general_reserved_zero_34bits);// tocheck
         }
         else
         {
-            my_printf(" general_reserved_zero_43bits: %u\n", ptl->general_reserved_zero_43bits);// todo
+            my_printf(" general_reserved_zero_43bits: %u\n", ptl->general_reserved_zero_43bits);// tocheck
         }
         if ((ptl->general_profile_idc>=1 && ptl->general_profile_idc<=5) ||
             ptl->general_profile_compatibility_flag[1] || ptl->general_profile_compatibility_flag[2] ||
@@ -1130,21 +1133,21 @@ static void h265_debug_scaling_list(scaling_list_data_t* sld)
     {
         for(int matrixId = 0; matrixId < 6; matrixId += ( sizeId == 3 ) ? 3 : 1)
         {
-            my_printf(" scaling_list_pred_mode_flag[%d][%d]: %d\n", sizeId, matrixId, sld->scaling_list_pred_mode_flag[sizeId][matrixId]);
+            my_printf("  scaling_list_pred_mode_flag[%d][%d]: %d\n", sizeId, matrixId, sld->scaling_list_pred_mode_flag[sizeId][matrixId]);
             if (!sld->scaling_list_pred_mode_flag[sizeId][matrixId])
             {
-                my_printf("  scaling_list_pred_mode_flag[%d][%d]: %d\n", sizeId, matrixId, sld->scaling_list_pred_matrix_id_delta[sizeId][matrixId]);
+                my_printf("   scaling_list_pred_mode_flag[%d][%d]: %d\n", sizeId, matrixId, sld->scaling_list_pred_matrix_id_delta[sizeId][matrixId]);
             }
             else
             {
                 if (sizeId > 1)
                 {
-                    my_printf("  scaling_list_dc_coef_minus8[%d][%d]: %d\n", sizeId, matrixId, sld->scaling_list_dc_coef_minus8[sizeId - 2][matrixId]);
+                    my_printf("   scaling_list_dc_coef_minus8[%d][%d]: %d\n", sizeId, matrixId, sld->scaling_list_dc_coef_minus8[sizeId - 2][matrixId]);
                 }
                 for (int i = 0; i < sld->coefNum; i++)
                 {
 
-                    my_printf("  ScalingList[%d][%d][%d]: %d\n", sizeId, matrixId, i, sld->ScalingList[sizeId][matrixId][i]);
+                    my_printf("   ScalingList[%d][%d][%d]: %d\n", sizeId, matrixId, i, sld->ScalingList[sizeId][matrixId][i]);
                 }
             }
         }
@@ -1391,22 +1394,155 @@ static void h265_debug_pps(h265_pps_t* pps)
 {
     my_printf("======= HEVC PPS =======\n");
     my_printf("pps_pic_parameter_set_id: %d\n", pps->pps_pic_parameter_set_id);
+    my_printf("pps_seq_parameter_set_id: %d\n", pps->pps_seq_parameter_set_id);
+    my_printf("dependent_slice_segments_enabled_flag: %d\n", pps->dependent_slice_segments_enabled_flag);
+    my_printf("output_flag_present_flag: %d\n", pps->output_flag_present_flag);
+    my_printf("num_extra_slice_header_bits: %d\n", pps->num_extra_slice_header_bits);
+    my_printf("sign_data_hiding_enabled_flag: %d\n", pps->sign_data_hiding_enabled_flag);
+    my_printf("cabac_init_present_flag: %d\n", pps->cabac_init_present_flag);
+    my_printf("num_ref_idx_l0_default_active_minus1: %d\n", pps->num_ref_idx_l0_default_active_minus1);
+    my_printf("num_ref_idx_l1_default_active_minus1: %d\n", pps->num_ref_idx_l1_default_active_minus1);
+    my_printf("init_qp_minus26: %d\n", pps->init_qp_minus26);
+    my_printf("constrained_intra_pred_flag: %d\n", pps->constrained_intra_pred_flag);
+    my_printf("transform_skip_enabled_flag: %d\n", pps->transform_skip_enabled_flag);
+    my_printf("cu_qp_delta_enabled_flag: %d\n", pps->cu_qp_delta_enabled_flag);
+    if (pps->cu_qp_delta_enabled_flag)
+        my_printf("diff_cu_qp_delta_depth: %d\n", pps->diff_cu_qp_delta_depth);
+    my_printf("pps_cb_qp_offset: %d\n", pps->pps_cb_qp_offset);
+    my_printf("pps_cr_qp_offset: %d\n", pps->pps_cr_qp_offset);
+    my_printf("pps_slice_chroma_qp_offsets_present_flag: %d\n", pps->pps_slice_chroma_qp_offsets_present_flag);
+    my_printf("weighted_pred_flag: %d\n", pps->weighted_pred_flag);
+    my_printf("weighted_bipred_flag: %d\n", pps->weighted_bipred_flag);
+    my_printf("transquant_bypass_enabled_flag: %d\n", pps->transquant_bypass_enabled_flag);
+    my_printf("tiles_enabled_flag: %d\n", pps->tiles_enabled_flag);
+    my_printf("entropy_coding_sync_enabled_flag: %d\n", pps->entropy_coding_sync_enabled_flag);
+    if (pps->tiles_enabled_flag)
+    {
+        my_printf("num_tile_columns_minus1: %d\n", pps->num_tile_columns_minus1);
+        my_printf("num_tile_rows_minus1: %d\n", pps->num_tile_rows_minus1);
+        my_printf("uniform_spacing_flag: %d\n", pps->uniform_spacing_flag);
+        if (!pps->uniform_spacing_flag)
+        {
+            for (int i = 0; i < pps->num_tile_columns_minus1; i++)
+                my_printf(" column_width_minus1[%d]: %d\n", i, pps->column_width_minus1[i]);
+            for (int i = 0; i < pps->num_tile_rows_minus1; i++)
+                my_printf(" row_height_minus1[%d]: %d\n", i, pps->row_height_minus1[i]);
+        }
+        my_printf(" loop_filter_across_tiles_enabled_flag: %d\n", pps->loop_filter_across_tiles_enabled_flag); // to check
+    }
+    my_printf("pps_loop_filter_across_slices_enabled_flag: %d\n", pps->pps_loop_filter_across_slices_enabled_flag); // to check
+    my_printf("deblocking_filter_control_present_flag: %d\n", pps->deblocking_filter_control_present_flag);
+    if (pps->deblocking_filter_control_present_flag)
+    {
+        my_printf(" deblocking_filter_override_enabled_flag: %d\n", pps->deblocking_filter_override_enabled_flag);
+        my_printf(" pps_deblocking_filter_disabled_flag: %d\n", pps->pps_deblocking_filter_disabled_flag);
+        if (pps->pps_deblocking_filter_disabled_flag)
+        {
+            my_printf("  pps_beta_offset_div2: %d\n", pps->pps_beta_offset_div2);
+            my_printf("  pps_tc_offset_div2: %d\n", pps->pps_tc_offset_div2);
+        }
+    }
+    my_printf("pps_scaling_list_data_present_flag: %d\n", pps->pps_scaling_list_data_present_flag);
+    if (pps->pps_scaling_list_data_present_flag)
+    {
+        // scaling_list_data()
+        h265_debug_scaling_list(&pps->scaling_list_data);
+    }
+    my_printf("lists_modification_present_flag: %d\n", pps->lists_modification_present_flag);
+    my_printf("log2_parallel_merge_level_minus2: %d\n", pps->log2_parallel_merge_level_minus2);
+    my_printf("slice_segment_header_extension_present_flag: %d\n", pps->slice_segment_header_extension_present_flag);
+    my_printf("pps_extension_present_flag: %d\n", pps->pps_extension_present_flag);
+    if (pps->pps_extension_present_flag)
+    {
+        my_printf(" pps_range_extension_flag: %d\n", pps->pps_range_extension_flag);
+        my_printf(" pps_multilayer_extension_flag: %d\n", pps->pps_multilayer_extension_flag);
+        my_printf(" pps_3d_extension_flag: %d\n", pps->pps_3d_extension_flag);
+        my_printf(" pps_extension_5bits: %d\n", pps->pps_extension_5bits);
+    }
+    if (pps->pps_range_extension_flag)
+    {
+        if (pps->transform_skip_enabled_flag)
+            my_printf(" pps_extension_5bits: %d\n", pps->pps_range_extension.log2_max_transform_skip_block_size_minus2);
+        my_printf(" cross_component_prediction_enabled_flag: %d\n", pps->pps_range_extension.cross_component_prediction_enabled_flag);
+        my_printf(" chroma_qp_offset_list_enabled_flag: %d\n", pps->pps_range_extension.chroma_qp_offset_list_enabled_flag);
+        if (pps->pps_range_extension.chroma_qp_offset_list_enabled_flag)
+        {
+            my_printf(" diff_cu_chroma_qp_offset_depth: %d\n", pps->pps_range_extension.diff_cu_chroma_qp_offset_depth);
+            my_printf(" chroma_qp_offset_list_len_minus1: %d\n", pps->pps_range_extension.chroma_qp_offset_list_len_minus1);
+            for (int i = 0; i < pps->pps_range_extension.chroma_qp_offset_list_len_minus1; i++)
+            {
+                my_printf(" cb_qp_offset_list[%d]: %d\n", i, pps->pps_range_extension.cb_qp_offset_list[i]);
+                my_printf(" cr_qp_offset_list[%d]: %d\n", i, pps->pps_range_extension.cb_qp_offset_list[i]);
+            }
+        }
+        my_printf(" log2_sao_offset_scale_luma: %d\n", pps->pps_range_extension.log2_sao_offset_scale_luma);
+        my_printf(" log2_sao_offset_scale_chroma: %d\n", pps->pps_range_extension.log2_sao_offset_scale_chroma);
+    }
+    if (pps->pps_multilayer_extension_flag)
+    {
+        // todo...
+    }
+    if (pps->pps_3d_extension_flag)
+    {
+        // todo...
+    }
 }
 
 // aud
 static void h265_debug_aud(h265_aud_t* aud)
 {
     my_printf("======= HEVC AUD =======\n");
+    const char* pic_type;
+    switch (aud->pic_type)
+    {
+    case H265_AUD_PRIMARY_PIC_TYPE_I :    pic_type = "I"; break;
+    case H265_AUD_PRIMARY_PIC_TYPE_IP :   pic_type = "P, I"; break;
+    case H265_AUD_PRIMARY_PIC_TYPE_IPB :  pic_type = "B, P, I"; break;
+    default : pic_type = "Unknown"; break;
+    }
+    my_printf("pic_type: %d ( %s ) \n", aud->pic_type, pic_type );
 }
+
 // sei
 static void h265_debug_sei(h265_stream_t* h)
 {
     my_printf("======= HEVC SEI =======\n");
 }
 
-static void h265_debug_slice_header(h265_slice_header_t* hrd)
+static void h265_debug_slice_header(h265_stream_t* h)
 {
+    h265_slice_header_t* hrd = h->sh;
+    h265_sps_t* sps = NULL;
+    h265_pps_t* pps = NULL;
+    int nal_unit_type = h->nal->nal_unit_type;
+    pps = h->pps = h->pps_table[hrd->slice_pic_parameter_set_id];
+    sps = h->sps = h->sps_table[pps->pps_seq_parameter_set_id];
+
     my_printf("======= HEVC Slice Header =======\n");
+    my_printf("first_slice_segment_in_pic_flag: %d\n", hrd->first_slice_segment_in_pic_flag);
+    my_printf("no_output_of_prior_pics_flag: %d\n", hrd->no_output_of_prior_pics_flag);
+    my_printf("slice_pic_parameter_set_id: %d\n", hrd->slice_pic_parameter_set_id);
+    my_printf("dependent_slice_segment_flag: %d\n", hrd->dependent_slice_segment_flag);
+    my_printf("slice_segment_address: %d\n", hrd->slice_segment_address);
+    if (!hrd->dependent_slice_segment_flag)
+    {
+        for (int i = 0; i < pps->num_extra_slice_header_bits; i++)
+            my_printf("slice_reserved_flag[%d]: %d\n", i, hrd->slice_reserved_flag[i]);
+        const char* slice_type_name;
+        switch(hrd->slice_type)
+        {
+            case H265_SH_SLICE_TYPE_P:  slice_type_name = "P slice"; break;
+            case H265_SH_SLICE_TYPE_B:  slice_type_name = "B slice"; break;
+            case H265_SH_SLICE_TYPE_I:  slice_type_name = "I slice"; break;
+            default :                   slice_type_name = "Unknown"; break;
+        }
+        my_printf("slice_type: %d (%s)\n", hrd->slice_type, slice_type_name);
+        if (pps->output_flag_present_flag)
+            my_printf("pic_output_flag: %d\n", hrd->pic_output_flag);
+        if (sps->separate_colour_plane_flag == 1)
+            my_printf("colour_plane_id: %d\n", hrd->colour_plane_id);
+    }
+    
 }
 
 static void h265_debug_nal(h265_stream_t* h, h265_nal_t* nal)
@@ -1560,6 +1696,6 @@ static void h265_debug_nal(h265_stream_t* h, h265_nal_t* nal)
         h265_debug_aud(h->aud);
     else if(my_nal_type == 4)
         h265_debug_sei(h);
-    else if( nal->nal_unit_type == 5)
-        h265_debug_slice_header(h->sh);
+    else if(my_nal_type == 5)
+        h265_debug_slice_header(h);
 }
