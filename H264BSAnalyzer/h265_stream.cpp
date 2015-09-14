@@ -662,16 +662,17 @@ void h265_read_short_term_ref_pic_set(bs_t* b, h265_sps_t* sps, st_ref_pic_set_t
         rps->m_numberOfNegativePictures = st->num_negative_pics;
         rps->m_numberOfPositivePictures = st->num_positive_pics;
 
-        st->delta_poc_s0_minus1.resize(st->num_negative_pics);
-        st->used_by_curr_pic_s0_flag.resize(st->num_negative_pics);
+        // todo...
+        //st->delta_poc_s0_minus1.resize(st->num_negative_pics);
+        //st->used_by_curr_pic_s0_flag.resize(st->num_negative_pics);
         for (int i = 0; i < st->num_negative_pics; i++)
         {
             st->delta_poc_s0_minus1[i] = bs_read_ue(b);
             st->used_by_curr_pic_s0_flag[i] = bs_read_u1(b);
             rps->m_used[i] = st->used_by_curr_pic_s0_flag[i];
         }
-        st->delta_poc_s1_minus1.resize(st->num_positive_pics);
-        st->used_by_curr_pic_s1_flag.resize(st->num_positive_pics);
+        //st->delta_poc_s1_minus1.resize(st->num_positive_pics);
+        //st->used_by_curr_pic_s1_flag.resize(st->num_positive_pics);
         for (int i = 0; i < st->num_positive_pics; i++)
         {
             st->delta_poc_s1_minus1[i] = bs_read_ue(b);
@@ -1253,6 +1254,8 @@ void h265_read_slice_header(h265_stream_t* h, bs_t* b, int only_slice)
     h265_pps_t* pps = NULL;
     int nal_unit_type = h->nal->nal_unit_type;
 
+    memset(hrd, 0, sizeof(h265_slice_header_t));
+
     hrd->first_slice_segment_in_pic_flag  = bs_read_u1(b);
 
     if (nal_unit_type >= NAL_UNIT_CODED_SLICE_BLA_W_LP && nal_unit_type <= NAL_UNIT_RESERVED_IRAP_VCL23)
@@ -1311,13 +1314,13 @@ void h265_read_slice_header(h265_stream_t* h, bs_t* b, int only_slice)
         //if (nal_unit_type != NAL_UNIT_CODED_SLICE_IDR_W_RADL && nal_unit_type != NAL_UNIT_CODED_SLICE_IDR_N_LP)
         else
         {
-            hrd->slice_pic_order_cnt_lsb = bs_read_u(b, sps->log2_max_pic_order_cnt_lsb_minus4 + 4); // poc
+            hrd->slice_pic_order_cnt_lsb = bs_read_u(b, sps->log2_max_pic_order_cnt_lsb_minus4 + 4); // poc v(u)
             hrd->short_term_ref_pic_set_sps_flag = bs_read_u1(b);
             if (!hrd->short_term_ref_pic_set_sps_flag)
             {
                 referencePictureSets_t* rps = &hrd->m_localRPS;
                 hrd->m_pRPS = &hrd->m_localRPS;
-
+                // error here
                 // st_ref_pic_set(num_short_term_ref_pic_sets)
                 h265_read_short_term_ref_pic_set(b, sps, &hrd->st_ref_pic_set, rps, sps->num_short_term_ref_pic_sets);
             }
@@ -1437,12 +1440,12 @@ void h265_read_slice_header(h265_stream_t* h, bs_t* b, int only_slice)
                 h265_read_pred_weight_table(h, b);
             }
             hrd->five_minus_max_num_merge_cand = bs_read_ue(b);
-        }
+        } // end of slice_type
         hrd->slice_qp_delta = bs_read_se(b);
         if (pps->pps_slice_chroma_qp_offsets_present_flag)
         {
-            hrd->slice_qp_delta = bs_read_se(b);
-            hrd->slice_qp_delta = bs_read_se(b);
+            hrd->slice_cb_qp_offset = bs_read_se(b);
+            hrd->slice_cr_qp_offset = bs_read_se(b);
         }
         if (pps->pps_range_extension.chroma_qp_offset_list_enabled_flag)
         {
@@ -1467,7 +1470,8 @@ void h265_read_slice_header(h265_stream_t* h, bs_t* b, int only_slice)
         {
             hrd->slice_loop_filter_across_slices_enabled_flag = bs_read_u1(b);
         }
-    }
+    } // end of dependent_slice_segment_flag
+
     if (pps->tiles_enabled_flag || pps->entropy_coding_sync_enabled_flag)
     {
         hrd->num_entry_point_offsets = bs_read_ue(b);
@@ -1475,6 +1479,7 @@ void h265_read_slice_header(h265_stream_t* h, bs_t* b, int only_slice)
         {
             hrd->offset_len_minus1   = bs_read_ue(b);
             hrd->entry_point_offset_minus1.resize(hrd->num_entry_point_offsets);
+            // error
             for (int i = 0; i < hrd->num_entry_point_offsets; i++)
             {
                 // to confirm

@@ -316,15 +316,15 @@ int CH264BSAnalyzerDlg::ShowNLInfo(NALU_t* nalu)
             {
             case 0:
             case 5:
-                strNalInfo.Format(_T("P Slice #%d"), m_nSliceIndex);
+                strNalInfo.Format(_T("Slice #%d"), m_nSliceIndex);
                 break;
             case 1:
             case 6:
-                strNalInfo.Format(_T("B Slice #%d"), m_nSliceIndex);
+                strNalInfo.Format(_T("Slice #%d"), m_nSliceIndex);
                 break;
             case 2:
             case 7:
-                strNalInfo.Format(_T("I Slice #%d"), m_nSliceIndex);
+                strNalInfo.Format(_T("Slice #%d"), m_nSliceIndex);
                 break;
             }
             m_nSliceIndex++;
@@ -731,7 +731,7 @@ void CH264BSAnalyzerDlg::OnNMCustomdrawH264Nallist(NMHDR *pNMHDR, LRESULT *pResu
         }
         else if(strncmp(strTemp,"VPS", 3)==0)
         {
-            clrNewBkColor = RGB(0,0,255);        //蓝色
+            clrNewBkColor = RGB(255,0,255);        //紫色
         }
         else if(strncmp(strTemp,"SPS", 3)==0)
         {
@@ -743,7 +743,7 @@ void CH264BSAnalyzerDlg::OnNMCustomdrawH264Nallist(NMHDR *pNMHDR, LRESULT *pResu
         }
         else if(strncmp(strTemp,"SEI", 3)==0)
         {
-            clrNewBkColor = RGB(255,66,255);       //粉红色
+            clrNewBkColor = RGB(128,128,192);       //灰色
         }
         else if(strncmp(strTemp,"IDR", 3)==0)
         {

@@ -270,10 +270,14 @@ typedef struct
     vector<uint8_t> use_delta_flag;
     int num_negative_pics;
     int num_positive_pics;
-    vector<int> delta_poc_s0_minus1;
-    vector<uint8_t> used_by_curr_pic_s0_flag;
-    vector<int> delta_poc_s1_minus1;
-    vector<uint8_t> used_by_curr_pic_s1_flag;
+    //vector<int> delta_poc_s0_minus1;
+    //vector<uint8_t> used_by_curr_pic_s0_flag;
+    //vector<int> delta_poc_s1_minus1;
+    //vector<uint8_t> used_by_curr_pic_s1_flag;
+    int delta_poc_s0_minus1[256];
+    uint8_t used_by_curr_pic_s0_flag[256];
+    int delta_poc_s1_minus1[256];
+    uint8_t used_by_curr_pic_s1_flag[256];
 } st_ref_pic_set_t;
 
 #define MAX_NUM_REF_PICS 16 ///< max. number of pictures used for reference
