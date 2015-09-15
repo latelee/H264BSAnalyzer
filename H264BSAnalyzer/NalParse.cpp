@@ -9,6 +9,42 @@
 
 #include "H264BSAnalyzerDlg.h"
 
+CNalParser::CNalParser()
+{
+    m_nType = 0;
+    m_hH264 = NULL;
+    m_hH265 = NULL;
+}
+
+CNalParser::~CNalParser()
+{
+
+}
+
+int CNalParser::init(const char* filename)
+{
+    // init handle
+
+    // judge file
+    char szExt[16] = {0};
+    _splitpath(m_filename, NULL, NULL, NULL, szExt);
+    if (!strcmp(&szExt[1], "h265") || !strcmp(&szExt[1], "265") ||
+        !strcmp(&szExt[1], "hevc"))
+    {
+        m_nType = 1;
+    }
+    else
+    {
+        m_nType = 0;
+    }
+    return 0;
+}
+
+int CNalParser::release(void)
+{
+    return 0;
+}
+
 FILE *g_fpBitStream = NULL;                //!< the bit stream file
 #define MAX_NAL_SIZE (1*1024*1024)
 
@@ -226,7 +262,7 @@ got_nal:
         //nalu->nal_unit_type = h265_get_nal_type((uint8_t*)&nal_header, 2);
         nal_header = Buf[startcodeprefix_len];
         nalu->nal_unit_type = h265_get_nal_type((uint8_t*)&nal_header, 1); // ugly
-        
+
         // todo 读slice_type
 
     }
@@ -263,7 +299,7 @@ int find_first_nal()
     unsigned char *Buf = NULL;
 
     if ((Buf = (unsigned char*)calloc (MAX_NAL_SIZE, sizeof(char))) == NULL)
-        printf ("GetAnnexbNALU: Could not allocate Buf memory\n");
+        printf ("find_first_nal: Could not allocate Buf memory\n");
 
     while (!found_startcode)
     {
@@ -289,6 +325,7 @@ int find_first_nal()
     // 文件指针要恢复
     fseek (g_fpBitStream, -startcode_len, SEEK_CUR);
 
+    free(Buf);
     return pos - startcode_len;
 }
 

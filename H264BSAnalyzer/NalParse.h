@@ -14,9 +14,10 @@ typedef struct
     int type;                       // 0 -- h.264; 1 -- h.265
     unsigned int num;               // 序号
     unsigned int len;               // 含起始码的总的长度
+    unsigned int data_offset;       // nal包在文件中的偏移
     char slice_type;               // 帧类型
     char nal_unit_type;            // NAL类型
-    unsigned int data_offset;       // nal包在文件中的偏移
+    char startcode_len;             // start code长度
     char startcode_buf[14];         // 起始码，字符串形式
 } NALU_t;
 
@@ -50,4 +51,20 @@ int h264_sps_parse(char* filename,int data_offset,int data_lenth, SPSInfo_t& inf
 
 int h264_pps_parse(char* filename,int data_offset,int data_lenth, PPSInfo_t& info);
 
+class CNalParser
+{
+public:
+    CNalParser();
+    ~CNalParser();
+    
+    int init(const char* filename);
+    int release(void);
+
+
+private:
+    h264_stream_t* m_hH264;
+    h265_stream_t* m_hH265;
+    int m_nType; // 0:264 1:265
+    const char* m_filename;
+};
 #endif
