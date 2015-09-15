@@ -64,19 +64,15 @@ CH264BSAnalyzerDlg::CH264BSAnalyzerDlg(CWnd* pParent /*=NULL*/)
 void CH264BSAnalyzerDlg::DoDataExchange(CDataExchange* pDX)
 {
     CDialogEx::DoDataExchange(pDX);
-    //DDX_Control(pDX, IDC_H264_INPUTURL, m_h264InputUrl);
     DDX_Control(pDX, IDC_H264_NALINFO, m_h264NalInfo);
     DDX_Control(pDX, IDC_H264_NALLIST, m_h264NalList);
-    DDX_Control(pDX, IDC_EDIT_FILE, m_edFileUrl);
     DDX_Control(pDX, IDC_EDIT_HEX, m_edHexInfo);
-    DDX_Control(pDX, IDC_CB_NAL, m_cbNalNum);
 }
 
 BEGIN_MESSAGE_MAP(CH264BSAnalyzerDlg, CDialogEx)
     ON_WM_SYSCOMMAND()
     ON_WM_PAINT()
     ON_WM_QUERYDRAGICON()
-    ON_BN_CLICKED(IDC_H264_INPUTURL_OPEN, &CH264BSAnalyzerDlg::OnBnClickedH264InputurlOpen)
     ON_WM_DROPFILES()
     ON_NOTIFY(LVN_ITEMACTIVATE, IDC_H264_NALLIST, &CH264BSAnalyzerDlg::OnLvnItemActivateH264Nallist)
     ON_NOTIFY(NM_CUSTOMDRAW, IDC_H264_NALLIST, &CH264BSAnalyzerDlg::OnNMCustomdrawH264Nallist)
@@ -131,8 +127,6 @@ BOOL CH264BSAnalyzerDlg::OnInitDialog()
     m_h264NalList.InsertColumn(3,_T("Start Code"),LVCFMT_LEFT,80,0);
     m_h264NalList.InsertColumn(4,_T("NAL Type"),LVCFMT_LEFT,180,0);
     m_h264NalList.InsertColumn(5,_T("Info"),LVCFMT_LEFT,80,0);
-
-    m_cbNalNum.SetCurSel(0);
 
     m_nSliceIndex = 0;
 
@@ -429,21 +423,6 @@ void CH264BSAnalyzerDlg::OnBnClickedH264InputurlOpen()
     SystemClear();
     UpdateData();
 
-    CString strFilePath;
-    CString strSimpleInfo;
-    CString strProfileInfo;
-    CString strVideoFormat;
-    CString strMaxNalNum;
-    int nMaxNalNum = -1;
-    SPSInfo_t sps = {0};
-    PPSInfo_t pps = {0};
-
-    m_edFileUrl.GetWindowText(m_strFileUrl);
-
-    // 输入非数字时，获取的nMaxNalNum为-1，则显示所有的NAL
-    m_cbNalNum.GetWindowText(strMaxNalNum);
-    sscanf((char*)strMaxNalNum.GetBuffer(), "%d", &nMaxNalNum);
-
     // test
     //m_strFileUrl.Format("%s", "../foreman_cif.h264");
     
@@ -453,8 +432,9 @@ void CH264BSAnalyzerDlg::OnBnClickedH264InputurlOpen()
         AfxMessageBox(_T("文件路径为空，请打开文件！！"));
         return;
     }
-
-    strcpy(str_szFileUrl, (char*)m_strFileUrl.GetBuffer());
+    CString strTemp;
+    strTemp.Format("%s - %s", m_strFileUrl, APP_NAM);
+    this->SetWindowText(strTemp);
 
     SetEvent(m_hFileLock);
 }
@@ -481,7 +461,7 @@ void CH264BSAnalyzerDlg::ReadFile(void)
     {
         WaitForSingleObject(m_hFileLock, INFINITE);
 
-        h264_nal_probe(str_szFileUrl, m_vNalTypeVector, nMaxNalNum);
+        h264_nal_probe(m_strFileUrl.GetBuffer(), m_vNalTypeVector, nMaxNalNum);
 
         m_nValTotalNum = m_vNalTypeVector.size();
 
@@ -491,12 +471,12 @@ void CH264BSAnalyzerDlg::ReadFile(void)
             // 解析SPS
             if (m_vNalTypeVector[i].nal_unit_type == 7)
             {
-                h264_sps_parse(str_szFileUrl, m_vNalTypeVector[i].data_offset, m_vNalTypeVector[i].len, sps);
+                h264_sps_parse(m_strFileUrl.GetBuffer(), m_vNalTypeVector[i].data_offset, m_vNalTypeVector[i].len, sps);
             }
             // 解析PPS
             if (m_vNalTypeVector[i].nal_unit_type == 8)
             {
-                h264_pps_parse(str_szFileUrl, m_vNalTypeVector[i].data_offset, m_vNalTypeVector[i].len, pps);
+                h264_pps_parse(m_strFileUrl.GetBuffer(), m_vNalTypeVector[i].data_offset, m_vNalTypeVector[i].len, pps);
             }
             ShowNLInfo(&m_vNalTypeVector[i]);
         }
@@ -552,7 +532,7 @@ void CH264BSAnalyzerDlg::ReadFile(void)
         "Video Format: xxx\r\n"
         */
         strSimpleInfo.Format(
-            "File name: %s\r\n"
+            "File Info\r\n"
             "Picture Size: %dx%d\r\n"
             " - Cropping Left        : %d\r\n"
             " - Cropping Right      : %d\r\n"
@@ -562,7 +542,6 @@ void CH264BSAnalyzerDlg::ReadFile(void)
             "Stream Type: %s Profile @ Level %d\r\n"
             "Encoding Type: %s\r\n"
             "Max fps: %.03f\r\n",
-            m_strFileUrl,
             sps.width, sps.height,
             sps.crop_left, sps.crop_right,
             sps.crop_top, sps.crop_bottom,
@@ -589,7 +568,7 @@ void CH264BSAnalyzerDlg::PaseNal(void)
     {
         WaitForSingleObject(m_hNALLock, INFINITE);
 
-        ret = h264_nal_parse(str_szFileUrl,m_nNalOffset,m_nNalLen,this);
+        ret = h264_nal_parse(m_strFileUrl.GetBuffer(),m_nNalOffset,m_nNalLen,this);
         if (ret < 0)
         {
             AfxMessageBox("解析NAL时出错，可能是文件读取出错。");
@@ -615,7 +594,7 @@ void CH264BSAnalyzerDlg::OnLvnItemActivateH264Nallist(NMHDR *pNMHDR, LRESULT *pR
     SetEvent(m_hNALLock);
 #else
     // 
-    ret = h264_nal_parse(str_szFileUrl,m_nNalOffset,m_nNalLen,this);
+    ret = h264_nal_parse(m_strFileUrl.GetBuffer(), m_nNalOffset,m_nNalLen,this);
     if (ret < 0)
     {
         AfxMessageBox("解析NAL时出错，可能是文件读取出错。");
@@ -682,7 +661,7 @@ void CH264BSAnalyzerDlg::OnLvnKeydownH264Nallist(NMHDR *pNMHDR, LRESULT *pResult
 #if 0
     SetEvent(m_hNALLock);
 #else
-    ret = h264_nal_parse(str_szFileUrl,m_nNalOffset,m_nNalLen,this);
+    ret = h264_nal_parse(m_strFileUrl.GetBuffer(),m_nNalOffset,m_nNalLen,this);
     if (ret < 0)
     {
         AfxMessageBox("解析NAL时出错，可能是文件读取出错。");
@@ -782,8 +761,6 @@ void CH264BSAnalyzerDlg::OnDropFiles(HDROP hDropInfo)
 
     char* pFilePathName =(char *)malloc(MAX_URL_LENGTH);
     ::DragQueryFile(hDropInfo, 0, (LPSTR)pFilePathName, MAX_URL_LENGTH);  // 获取拖放文件的完整文件名，最关键！
-    //m_h264InputUrl.SetWindowTextA(pFilePathName);
-    m_edFileUrl.SetWindowText((LPSTR)pFilePathName);
     m_strFileUrl.Format(_T("%s"), pFilePathName);
     ::DragFinish(hDropInfo);   // 注意这个不能少，它用于释放Windows 为处理文件拖放而分配的内存
     free(pFilePathName);
@@ -814,8 +791,6 @@ void CH264BSAnalyzerDlg::OnFileOpen()
     }
 
     m_strFileUrl = fileDlg.GetPathName();
-
-    m_edFileUrl.SetWindowTextA(m_strFileUrl);
 
     char szExt[16] = {0};
     _splitpath(m_strFileUrl, NULL, NULL, NULL, szExt);

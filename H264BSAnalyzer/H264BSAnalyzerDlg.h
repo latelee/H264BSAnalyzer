@@ -12,6 +12,8 @@ using std::vector;
 
 #pragma once
 
+#define APP_NAM "H264BSAnalyzer"
+
 #define MAX_URL_LENGTH 512
 
 // CH264BSAnalyzerDlg dialog
@@ -43,20 +45,16 @@ protected:
     afx_msg HCURSOR OnQueryDragIcon();
     DECLARE_MESSAGE_MAP()
 public:
-    //CMFCEditBrowseCtrl m_h264InputUrl;  // 保留用
     CEdit m_h264NalInfo;
     CListCtrl m_h264NalList;
-    CEdit m_edFileUrl;
     CHexEdit m_edHexInfo;   // 显示十六进制
-    CComboBox m_cbNalNum;   // 分析NAL数量
 
-    afx_msg void OnBnClickedH264InputurlOpen();
+    void OnBnClickedH264InputurlOpen();
 
     // our own
 private:
     int m_nSliceIndex;
     CString m_strFileUrl;
-    char str_szFileUrl[MAX_URL_LENGTH];
 
     vector<NALU_t> m_vNalTypeVector;
     int m_nValTotalNum; // m_vNalTypeVector有多少个NALU_t
