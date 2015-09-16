@@ -12,6 +12,7 @@ ref: HM16.6 source code
 #include <assert.h>
 
 #include "bs.h"
+#include "h264_stream.h" // for nal_to_rbsp, etc...
 
 #ifndef min
 #define min(a, b) (((a) < (b)) ? (a) : (b))
@@ -535,22 +536,6 @@ typedef struct
   uint8_t* rbsp_buf;
 } h265_slice_data_rbsp_t;
 
-typedef struct
-{
-    int init;
-    int profile_idc;
-    int level_idc;
-    int width;
-    int height;
-    int crop_left;
-    int crop_right;
-    int crop_top;
-    int crop_bottom;
-    float max_framerate;  // 由SPS计算得到的帧率，为0表示SPS中没有相应的字段计算
-    int chroma_format_idc;  // YUV颜色空间 0: monochrome 1:420 2:422 3:444
-    int encoding_type;  // 为1表示CABAC 0表示CAVLC
-} h265videoinfo_t;
-
 /**
    H265 stream
    Contains data structures for all NAL types that can be handled by this library.
@@ -574,14 +559,12 @@ typedef struct
     h265_sps_t* sps_table[32];
     h265_pps_t* pps_table[256];
     h265_sei_t** seis;
-    h265videoinfo_t* info;
+    videoinfo_t* info;
 } h265_stream_t;
 
 h265_stream_t* h265_new();
 void h265_free(h265_stream_t* h);
 
-int h265_get_nal_type(uint8_t* buf, int size);
-int h265_get_slice_type(uint8_t* buf, int size);
 
 int h265_read_nal_unit(h265_stream_t* h, uint8_t* buf, int size);
 

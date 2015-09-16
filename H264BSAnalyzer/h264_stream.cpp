@@ -83,7 +83,8 @@ h264_stream_t* h264_new()
     h->seis = NULL;
     h->sei = NULL;  //This is a TEMP pointer at whats in h->seis...
     h->sh = (slice_header_t*)calloc(1, sizeof(slice_header_t));
-
+    h->info = (videoinfo_t*)calloc(1, sizeof(videoinfo_t));
+    h->info->type = 0;
     return h;   
 }
 
@@ -538,6 +539,28 @@ void read_seq_parameter_set_rbsp(h264_stream_t* h, bs_t* b)
         read_vui_parameters(h, b);
     }
     read_rbsp_trailing_bits(h, b);
+
+    // add by Late Lee
+    h->info->crop_left = sps->frame_crop_left_offset;
+    h->info->crop_right = sps->frame_crop_right_offset;
+    h->info->crop_top = sps->frame_crop_top_offset;
+    h->info->crop_bottom = sps->frame_crop_bottom_offset;
+
+    // 宽高计算公式
+    h->info->width = ((sps->pic_width_in_mbs_minus1 +1)*16) - sps->frame_crop_left_offset*2 - sps->frame_crop_right_offset*2;
+    h->info->height= ((2 - sps->frame_mbs_only_flag)* (sps->pic_height_in_map_units_minus1 +1) * 16) - (sps->frame_crop_top_offset * 2) - (sps->frame_crop_bottom_offset * 2);
+
+    h->info->profile_idc = sps->profile_idc;
+    h->info->level_idc = sps->level_idc;
+
+    // YUV空间
+    h->info->chroma_format_idc = sps->chroma_format_idc;
+
+    // 注：这里的帧率计算还有疑问
+    if (sps->vui_parameters_present_flag)
+    {
+        h->info->max_framerate = (float)(sps->vui.time_scale) / (float)(sps->vui.num_units_in_tick);
+    }
 }
 
 
@@ -693,6 +716,10 @@ void read_pic_parameter_set_rbsp(h264_stream_t* h, bs_t* b)
     pps->pic_parameter_set_id = pps_id;
     pps->seq_parameter_set_id = bs_read_ue(b);
     pps->entropy_coding_mode_flag = bs_read_u1(b);
+
+    // add by Late Lee
+    h->info->encoding_type = pps->entropy_coding_mode_flag;
+
     pps->pic_order_present_flag = bs_read_u1(b);
     pps->num_slice_groups_minus1 = bs_read_ue(b);
 

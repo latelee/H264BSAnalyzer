@@ -36,54 +36,6 @@ CNalParser::~CNalParser()
     release();
 }
 
-FileType CNalParser::judeVideoFile(const char* filename)
-{
-    char szExt[16] = {0};
-    FileType type = FILE_H264; // default
-
-    _splitpath(filename, NULL, NULL, NULL, szExt);
-    if (!strcmp(&szExt[1], "h265") || !strcmp(&szExt[1], "265") ||
-        !strcmp(&szExt[1], "hevc"))
-    {
-        type = FILE_H265;
-    }
-    else if (!strcmp(&szExt[1], "h264") || !strcmp(&szExt[1], "264") ||
-        !strcmp(&szExt[1], "avc"))
-    {
-        type = FILE_H264;
-    }
-    else
-    {
-        // read file content
-        FILE* fp = NULL;
-        int offset = 0;
-        int startcode = 0;
-        unsigned char nalHader = 0;
-        unsigned char nalType = 0;
-        fp = fopen(filename, "r+b");
-        offset = findFirstNALU(fp, &startcode);
-        fseek(fp, offset+startcode, SEEK_SET);
-        fread((void*)&nalHader,1,1,fp);
-        // check h264 first...
-        nalType = nalHader & 0x1f; // 5 bit
-        if (nalType > 0 && nalType < 22) // ok
-        {
-            type = FILE_H264;
-        }
-        else
-        {
-            // not h264, then check h265...
-            nalType = (nalHader>>1) & 0x3f; // 6 bit
-            if (nalType >= 0 && nalType <= 47) // ok
-            {
-                type = FILE_H265;
-            }
-        }
-    }
-
-    return type;
-}
-
 int CNalParser::init(const char* filename)
 {
     m_filename = filename;
@@ -132,7 +84,7 @@ int CNalParser::probeNALU(vector<NALU_t>& vNal, int num)
     NALU_t n;
     int nal_num=0;
     int offset=0;
-    int data_lenth;
+    int nalLen;
     FILE* fp = NULL;
 
     fp=fopen(m_filename, "r+b");
@@ -145,20 +97,19 @@ int CNalParser::probeNALU(vector<NALU_t>& vNal, int num)
 
     n.type = m_nType; // h.265
 
-    int tmp = findFirstNALU(fp, &(n.startcodeLen));
+    offset = findFirstNALU(fp, &(n.startcodeLen));
 
-    offset = tmp;
     fseek(fp, offset, SEEK_SET);
-    while(!feof(fp))
+    while (!feof(fp))
     {
         if (num > 0 && nal_num == num)
         {
             break;
         }
-        data_lenth=getAnnexbNALU(fp, &n);//每执行一次，文件的指针指向本次找到的NALU的末尾，下一个位置即为下个NALU的起始码0x000001
-        n.offset=offset;
+        nalLen = getAnnexbNALU(fp, &n);//每执行一次，文件的指针指向本次找到的NALU的末尾，下一个位置即为下个NALU的起始码0x000001
+        n.offset = offset;
         n.num = nal_num;
-        offset=offset+data_lenth;
+        offset = offset + nalLen;
 
         vNal.push_back(n);
 
@@ -167,43 +118,39 @@ int CNalParser::probeNALU(vector<NALU_t>& vNal, int num)
     return 0;
 }
 
-int CNalParser::parseNALU(int offset,int lenght, char** naluData, char** naluInfo)
+int CNalParser::parseNALU(NALU_t& vNal, char** naluData, char** naluInfo)
 {
     int nal_start,nal_end;
 
-    //清空字符串-----------------
     memset(g_outputInfo, '\0', OUTPUT_SIZE);
 
-    if (lenght == 0)
-        return 0;
-    //句柄
-    //内存用于存放NAL（包含起始码）
     if (m_naluData == NULL)
     {
         free(m_naluData);
         m_naluData = NULL;
     }
-    m_naluData = (uint8_t *)malloc(lenght);
+    m_naluData = (uint8_t *)malloc(vNal.len);
 
-    //从文件读取
     FILE *fp = fopen(m_filename, "rb");
     if (fp == NULL)
     {
         return -1;
     }
 
-    fseek(fp, offset, SEEK_SET);
-    fread(m_naluData, lenght, 1, fp);
+    fseek(fp, vNal.offset, SEEK_SET);
+    fread(m_naluData, vNal.len, 1, fp);
 
-    find_nal_unit(m_naluData, lenght, &nal_start, &nal_end);
+    // 不需要再次查询nal
+    //find_nal_unit(m_naluData, vNal.len, &nal_start, &nal_end);
     if (m_nType == 1)
     {
-        h265_read_nal_unit(m_hH265, &m_naluData[nal_start], nal_end - nal_start);
+        // 此函数分析时，是不包含startcode的，所以要减去startcodeLen
+        h265_read_nal_unit(m_hH265, &m_naluData[vNal.startcodeLen], vNal.len - vNal.startcodeLen);
         h265_debug_nal(m_hH265,m_hH265->nal);    // 打印到g_outputInfo中
     }
     else
     {
-        read_nal_unit(m_hH264, &m_naluData[nal_start], nal_end - nal_start);
+        read_nal_unit(m_hH264, &m_naluData[vNal.startcodeLen], vNal.len - vNal.startcodeLen);
         h264_debug_nal(m_hH264, m_hH264->nal);  // 打印到g_outputInfo中
     }
 
@@ -335,7 +282,6 @@ static int ue(char *buff, int len, int &start_bit)
     return (1 << zero_num) - 1 + ret;
 }
 
-
 /**
 解析NAL，返回两个开始字符之间间隔的字节数，即包含startcode的NALU的长度
 
@@ -343,14 +289,13 @@ note：一个视频文件中不同的NAL，startcode可能不一样。比如SPS为4字节，但SEI可能为3
 todo:每次读一个字节，较慢，有无好的方法？
 */
 
-int CNalParser::getAnnexbNALU(FILE* fp, NALU_t *nalu)
+int CNalParser::getAnnexbNALU(FILE* fp, NALU_t* nalu)
 {
     int pos = 0;
     int found, rewind;
     unsigned char *buffer;
     int info2=0, info3=0;
     int eof = 0;
-    int startcodeLen = 3; // 码流序列的开始字符为3个字节
 
     if ((buffer = (unsigned char*)calloc (MAX_NAL_SIZE, sizeof(char))) == NULL)
         printf ("Could not allocate buffer memory\n");
@@ -378,16 +323,16 @@ int CNalParser::getAnnexbNALU(FILE* fp, NALU_t *nalu)
         else
         {
             //如果是0x00000001,得到开始前缀为4个字节
-            startcodeLen = 4;
+            nalu->startcodeLen = 4;
         }
     }
     else
     {
         //如果是0x000001,得到开始前缀为3个字节
-        startcodeLen = 3;
+        nalu->startcodeLen = 3;
     }
 
-    pos = startcodeLen;
+    pos = nalu->startcodeLen;
     //查找下一个开始字符的标志位
     found = 0;
     info2 = 0;
@@ -409,8 +354,7 @@ int CNalParser::getAnnexbNALU(FILE* fp, NALU_t *nalu)
         found = (info2 == 1 || info3 == 1);
     }
 
-    // Here, we have found another start code (and read length of startcode bytes more than we should
-    // have.  Hence, go back in the file
+    // startcode可能为3，也可能为4，故要如此判断
     rewind = (info3 == 1)? -4 : -3;
 
     if (0 != fseek (fp, rewind, SEEK_CUR))//把文件指针指向前一个NALU的末尾
@@ -426,25 +370,22 @@ got_nal:
         rewind = -1;
     }
 
-    // 有什么用？
-    //memcpy (nalu->buf, &Buf[nalu->startcodeprefix_len], nalu->len);//拷贝一个完整NALU，不拷贝起始前缀0x000001或0x00000001
-
     // 包括起始码在内的5个字节
     sprintf(nalu->startcodeBuffer, "%02x%02x%02x%02x%02x", buffer[0], buffer[1], buffer[2], buffer[3], buffer[4]);
-    nalu->len = pos+rewind;   //nalu->len + nalu->startcodeprefix_len;
-    uint16_t nal_header = 0; // two bytes for h.265
+    nalu->len = pos+rewind;
+
+    uint8_t nal_header = 0;
     if (nalu->type)
     {
-        nal_header = buffer[startcodeLen];
-        nalu->nalType = h265_get_nal_type((uint8_t*)&nal_header, 1); // ugly
-
-        // todo 读slice_type
-
+        h265_read_nal_unit(m_hH265, &buffer[nalu->startcodeLen], nalu->len - nalu->startcodeLen);
+        nalu->nalType = m_hH265->nal->nal_unit_type;
+        nalu->sliceType = m_hH265->sh->slice_type;
     }
     else
     {
-        //char nal_header = 0;
-        nal_header = buffer[startcodeLen];
+    // simple version
+#if 01
+        nal_header = buffer[nalu->startcodeLen];
         nalu->nalType = nal_header & 0x1f;// 5 bit
 
         // 获取slice类型：I帧、P帧、B帧
@@ -452,9 +393,20 @@ got_nal:
         if (nalu->nalType <= 5 && nalu->nalType >= 1)
         {
             int start_bit = 0;
-            int first_mb_in_slice = ue((char*)buffer+startcodeLen+1, 8, start_bit);
-            nalu->sliceType = ue((char*)buffer+startcodeLen+1, 8, start_bit);
+            int first_mb_in_slice = ue((char*)buffer+nalu->startcodeLen+1, 8, start_bit);
+            nalu->sliceType = ue((char*)buffer+nalu->startcodeLen+1, 8, start_bit);
         }
+        if (nalu->nalType == 7 || nalu->nalType == 8) // sps pps
+        {
+            read_nal_unit(m_hH264, &buffer[nalu->startcodeLen], nalu->len - nalu->startcodeLen);
+        }
+
+        int tmp = 0;
+#else
+        read_nal_unit(m_hH264, &buffer[nalu->startcodeLen], nalu->len - nalu->startcodeLen);
+        nalu->nalType = m_hH264->nal->nal_unit_type;
+        nalu->sliceType = m_hH264->sh->slice_type;
+#endif
     }
 
     free(buffer);
@@ -504,6 +456,54 @@ int CNalParser::findFirstNALU(FILE* fp, int* startcodeLenght)
         *startcodeLenght = startcode_len;
 
     return pos - startcode_len;
+}
+
+FileType CNalParser::judeVideoFile(const char* filename)
+{
+    char szExt[16] = {0};
+    FileType type = FILE_H264; // default
+
+    _splitpath(filename, NULL, NULL, NULL, szExt);
+    if (!strcmp(&szExt[1], "h265") || !strcmp(&szExt[1], "265") ||
+        !strcmp(&szExt[1], "hevc"))
+    {
+        type = FILE_H265;
+    }
+    else if (!strcmp(&szExt[1], "h264") || !strcmp(&szExt[1], "264") ||
+        !strcmp(&szExt[1], "avc"))
+    {
+        type = FILE_H264;
+    }
+    else
+    {
+        // read content 
+        FILE* fp = NULL;
+        int offset = 0;
+        int startcode = 0;
+        unsigned char nalHader = 0;
+        unsigned char nalType = 0;
+        fp = fopen(filename, "r+b");
+        offset = findFirstNALU(fp, &startcode);
+        fseek(fp, offset+startcode, SEEK_SET);
+        fread((void*)&nalHader,1,1,fp);
+        // check h264 first...
+        nalType = nalHader & 0x1f; // 5 bit
+        if (nalType > 0 && nalType < 22) // ok
+        {
+            type = FILE_H264;
+        }
+        else
+        {
+            // not h264, then check h265...
+            nalType = (nalHader>>1) & 0x3f; // 6 bit
+            if (nalType >= 0 && nalType <= 47) // ok
+            {
+                type = FILE_H265;
+            }
+        }
+    }
+
+    return type;
 }
 
 // 以下代码来自h264_stream.c，单独出来

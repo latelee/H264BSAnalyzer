@@ -63,8 +63,13 @@ public:
     int probeNALU(vector<NALU_t>& vNal, int num);
 
     // 解析offset处大小为length的数据，十六进制数据传递到naluData，NAL信息传递到naluInfo
-    int parseNALU(int offset, int length, char** naluData, char** naluInfo);
+    int parseNALU(NALU_t& vNal, char** naluData, char** naluInfo);
 
+    void getVideoInfo(videoinfo_t* videoInfo)
+    {
+        if (m_nType) memcpy(videoInfo, m_hH265->info, sizeof(videoinfo_t));
+        else memcpy(videoInfo, m_hH264->info, sizeof(videoinfo_t));
+    }
     int h264_sps_parse(char* filename,int offset,int data_lenth, SPSInfo_t& info);
 
     int h264_pps_parse(char* filename,int offset,int data_lenth, PPSInfo_t& info);
@@ -90,7 +95,6 @@ private:
     h265_stream_t* m_hH265;
     FileType m_nType; // 0:264 1:265
     const char* m_filename;
-
     uint8_t* m_naluData;
 };
 #endif

@@ -301,23 +301,20 @@ int CH264BSAnalyzerDlg::ShowNLInfo(NALU_t* nalu)
         // NAL单元类型
         switch (nalu->nalType)
         {
+        // to confirm type...
         case NAL_UNIT_CODED_SLICE_TRAIL_N:
         case NAL_UNIT_CODED_SLICE_TRAIL_R:
             strNalUnitType.Format(_T("Coded slice segment of a non-TSA, non-STSA trailing picture"));
-            // todo
             switch (nalu->sliceType)
             {
-            case 0:
-            case 5:
-                strNalInfo.Format(_T("Slice #%d"), m_nSliceIndex);
+            case H265_SH_SLICE_TYPE_B:
+                strNalInfo.Format(_T("B Slice #%d"), m_nSliceIndex);
                 break;
-            case 1:
-            case 6:
-                strNalInfo.Format(_T("Slice #%d"), m_nSliceIndex);
+            case H265_SH_SLICE_TYPE_P:
+                strNalInfo.Format(_T("P Slice #%d"), m_nSliceIndex);
                 break;
-            case 2:
-            case 7:
-                strNalInfo.Format(_T("Slice #%d"), m_nSliceIndex);
+            case H265_SH_SLICE_TYPE_I:
+                strNalInfo.Format(_T("I Slice #%d"), m_nSliceIndex);
                 break;
             }
             m_nSliceIndex++;
@@ -325,14 +322,37 @@ int CH264BSAnalyzerDlg::ShowNLInfo(NALU_t* nalu)
         case NAL_UNIT_CODED_SLICE_TSA_N:
         case NAL_UNIT_CODED_SLICE_TSA_R:
             strNalUnitType.Format(_T("Coded slice segment of a TSA picture"));
+            switch (nalu->sliceType)
+            {
+            case H265_SH_SLICE_TYPE_B:
+                strNalInfo.Format(_T("B Slice #%d"), m_nSliceIndex);
+                break;
+            case H265_SH_SLICE_TYPE_P:
+                strNalInfo.Format(_T("P Slice #%d"), m_nSliceIndex);
+                break;
+            case H265_SH_SLICE_TYPE_I:
+                strNalInfo.Format(_T("I Slice #%d"), m_nSliceIndex);
+                break;
+            }
             m_nSliceIndex++;
             break;
         case NAL_UNIT_CODED_SLICE_RADL_N:
         case NAL_UNIT_CODED_SLICE_RADL_R:
             strNalUnitType.Format(_T("Coded slice segment of a TSA picture"));
+            switch (nalu->sliceType)
+            {
+            case H265_SH_SLICE_TYPE_B:
+                strNalInfo.Format(_T("B Slice #%d"), m_nSliceIndex);
+                break;
+            case H265_SH_SLICE_TYPE_P:
+                strNalInfo.Format(_T("P Slice #%d"), m_nSliceIndex);
+                break;
+            case H265_SH_SLICE_TYPE_I:
+                strNalInfo.Format(_T("I Slice #%d"), m_nSliceIndex);
+                break;
+            }
             m_nSliceIndex++;
             break;
-        // todo...
         case NAL_UNIT_CODED_SLICE_IDR_W_RADL:
         case NAL_UNIT_CODED_SLICE_IDR_N_LP:
             strNalUnitType.Format(_T("Coded slice of an IDR picture"));
@@ -466,21 +486,13 @@ void CH264BSAnalyzerDlg::ReadFile(void)
 
         for (int i = 0; i < m_nValTotalNum; i++)
         {
-            // todelete...
-            // 解析SPS
-            if (m_vNalTypeVector[i].nalType == 7)
-            {
-                m_cParser.h264_sps_parse(m_strFileUrl.GetBuffer(), m_vNalTypeVector[i].offset, m_vNalTypeVector[i].len, sps);
-            }
-            // 解析PPS
-            if (m_vNalTypeVector[i].nalType == 8)
-            {
-                m_cParser.h264_pps_parse(m_strFileUrl.GetBuffer(), m_vNalTypeVector[i].offset, m_vNalTypeVector[i].len, pps);
-            }
             ShowNLInfo(&m_vNalTypeVector[i]);
         }
+
+        videoinfo_t videoInfo;
+        m_cParser.getVideoInfo(&videoInfo);
         // profile类型
-        switch (sps.profile_idc)
+        switch (videoInfo.profile_idc)
         {
         case 66:
             strProfileInfo.Format(_T("Baseline"));
@@ -507,7 +519,7 @@ void CH264BSAnalyzerDlg::ReadFile(void)
             strProfileInfo.Format(_T("Unkown"));
             break;
         }
-        switch (sps.chroma_format_idc)
+        switch (videoInfo.chroma_format_idc)
         {
         case 1:
             strVideoFormat.Format(_T("YUV420"));
@@ -525,13 +537,12 @@ void CH264BSAnalyzerDlg::ReadFile(void)
             strVideoFormat.Format(_T("Unkown"));
             break;
         }
-        
-        // todo
+
         /*
         "Video Format: xxx\r\n"
         */
         strSimpleInfo.Format(
-            "File Info\r\n"
+            "%s File Information\r\n\r\n"
             "Picture Size: %dx%d\r\n"
             " - Cropping Left        : %d\r\n"
             " - Cropping Right      : %d\r\n"
@@ -541,13 +552,14 @@ void CH264BSAnalyzerDlg::ReadFile(void)
             "Stream Type: %s Profile @ Level %d\r\n"
             "Encoding Type: %s\r\n"
             "Max fps: %.03f\r\n",
-            sps.width, sps.height,
-            sps.crop_left, sps.crop_right,
-            sps.crop_top, sps.crop_bottom,
+            videoInfo.type ? "H.265/HEVC" : "H.264/AVC",
+            videoInfo.width, videoInfo.height,
+            videoInfo.crop_left, videoInfo.crop_right,
+            videoInfo.crop_top, videoInfo.crop_bottom,
             strVideoFormat,
-            strProfileInfo, sps.level_idc,
-            pps.encoding_type ? "CABAC" : "CAVLC",
-            sps.max_framerate
+            strProfileInfo, videoInfo.level_idc,
+            videoInfo.encoding_type ? "CABAC" : "CAVLC",
+            videoInfo.max_framerate
             );
         GetDlgItem(IDC_EDIT_SIMINFO)->SetWindowText(strSimpleInfo);
     }
@@ -588,14 +600,12 @@ void CH264BSAnalyzerDlg::OnLvnItemActivateH264Nallist(NMHDR *pNMHDR, LRESULT *pR
     ps=m_h264NalList.GetFirstSelectedItemPosition();
     nIndex=m_h264NalList.GetNextSelectedItem(ps);
 
-    m_nNalOffset=m_vNalTypeVector[nIndex].offset;
-    m_nNalLen=m_vNalTypeVector[nIndex].len;
 #if 0
     SetEvent(m_hNALLock);
 #else
     char* nalData = NULL;
     char* nalInfo = NULL;
-    ret = m_cParser.parseNALU(m_nNalOffset, m_nNalLen, &nalData, &nalInfo);
+    ret = m_cParser.parseNALU(m_vNalTypeVector[nIndex], &nalData, &nalInfo);
     if (ret < 0)
     {
         AfxMessageBox("解析NAL时出错，可能是文件读取出错。");
@@ -603,7 +613,7 @@ void CH264BSAnalyzerDlg::OnLvnItemActivateH264Nallist(NMHDR *pNMHDR, LRESULT *pR
     // 把NAL详细信息显示到界面上
     m_h264NalInfo.SetWindowText((LPCTSTR)nalInfo);
     // 显示十六进制
-    m_edHexInfo.SetData((LPBYTE)nalData, m_nNalLen);
+    m_edHexInfo.SetData((LPBYTE)nalData, m_vNalTypeVector[nIndex].len);
     ::SendMessage(GetDlgItem(IDC_EDIT_HEX)->m_hWnd,WM_KILLFOCUS,-1,0); // 不要控件焦点
 #endif
 
@@ -661,15 +671,12 @@ void CH264BSAnalyzerDlg::OnLvnKeydownH264Nallist(NMHDR *pNMHDR, LRESULT *pResult
     return;
 #endif
 
-    m_nNalOffset=m_vNalTypeVector[nIndex].offset;
-    m_nNalLen=m_vNalTypeVector[nIndex].len;
-
 #if 0
     SetEvent(m_hNALLock);
 #else
     char* nalData = NULL;
     char* nalInfo = NULL;
-    ret = m_cParser.parseNALU(m_nNalOffset, m_nNalLen, &nalData, &nalInfo);
+    ret = m_cParser.parseNALU(m_vNalTypeVector[nIndex], &nalData, &nalInfo);
     if (ret < 0)
     {
         AfxMessageBox("解析NAL时出错，可能是文件读取出错。");
@@ -677,7 +684,7 @@ void CH264BSAnalyzerDlg::OnLvnKeydownH264Nallist(NMHDR *pNMHDR, LRESULT *pResult
      // 把NAL详细信息显示到界面上
     m_h264NalInfo.SetWindowText((LPCTSTR)nalInfo);
     // 显示十六进制
-    m_edHexInfo.SetData((LPBYTE)nalData, m_nNalLen);
+    m_edHexInfo.SetData((LPBYTE)nalData, m_vNalTypeVector[nIndex].len);
     ::SendMessage(GetDlgItem(IDC_EDIT_HEX)->m_hWnd,WM_KILLFOCUS,-1,0); // 不要控件焦点
 #endif
 

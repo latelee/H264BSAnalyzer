@@ -339,6 +339,24 @@ typedef struct
   uint8_t* rbsp_buf;
 } slice_data_rbsp_t;
 
+typedef struct
+{
+    int type;
+    int init;
+    int profile_idc;
+    int level_idc;
+    int width;
+    int height;
+    int crop_left;
+    int crop_right;
+    int crop_top;
+    int crop_bottom;
+    float max_framerate;  // 由SPS计算得到的帧率，为0表示SPS中没有相应的字段计算
+    int chroma_format_idc;  // YUV颜色空间 0: monochrome 1:420 2:422 3:444
+    int encoding_type;  // 为1表示CABAC 0表示CAVLC
+} videoinfo_t;
+
+
 /**
    H264 stream
    Contains data structures for all NAL types that can be handled by this library.  
@@ -360,7 +378,7 @@ typedef struct
     sps_t* sps_table[32];
     pps_t* pps_table[256];
     sei_t** seis;
-
+    videoinfo_t* info;
 } h264_stream_t;
 
 h264_stream_t* h264_new();

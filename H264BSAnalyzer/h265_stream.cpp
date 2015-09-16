@@ -5,7 +5,6 @@
 #include <stdio.h>
 
 #include "bs.h"
-#include "h264_stream.h" // for nal_to_rbsp...
 #include "h265_stream.h"
 #include "h265_sei.h"
 
@@ -37,8 +36,8 @@ h265_stream_t* h265_new()
     h->sei = NULL;  //This is a TEMP pointer at whats in h->seis...
     h->sh = (h265_slice_header_t*)calloc(1, sizeof(h265_slice_header_t));
 
-    h->info = (h265videoinfo_t*)calloc(1, sizeof(h265videoinfo_t));
-
+    h->info = (videoinfo_t*)calloc(1, sizeof(videoinfo_t));
+    h->info->type = 1;
     return h;
 }
 
@@ -69,39 +68,6 @@ void h265_free(h265_stream_t* h)
     }
     free(h->sh);
     free(h);
-}
-
-int h265_get_nal_type(uint8_t* buf, int size)
-{
-    return (*buf>>1) & 0x3f;// 6 bit
-}
-
-int h265_get_slice_type(uint8_t* buf, int size)
-{
-#if 0
-    h265_nal_t* nal = h->nal;
-
-    bs_t* b = bs_new(buf, size);
-    // nal header
-    nal->forbidden_zero_bit = bs_read_f(b,1);
-    nal->nal_unit_type = bs_read_u(b,6);
-    nal->nuh_layer_id = bs_read_u(b,6);
-    nal->nuh_temporal_id_plus1 = bs_read_u(b,3);
-    nal->parsed = NULL;
-    nal->sizeof_parsed = 0;
-    bs_free(b);
-
-    int nal_size = size;
-    int rbsp_size = size;
-    uint8_t* rbsp_buf = (uint8_t*)malloc(rbsp_size);
-
-    int rc = nal_to_rbsp(2, buf, &nal_size, rbsp_buf, &rbsp_size);
-
-    if (rc < 0) { free(rbsp_buf); return -1; } // handle conversion error
-
-    b = bs_new(rbsp_buf, rbsp_size);
-#endif
-    return 0;
 }
 
 /**

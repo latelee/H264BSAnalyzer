@@ -71,8 +71,6 @@ private:
     void ReadFile(void);
     void PaseNal(void);
 
-    int m_nNalOffset;
-    int m_nNalLen;
 public:
     afx_msg void OnDropFiles(HDROP hDropInfo);
     afx_msg void OnLvnItemActivateH264Nallist(NMHDR *pNMHDR, LRESULT *pResult);
