@@ -14,11 +14,11 @@ typedef struct
     int type;                       // 0 -- h.264; 1 -- h.265
     unsigned int num;               // 序号
     unsigned int len;               // 含起始码的总的长度
-    unsigned int data_offset;       // nal包在文件中的偏移
-    char slice_type;               // 帧类型
-    char nal_unit_type;            // NAL类型
-    char startcode_len;             // start code长度
-    char startcode_buf[16];         // 起始码，字符串形式
+    unsigned int offset;       // nal包在文件中的偏移
+    int sliceType;               // 帧类型
+    int nalType;            // NAL类型
+    int startcodeLen;             // start code长度
+    char startcodeBuffer[16];         // 起始码，字符串形式
 } NALU_t;
 
 typedef struct 
@@ -47,6 +47,9 @@ enum FileType
     FILE_H265 = 1,
 };
 
+const int MAX_NAL_SIZE = 1*1024*1024;
+const int OUTPUT_SIZE = 512*1024;
+
 class CNalParser
 {
 public:
@@ -56,28 +59,29 @@ public:
     int init(const char* filename);
     int release(void);
 
-    int h264_nal_probe(char *fileurl, vector<NALU_t>& vNal, int num);
+    // 搜索视频文件的ANL单元，记录偏移及长度
+    int probeNALU(vector<NALU_t>& vNal, int num);
 
-    int h264_nal_parse(char* filename,int data_offset,int data_lenth,LPVOID lparam);;
+    // 解析offset处大小为length的数据，十六进制数据传递到naluData，NAL信息传递到naluInfo
+    int parseNALU(int offset, int length, char** naluData, char** naluInfo);
 
-    int h264_sps_parse(char* filename,int data_offset,int data_lenth, SPSInfo_t& info);
+    int h264_sps_parse(char* filename,int offset,int data_lenth, SPSInfo_t& info);
 
-    int h264_pps_parse(char* filename,int data_offset,int data_lenth, PPSInfo_t& info);
+    int h264_pps_parse(char* filename,int offset,int data_lenth, PPSInfo_t& info);
 
 private:
-    //判断是否为0x000001,如果是返回1
-    inline int findStartcode3(unsigned char *Buf)
+    inline int findStartcode3(unsigned char *buffer)
     {
-        return (Buf[0]==0 && Buf[1]==0 && Buf[2]==1);
+        return (buffer[0]==0 && buffer[1]==0 && buffer[2]==1);
+    }
+    inline int findStartcode4(unsigned char *buffer)
+    {
+        return (buffer[0]==0 && buffer[1]==0 && buffer[2]==0 && buffer[3]==1);
     }
 
-    //判断是否为0x00000001,如果是返回1
-    inline int findStartcode4(unsigned char *Buf)
-    {
-        return (Buf[0]==0 && Buf[1]==0 && Buf[2]==0 && Buf[3]==1);
-    }
-    int GetAnnexbNALU (FILE* fp, NALU_t *nalu);
-    int find_first_nal(FILE* fp, int& startcodeLenght);
+    int getAnnexbNALU (FILE* fp, NALU_t *nalu);
+
+    int findFirstNALU(FILE* fp, int* startcodeLenght);
 
     FileType judeVideoFile(const char* filename);
 
@@ -86,5 +90,7 @@ private:
     h265_stream_t* m_hH265;
     FileType m_nType; // 0:264 1:265
     const char* m_filename;
+
+    uint8_t* m_naluData;
 };
 #endif
