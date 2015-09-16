@@ -55,7 +55,7 @@ public:
 private:
     int m_nSliceIndex;
     CString m_strFileUrl;
-
+    CNalParser m_cParser;
     vector<NALU_t> m_vNalTypeVector;
     int m_nValTotalNum; // m_vNalTypeVector有多少个NALU_t
 

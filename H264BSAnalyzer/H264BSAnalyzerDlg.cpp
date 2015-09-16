@@ -13,7 +13,6 @@
 #define new DEBUG_NEW
 #endif
 
-extern int g_type;
 // CAboutDlg dialog used for App About
 
 class CAboutDlg : public CDialogEx
@@ -461,7 +460,7 @@ void CH264BSAnalyzerDlg::ReadFile(void)
     {
         WaitForSingleObject(m_hFileLock, INFINITE);
 
-        h264_nal_probe(m_strFileUrl.GetBuffer(), m_vNalTypeVector, nMaxNalNum);
+        m_cParser.h264_nal_probe(m_strFileUrl.GetBuffer(), m_vNalTypeVector, nMaxNalNum);
 
         m_nValTotalNum = m_vNalTypeVector.size();
 
@@ -471,12 +470,12 @@ void CH264BSAnalyzerDlg::ReadFile(void)
             // 解析SPS
             if (m_vNalTypeVector[i].nal_unit_type == 7)
             {
-                h264_sps_parse(m_strFileUrl.GetBuffer(), m_vNalTypeVector[i].data_offset, m_vNalTypeVector[i].len, sps);
+                m_cParser.h264_sps_parse(m_strFileUrl.GetBuffer(), m_vNalTypeVector[i].data_offset, m_vNalTypeVector[i].len, sps);
             }
             // 解析PPS
             if (m_vNalTypeVector[i].nal_unit_type == 8)
             {
-                h264_pps_parse(m_strFileUrl.GetBuffer(), m_vNalTypeVector[i].data_offset, m_vNalTypeVector[i].len, pps);
+                m_cParser.h264_pps_parse(m_strFileUrl.GetBuffer(), m_vNalTypeVector[i].data_offset, m_vNalTypeVector[i].len, pps);
             }
             ShowNLInfo(&m_vNalTypeVector[i]);
         }
@@ -557,10 +556,10 @@ void CH264BSAnalyzerDlg::ReadFile(void)
 UINT CH264BSAnalyzerDlg::ThreadFuncPaseNal(LPVOID* lpvoid)
 {
     CH264BSAnalyzerDlg* dlg = (CH264BSAnalyzerDlg*)lpvoid;
-    dlg->PaseNal();
+    //dlg->PaseNal();
     return 0;
 }
-
+/*
 void CH264BSAnalyzerDlg::PaseNal(void)
 {
     int ret = 0;
@@ -568,13 +567,14 @@ void CH264BSAnalyzerDlg::PaseNal(void)
     {
         WaitForSingleObject(m_hNALLock, INFINITE);
 
-        ret = h264_nal_parse(m_strFileUrl.GetBuffer(),m_nNalOffset,m_nNalLen,this);
+        ret = m_cParser.h264_nal_parse(m_strFileUrl.GetBuffer(),m_nNalOffset,m_nNalLen,this);
         if (ret < 0)
         {
             AfxMessageBox("解析NAL时出错，可能是文件读取出错。");
         }
     }
 }
+*/
 // 双击(单击)某一项，进行NAL详细分析
 void CH264BSAnalyzerDlg::OnLvnItemActivateH264Nallist(NMHDR *pNMHDR, LRESULT *pResult)
 {
@@ -594,7 +594,7 @@ void CH264BSAnalyzerDlg::OnLvnItemActivateH264Nallist(NMHDR *pNMHDR, LRESULT *pR
     SetEvent(m_hNALLock);
 #else
     // 
-    ret = h264_nal_parse(m_strFileUrl.GetBuffer(), m_nNalOffset,m_nNalLen,this);
+    ret = m_cParser.h264_nal_parse(m_strFileUrl.GetBuffer(), m_nNalOffset,m_nNalLen,this);
     if (ret < 0)
     {
         AfxMessageBox("解析NAL时出错，可能是文件读取出错。");
@@ -661,7 +661,7 @@ void CH264BSAnalyzerDlg::OnLvnKeydownH264Nallist(NMHDR *pNMHDR, LRESULT *pResult
 #if 0
     SetEvent(m_hNALLock);
 #else
-    ret = h264_nal_parse(m_strFileUrl.GetBuffer(),m_nNalOffset,m_nNalLen,this);
+    ret = m_cParser.h264_nal_parse(m_strFileUrl.GetBuffer(),m_nNalOffset,m_nNalLen,this);
     if (ret < 0)
     {
         AfxMessageBox("解析NAL时出错，可能是文件读取出错。");
@@ -765,17 +765,16 @@ void CH264BSAnalyzerDlg::OnDropFiles(HDROP hDropInfo)
     ::DragFinish(hDropInfo);   // 注意这个不能少，它用于释放Windows 为处理文件拖放而分配的内存
     free(pFilePathName);
 
-    char szExt[16] = {0};
-    _splitpath(m_strFileUrl, NULL, NULL, NULL, szExt);
-    if (!strcmp(&szExt[1], "h265") || !strcmp(&szExt[1], "265") ||
-        !strcmp(&szExt[1], "hevc"))
+    FILE* fp = fopen(m_strFileUrl.GetBuffer(), "r+b");
+    if (fp == NULL)
     {
-        g_type = 1;
+        AfxMessageBox("Error open file.");
+        return;
     }
-    else
-    {
-        g_type = 0;
-    }
+    fclose(fp);
+
+    m_cParser.init(m_strFileUrl.GetBuffer());
+    
     OnBnClickedH264InputurlOpen();
 }
 
@@ -792,17 +791,16 @@ void CH264BSAnalyzerDlg::OnFileOpen()
 
     m_strFileUrl = fileDlg.GetPathName();
 
-    char szExt[16] = {0};
-    _splitpath(m_strFileUrl, NULL, NULL, NULL, szExt);
-    if (!strcmp(&szExt[1], "h265") || !strcmp(&szExt[1], "265") ||
-        !strcmp(&szExt[1], "hevc"))
+    FILE* fp = fopen(m_strFileUrl.GetBuffer(), "r+b");
+    if (fp == NULL)
     {
-        g_type = 1;
+        AfxMessageBox("Error open file.");
+        return;
     }
-    else
-    {
-        g_type = 0;
-    }
+    fclose(fp);
+
+    m_cParser.init(m_strFileUrl.GetBuffer());
+
     OnBnClickedH264InputurlOpen();
 }
 

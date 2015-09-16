@@ -18,7 +18,7 @@ typedef struct
     char slice_type;               // 帧类型
     char nal_unit_type;            // NAL类型
     char startcode_len;             // start code长度
-    char startcode_buf[14];         // 起始码，字符串形式
+    char startcode_buf[16];         // 起始码，字符串形式
 } NALU_t;
 
 typedef struct 
@@ -41,15 +41,11 @@ typedef struct
 
 }PPSInfo_t;
 
-typedef int handle_nalu_info(NALU_t* nalu);
-
-int h264_nal_probe(char *fileurl, vector<NALU_t>& vNal, int num);
-
-int h264_nal_parse(char* filename,int data_offset,int data_lenth,LPVOID lparam);;
-
-int h264_sps_parse(char* filename,int data_offset,int data_lenth, SPSInfo_t& info);
-
-int h264_pps_parse(char* filename,int data_offset,int data_lenth, PPSInfo_t& info);
+enum FileType
+{
+    FILE_H264 = 0,
+    FILE_H265 = 1,
+};
 
 class CNalParser
 {
@@ -60,11 +56,35 @@ public:
     int init(const char* filename);
     int release(void);
 
+    int h264_nal_probe(char *fileurl, vector<NALU_t>& vNal, int num);
+
+    int h264_nal_parse(char* filename,int data_offset,int data_lenth,LPVOID lparam);;
+
+    int h264_sps_parse(char* filename,int data_offset,int data_lenth, SPSInfo_t& info);
+
+    int h264_pps_parse(char* filename,int data_offset,int data_lenth, PPSInfo_t& info);
+
+private:
+    //判断是否为0x000001,如果是返回1
+    inline int findStartcode3(unsigned char *Buf)
+    {
+        return (Buf[0]==0 && Buf[1]==0 && Buf[2]==1);
+    }
+
+    //判断是否为0x00000001,如果是返回1
+    inline int findStartcode4(unsigned char *Buf)
+    {
+        return (Buf[0]==0 && Buf[1]==0 && Buf[2]==0 && Buf[3]==1);
+    }
+    int GetAnnexbNALU (FILE* fp, NALU_t *nalu);
+    int find_first_nal(FILE* fp, int& startcodeLenght);
+
+    FileType judeVideoFile(const char* filename);
 
 private:
     h264_stream_t* m_hH264;
     h265_stream_t* m_hH265;
-    int m_nType; // 0:264 1:265
+    FileType m_nType; // 0:264 1:265
     const char* m_filename;
 };
 #endif
