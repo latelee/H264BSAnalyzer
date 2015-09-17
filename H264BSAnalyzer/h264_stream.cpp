@@ -550,13 +550,19 @@ void read_seq_parameter_set_rbsp(h264_stream_t* h, bs_t* b)
     h->info->width = ((sps->pic_width_in_mbs_minus1 +1)*16) - sps->frame_crop_left_offset*2 - sps->frame_crop_right_offset*2;
     h->info->height= ((2 - sps->frame_mbs_only_flag)* (sps->pic_height_in_map_units_minus1 +1) * 16) - (sps->frame_crop_top_offset * 2) - (sps->frame_crop_bottom_offset * 2);
 
+    h->info->bit_depth_luma   = sps->bit_depth_luma_minus8 + 8;
+    h->info->bit_depth_chroma = sps->bit_depth_chroma_minus8 + 8;
+
     h->info->profile_idc = sps->profile_idc;
     h->info->level_idc = sps->level_idc;
 
     // YUV空间
     h->info->chroma_format_idc = sps->chroma_format_idc;
 
-    // 注：这里的帧率计算还有疑问
+    /* 注：这里的帧率计算还有问题，x264编码25fps，time_scale为50，num_units_in_tick为1，计算得50fps
+    网上说法，当nuit_field_based_flag为1时，再除以2，又说x264将该值设置为0.
+    地址：http://forum.doom9.org/showthread.php?t=153019
+    */
     if (sps->vui_parameters_present_flag)
     {
         h->info->max_framerate = (float)(sps->vui.time_scale) / (float)(sps->vui.num_units_in_tick);
@@ -949,6 +955,8 @@ void read_rbsp_trailing_bits(h264_stream_t* h, bs_t* b)
 void read_slice_header(h264_stream_t* h, bs_t* b)
 {
     slice_header_t* sh = h->sh;
+    int read_slice_type = sh->read_slice_type;
+
     memset(sh, 0, sizeof(slice_header_t));
 
     sps_t* sps = NULL; // h->sps;
@@ -957,6 +965,9 @@ void read_slice_header(h264_stream_t* h, bs_t* b)
 
     sh->first_mb_in_slice = bs_read_ue(b);
     sh->slice_type = bs_read_ue(b);
+
+    if (read_slice_type) return;
+
     sh->pic_parameter_set_id = bs_read_ue(b);
 
     pps = h->pps = h->pps_table[sh->pic_parameter_set_id];

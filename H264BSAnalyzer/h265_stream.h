@@ -402,7 +402,7 @@ typedef struct
     uint8_t sps_temporal_mvp_enabled_flag;
     uint8_t strong_intra_smoothing_enabled_flag;
     uint8_t vui_parameters_present_flag;
-      vui_parameters_t vui_parameters;
+      vui_parameters_t vui;
     uint8_t sps_extension_present_flag;
       uint8_t sps_range_extension_flag;
       uint8_t sps_multilayer_extension_flag;
@@ -478,6 +478,8 @@ typedef struct
 */
 typedef struct
 {
+    int read_slice_type; // see if we only read slice type and return
+
     int first_slice_segment_in_pic_flag;
     uint8_t no_output_of_prior_pics_flag;
     int slice_pic_parameter_set_id;

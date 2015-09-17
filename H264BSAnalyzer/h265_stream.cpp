@@ -851,6 +851,9 @@ void  h265_read_vps_rbsp(h265_stream_t* h, bs_t* b)
 
     // profile tier level...
     h265_read_ptl(&vps->ptl, b, 1, vps->vps_max_sub_layers_minus1);
+    h->info->profile_idc = vps->ptl.general_profile_idc;
+    h->info->level_idc   = vps->ptl.general_level_idc;
+    h->info->tier_idc    = vps->ptl.general_tier_flag;
 
     vps->vps_sub_layer_ordering_info_present_flag = bs_read_u1(b);
     for (i = (vps->vps_sub_layer_ordering_info_present_flag ? 0 : vps->vps_max_sub_layers_minus1);
@@ -948,14 +951,16 @@ void  h265_read_sps_rbsp(h265_stream_t* h, bs_t* b)
     memcpy(&(sps->ptl), &profile_tier_level, sizeof(profile_tier_level_t)); // ptl
 
     sps->sps_seq_parameter_set_id     = sps_seq_parameter_set_id;
-    sps->chroma_format_idc  = bs_read_ue(b);
+    sps->chroma_format_idc     = bs_read_ue(b);
+    h->info->chroma_format_idc = sps->chroma_format_idc;
     if (sps->chroma_format_idc == 3)
     {
         sps->separate_colour_plane_flag = bs_read_u1(b);
     }
     sps->pic_width_in_luma_samples  = bs_read_ue(b);
     sps->pic_height_in_luma_samples = bs_read_ue(b);
-    h->info->width = sps->pic_width_in_luma_samples;
+
+    h->info->width  = sps->pic_width_in_luma_samples;
     h->info->height = sps->pic_height_in_luma_samples;
 
     sps->conformance_window_flag    = bs_read_u1(b);
@@ -965,9 +970,28 @@ void  h265_read_sps_rbsp(h265_stream_t* h, bs_t* b)
         sps->conf_win_right_offset  = bs_read_ue(b);
         sps->conf_win_top_offset    = bs_read_ue(b);
         sps->conf_win_bottom_offset = bs_read_ue(b);
+
+        // calc width & height again...
+        h->info->crop_left = sps->conf_win_left_offset;
+        h->info->crop_right = sps->conf_win_right_offset;
+        h->info->crop_top = sps->conf_win_top_offset;
+        h->info->crop_bottom = sps->conf_win_bottom_offset;
+
+        // 根据Table6-1及7.4.3.2.1重新计算宽、高
+        // 注意：手册里加1，实际上不用
+        int sub_width_c  = ((1 == sps->chroma_format_idc) || (2 == sps->chroma_format_idc)) && (0 == sps->separate_colour_plane_flag) ? 2 : 1;
+        int sub_height_c =  (1 == sps->chroma_format_idc)                                  && (0 == sps->separate_colour_plane_flag) ? 2 : 1;
+        h->info->width  -= (sub_width_c*sps->conf_win_right_offset + sub_width_c*sps->conf_win_left_offset);
+        h->info->height -= (sub_height_c*sps->conf_win_bottom_offset + sub_height_c*sps->conf_win_top_offset);
     }
+
     sps->bit_depth_luma_minus8   = bs_read_ue(b);
     sps->bit_depth_chroma_minus8 = bs_read_ue(b);
+
+    // bit depth
+    h->info->bit_depth_luma = sps->bit_depth_luma_minus8 + 8;
+    h->info->bit_depth_chroma = sps->bit_depth_chroma_minus8 + 8;
+
     sps->log2_max_pic_order_cnt_lsb_minus4 = bs_read_ue(b);
 
     sps->sps_sub_layer_ordering_info_present_flag = bs_read_u1(b);
@@ -1040,7 +1064,9 @@ void  h265_read_sps_rbsp(h265_stream_t* h, bs_t* b)
     sps->vui_parameters_present_flag = bs_read_u1(b);
     if (sps->vui_parameters_present_flag)
     {
-        h265_read_vui_parameters(&(sps->vui_parameters), b, sps->sps_max_sub_layers_minus1);
+        h265_read_vui_parameters(&(sps->vui), b, sps->sps_max_sub_layers_minus1);
+        // calc fps
+        h->info->max_framerate = (float)(sps->vui.vui_time_scale) / (float)(sps->vui.vui_num_units_in_tick);
     }
 
     sps->sps_extension_present_flag = bs_read_u1(b);
@@ -1119,6 +1145,8 @@ void h265_read_pps_rbsp(h265_stream_t* h, bs_t* b)
     pps->transquant_bypass_enabled_flag   = bs_read_u1(b);
     pps->tiles_enabled_flag               = bs_read_u1(b);
     pps->entropy_coding_sync_enabled_flag = bs_read_u1(b);
+    h->info->encoding_type = pps->entropy_coding_sync_enabled_flag;
+
     if (pps->tiles_enabled_flag)
     {
         pps->num_tile_columns_minus1 = bs_read_ue(b);
@@ -1213,12 +1241,13 @@ void h265_read_pps_rbsp(h265_stream_t* h, bs_t* b)
 }
 
 //7.3.6.1  General slice segment header syntax
-void h265_read_slice_header(h265_stream_t* h, bs_t* b, int only_slice)
+void h265_read_slice_header(h265_stream_t* h, bs_t* b)
 {
     h265_slice_header_t* hrd = h->sh;
     h265_sps_t* sps = NULL;
     h265_pps_t* pps = NULL;
     int nal_unit_type = h->nal->nal_unit_type;
+    int read_slice_type = hrd->read_slice_type;
 
     memset(hrd, 0, sizeof(h265_slice_header_t));
 
@@ -1258,7 +1287,10 @@ void h265_read_slice_header(h265_stream_t* h, bs_t* b, int only_slice)
             hrd->slice_reserved_flag[i] = bs_read_u1(b);
         }
         hrd->slice_type = bs_read_ue(b);
-        if (only_slice) return;
+
+        // we need slice type only
+        if (read_slice_type) return;
+
         if (pps->output_flag_present_flag)
         {
             hrd->pic_output_flag = bs_read_u1(b);
@@ -1468,7 +1500,7 @@ void h265_read_slice_header(h265_stream_t* h, bs_t* b, int only_slice)
 
 void h265_read_slice_layer_rbsp(h265_stream_t* h, bs_t* b)
 {
-    h265_read_slice_header(h, b, 0);
+    h265_read_slice_header(h, b);
 #if 0
 
     slice_data_rbsp_t* slice_data = h->slice_data;

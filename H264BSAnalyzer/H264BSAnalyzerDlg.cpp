@@ -470,11 +470,16 @@ void CH264BSAnalyzerDlg::ReadFile(void)
     CString strFilePath;
     CString strSimpleInfo;
     CString strProfileInfo;
+    CString strLevelInfo;
+    CString strTierInfo;
     CString strVideoFormat;
+    CString strBitDepth;
     CString strMaxNalNum;
     int nMaxNalNum = -1;
     SPSInfo_t sps = {0};
     PPSInfo_t pps = {0};
+
+    strTierInfo.Empty();
 
     while (true)
     {
@@ -491,34 +496,134 @@ void CH264BSAnalyzerDlg::ReadFile(void)
 
         videoinfo_t videoInfo;
         m_cParser.getVideoInfo(&videoInfo);
-        // profile类型
-        switch (videoInfo.profile_idc)
+        if (videoInfo.type)
         {
-        case 66:
-            strProfileInfo.Format(_T("Baseline"));
-            break;
-        case 77:
-            strProfileInfo.Format(_T("Main"));
-            break;
-        case 88:
-            strProfileInfo.Format(_T("Extended"));
-            break;
-        case 100:
-            strProfileInfo.Format(_T("High"));
-            break;
-        case 110:
-            strProfileInfo.Format(_T("High 10"));
-            break;
-        case 122:
-            strProfileInfo.Format(_T("High 422"));
-            break;
-        case 144:
-            strProfileInfo.Format(_T("High 444"));
-            break;
-        default:
-            strProfileInfo.Format(_T("Unkown"));
-            break;
+            // profile类型
+            switch (videoInfo.profile_idc)
+            {
+            case 0:
+                strProfileInfo.Format(_T("None"));
+                break;
+            case 1:
+                strProfileInfo.Format(_T("Main"));
+                break;
+            case 2:
+                strProfileInfo.Format(_T("Main 10"));
+                break;
+            case 3:
+                strProfileInfo.Format(_T("Main Still Picture"));
+                break;
+            case 4:
+                strProfileInfo.Format(_T("PROFILE_MAINREXT"));
+                break;
+            case 5:
+                strProfileInfo.Format(_T("PROFILE_HIGHTHROUGHPUTREXT"));
+                break;
+                break;
+            default:
+                strProfileInfo.Format(_T("Unkown"));
+                break;
+            }
+            switch (videoInfo.level_idc)
+            {
+            case LEVEL_NONE:
+                strLevelInfo.Format(_T("LEVEL_NONE"));
+                break;
+            case LEVEL1:
+                strLevelInfo.Format(_T("1(%d)"), LEVEL1);
+                break;
+            case LEVEL2:
+                strLevelInfo.Format(_T("2(%d)"), LEVEL2);
+                break;
+            case LEVEL2_1:
+                strLevelInfo.Format(_T("2(%d)"), LEVEL2_1);
+                break;
+            case LEVEL3:
+                strLevelInfo.Format(_T("3(%d)"), LEVEL3);
+                break;
+            case LEVEL3_1:
+                strLevelInfo.Format(_T("3(%d)"), LEVEL3_1);
+                break;
+            case LEVEL4:
+                strLevelInfo.Format(_T("4(%d)"), LEVEL4);
+                break;
+            case LEVEL4_1:
+                strLevelInfo.Format(_T("4(%d)"), LEVEL4_1);
+                break;
+            case LEVEL5:
+                strLevelInfo.Format(_T("5(%d)"), LEVEL5);
+                break;
+            case LEVEL5_1:
+                strLevelInfo.Format(_T("5(%d)"), LEVEL5_1);
+                break;
+            case LEVEL5_2:
+                strLevelInfo.Format(_T("5(%d)"), LEVEL5_2);
+                break;
+            case LEVEL6:
+                strLevelInfo.Format(_T("6(%d)"), LEVEL6);
+                break;
+            case LEVEL6_1:
+                strLevelInfo.Format(_T("6(%d)"), LEVEL6_1);
+                break;
+            case LEVEL6_2:
+                strLevelInfo.Format(_T("6(%d)"), LEVEL6_2);
+                break;
+            case LEVEL8_5:
+                strLevelInfo.Format(_T("8(%d)"), LEVEL8_5);
+                break;
+            default:
+                strLevelInfo.Format(_T("Unkown"));
+                break;
+            }
+            switch (videoInfo.tier_idc)
+            {
+            case 1:
+                strTierInfo.Format(_T("Tier High"));
+                break;
+            case 0:
+            default:
+                strTierInfo.Format(_T("Tier Low"));
+                break;
+            }
         }
+        else // h264
+        {
+            // profile类型
+            switch (videoInfo.profile_idc)
+            {
+            case 66:
+                strProfileInfo.Format(_T("Baseline"));
+                break;
+            case 77:
+                strProfileInfo.Format(_T("Main"));
+                break;
+            case 88:
+                strProfileInfo.Format(_T("Extended"));
+                break;
+            case 100:
+                strProfileInfo.Format(_T("High"));
+                break;
+            case 110:
+                strProfileInfo.Format(_T("High 10"));
+                break;
+            case 122:
+                strProfileInfo.Format(_T("High 422"));
+                break;
+            case 144:
+                strProfileInfo.Format(_T("High 444"));
+                break;
+            default:
+                strProfileInfo.Format(_T("Unkown"));
+                break;
+            }
+            strTierInfo.Empty();
+            strLevelInfo.Format(_T("%d"), videoInfo.level_idc);
+        }
+        // common
+        // bit depth
+        strBitDepth.Format(_T("Luma bit: %d Chroma bit: %d"), videoInfo.bit_depth_luma, videoInfo.bit_depth_chroma);
+
+        // chroma format
         switch (videoInfo.chroma_format_idc)
         {
         case 1:
@@ -543,21 +648,21 @@ void CH264BSAnalyzerDlg::ReadFile(void)
         */
         strSimpleInfo.Format(
             "%s File Information\r\n\r\n"
-            "Picture Size: %dx%d\r\n"
-            " - Cropping Left        : %d\r\n"
-            " - Cropping Right      : %d\r\n"
-            " - Cropping Top        : %d\r\n"
-            " - Cropping Bottom   : %d\r\n"
-            "Video Format: %s\r\n"
-            "Stream Type: %s Profile @ Level %d\r\n"
-            "Encoding Type: %s\r\n"
-            "Max fps: %.03f\r\n",
+            "Picture Size \t: %dx%d\r\n"
+            "  - Cropping Left \t: %d\r\n"
+            "  - Cropping Right \t: %d\r\n"
+            "  - Cropping Top \t: %d\r\n"
+            "  - Cropping Bottom : %d\r\n"
+            "Video Format \t: %s %s\r\n"
+            "Stream Type \t: %s Profile @ Level %s %s\r\n"
+            "Encoding Type \t: %s\r\n"
+            "Max fps \t\t: %.03f\r\n",
             videoInfo.type ? "H.265/HEVC" : "H.264/AVC",
             videoInfo.width, videoInfo.height,
             videoInfo.crop_left, videoInfo.crop_right,
             videoInfo.crop_top, videoInfo.crop_bottom,
-            strVideoFormat,
-            strProfileInfo, videoInfo.level_idc,
+            strVideoFormat, strBitDepth, 
+            strProfileInfo, strLevelInfo, strTierInfo,
             videoInfo.encoding_type ? "CABAC" : "CAVLC",
             videoInfo.max_framerate
             );

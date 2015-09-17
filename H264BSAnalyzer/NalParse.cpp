@@ -298,7 +298,7 @@ int CNalParser::getAnnexbNALU(FILE* fp, NALU_t* nalu)
     int eof = 0;
 
     if ((buffer = (unsigned char*)calloc (MAX_NAL_SIZE, sizeof(char))) == NULL)
-        printf ("Could not allocate buffer memory\n");
+        printf("Could not allocate buffer memory\n");
 
     if (3 != fread (buffer, 1, 3, fp))//从码流中读3个字节
     {
@@ -371,20 +371,25 @@ got_nal:
     }
 
     // 包括起始码在内的5个字节
-    sprintf(nalu->startcodeBuffer, "%02x%02x%02x%02x%02x", buffer[0], buffer[1], buffer[2], buffer[3], buffer[4]);
+    if (nalu->startcodeLen == 3)
+        sprintf(nalu->startcodeBuffer, "%02x%02x%02x%02x", buffer[0], buffer[1], buffer[2], buffer[3]);
+    else
+        sprintf(nalu->startcodeBuffer, "%02x%02x%02x%02x%02x", buffer[0], buffer[1], buffer[2], buffer[3], buffer[4]);
     nalu->len = pos+rewind;
 
     uint8_t nal_header = 0;
     if (nalu->type)
     {
+        m_hH265->sh->read_slice_type = 1;
         h265_read_nal_unit(m_hH265, &buffer[nalu->startcodeLen], nalu->len - nalu->startcodeLen);
         nalu->nalType = m_hH265->nal->nal_unit_type;
         nalu->sliceType = m_hH265->sh->slice_type;
+        m_hH265->sh->read_slice_type = 0;
     }
     else
     {
     // simple version
-#if 01
+#if 0
         nal_header = buffer[nalu->startcodeLen];
         nalu->nalType = nal_header & 0x1f;// 5 bit
 
@@ -400,12 +405,12 @@ got_nal:
         {
             read_nal_unit(m_hH264, &buffer[nalu->startcodeLen], nalu->len - nalu->startcodeLen);
         }
-
-        int tmp = 0;
 #else
+        m_hH264->sh->read_slice_type = 1;
         read_nal_unit(m_hH264, &buffer[nalu->startcodeLen], nalu->len - nalu->startcodeLen);
         nalu->nalType = m_hH264->nal->nal_unit_type;
         nalu->sliceType = m_hH264->sh->slice_type;
+        m_hH264->sh->read_slice_type = 0;
 #endif
     }
 
@@ -1347,7 +1352,7 @@ static void h265_debug_sps(h265_sps_t* sps)
     if (sps->vui_parameters_present_flag)
     {
         // vui
-        h265_debug_vui_parameters(&sps->vui_parameters, sps->sps_max_sub_layers_minus1);
+        h265_debug_vui_parameters(&sps->vui, sps->sps_max_sub_layers_minus1);
     }
     my_printf("sps_extension_present_flag: %d", sps->sps_extension_present_flag);
     if (sps->sps_extension_present_flag)

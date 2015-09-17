@@ -195,6 +195,8 @@ typedef struct
 */
 typedef struct
 {
+    int read_slice_type; // see if we only read slice type and return
+
     int first_mb_in_slice;
     int slice_type;
     int pic_parameter_set_id;
@@ -341,10 +343,11 @@ typedef struct
 
 typedef struct
 {
-    int type;
+    int type;           // 0:h264 1:h265
     int init;
     int profile_idc;
     int level_idc;
+    int tier_idc;
     int width;
     int height;
     int crop_left;
@@ -354,6 +357,8 @@ typedef struct
     float max_framerate;  // 由SPS计算得到的帧率，为0表示SPS中没有相应的字段计算
     int chroma_format_idc;  // YUV颜色空间 0: monochrome 1:420 2:422 3:444
     int encoding_type;  // 为1表示CABAC 0表示CAVLC
+    int bit_depth_luma;
+    int bit_depth_chroma;
 } videoinfo_t;
 
 
