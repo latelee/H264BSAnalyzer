@@ -24,8 +24,12 @@ bug：
 --fixed
 
 todo:
-独立出读nal头及读slice函数
-数据用vector实现
+独立出读nal头及读slice函数 --no need
+数据用vector实现 --checked
+
+2015.9.17 todo
+图像显示出来。。。
+
 ====================================================
 
 log：

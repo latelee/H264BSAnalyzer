@@ -536,40 +536,40 @@ void CH264BSAnalyzerDlg::ReadFile(void)
                 strLevelInfo.Format(_T("2(%d)"), LEVEL2);
                 break;
             case LEVEL2_1:
-                strLevelInfo.Format(_T("2(%d)"), LEVEL2_1);
+                strLevelInfo.Format(_T("2.1(%d)"), LEVEL2_1);
                 break;
             case LEVEL3:
                 strLevelInfo.Format(_T("3(%d)"), LEVEL3);
                 break;
             case LEVEL3_1:
-                strLevelInfo.Format(_T("3(%d)"), LEVEL3_1);
+                strLevelInfo.Format(_T("3.1(%d)"), LEVEL3_1);
                 break;
             case LEVEL4:
                 strLevelInfo.Format(_T("4(%d)"), LEVEL4);
                 break;
             case LEVEL4_1:
-                strLevelInfo.Format(_T("4(%d)"), LEVEL4_1);
+                strLevelInfo.Format(_T("4.1(%d)"), LEVEL4_1);
                 break;
             case LEVEL5:
                 strLevelInfo.Format(_T("5(%d)"), LEVEL5);
                 break;
             case LEVEL5_1:
-                strLevelInfo.Format(_T("5(%d)"), LEVEL5_1);
+                strLevelInfo.Format(_T("5.1(%d)"), LEVEL5_1);
                 break;
             case LEVEL5_2:
-                strLevelInfo.Format(_T("5(%d)"), LEVEL5_2);
+                strLevelInfo.Format(_T("5.2(%d)"), LEVEL5_2);
                 break;
             case LEVEL6:
                 strLevelInfo.Format(_T("6(%d)"), LEVEL6);
                 break;
             case LEVEL6_1:
-                strLevelInfo.Format(_T("6(%d)"), LEVEL6_1);
+                strLevelInfo.Format(_T("6.1(%d)"), LEVEL6_1);
                 break;
             case LEVEL6_2:
-                strLevelInfo.Format(_T("6(%d)"), LEVEL6_2);
+                strLevelInfo.Format(_T("6.2(%d)"), LEVEL6_2);
                 break;
             case LEVEL8_5:
-                strLevelInfo.Format(_T("8(%d)"), LEVEL8_5);
+                strLevelInfo.Format(_T("8.5(%d)"), LEVEL8_5);
                 break;
             default:
                 strLevelInfo.Format(_T("Unkown"));

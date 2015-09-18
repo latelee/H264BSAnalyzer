@@ -537,6 +537,11 @@ void read_seq_parameter_set_rbsp(h264_stream_t* h, bs_t* b)
     if( sps->vui_parameters_present_flag )
     {
         read_vui_parameters(h, b);
+        /* 注：这里的帧率计算还有问题，x264编码25fps，time_scale为50，num_units_in_tick为1，计算得50fps
+        网上说法，当nuit_field_based_flag为1时，再除以2，又说x264将该值设置为0.
+        地址：http://forum.doom9.org/showthread.php?t=153019
+        */
+        h->info->max_framerate = (float)(sps->vui.time_scale) / (float)(sps->vui.num_units_in_tick);
     }
     read_rbsp_trailing_bits(h, b);
 
@@ -546,10 +551,47 @@ void read_seq_parameter_set_rbsp(h264_stream_t* h, bs_t* b)
     h->info->crop_top = sps->frame_crop_top_offset;
     h->info->crop_bottom = sps->frame_crop_bottom_offset;
 
-    // 宽高计算公式
-    h->info->width = ((sps->pic_width_in_mbs_minus1 +1)*16) - sps->frame_crop_left_offset*2 - sps->frame_crop_right_offset*2;
-    h->info->height= ((2 - sps->frame_mbs_only_flag)* (sps->pic_height_in_map_units_minus1 +1) * 16) - (sps->frame_crop_top_offset * 2) - (sps->frame_crop_bottom_offset * 2);
+#if 01
+    // 根据Table6-1及7.4.2.1.1计算宽、高
+    h->info->width  = (sps->pic_width_in_mbs_minus1+1) * 16;
+    h->info->height = (2 - sps->frame_mbs_only_flag)* (sps->pic_height_in_map_units_minus1 +1) * 16;
+    
+    if(sps->frame_cropping_flag)
+    {
+        unsigned int crop_unit_x;
+        unsigned int crop_unit_y;
+        if (0 == sps->chroma_format_idc) // monochrome
+        {
+            crop_unit_x = 1;
+            crop_unit_y = 2 - sps->frame_mbs_only_flag;
+        }
+        else if (1 == sps->chroma_format_idc) // 4:2:0
+        {
+            crop_unit_x = 2;
+            crop_unit_y = 2 * (2 - sps->frame_mbs_only_flag);
+        }
+        else if (2 == sps->chroma_format_idc) // 4:2:2
+        {
+            crop_unit_x = 2;
+            crop_unit_y = 2 - sps->frame_mbs_only_flag;
+        }
+        else // 3 == sps.chroma_format_idc   // 4:4:4
+        {
+            crop_unit_x = 1;
+            crop_unit_y = 2 - sps->frame_mbs_only_flag;
+        }
+        
+        h->info->width  -= crop_unit_x * (sps->frame_crop_left_offset + sps->frame_crop_right_offset);
+        h->info->height -= crop_unit_y * (sps->frame_crop_top_offset  + sps->frame_crop_bottom_offset);
+    }
+#else
+    // 根据Table6-1及7.4.2.1.1计算宽、高
+    int sub_width_c  = ((1 == sps->chroma_format_idc) || (2 == sps->chroma_format_idc)) && (0 == sps->residual_colour_transform_flag) ? 2 : 1;
+    int sub_height_c =  (1 == sps->chroma_format_idc)                                   && (0 == sps->residual_colour_transform_flag) ? 2 : 1;
 
+    h->info->width = ((sps->pic_width_in_mbs_minus1 +1)*16) - sps->frame_crop_left_offset*sub_width_c - sps->frame_crop_right_offset*sub_width_c;
+    h->info->height= ((2 - sps->frame_mbs_only_flag)* (sps->pic_height_in_map_units_minus1 +1) * 16) - (sps->frame_crop_top_offset * sub_height_c) - (sps->frame_crop_bottom_offset * sub_height_c);
+#endif
     h->info->bit_depth_luma   = sps->bit_depth_luma_minus8 + 8;
     h->info->bit_depth_chroma = sps->bit_depth_chroma_minus8 + 8;
 
@@ -558,15 +600,6 @@ void read_seq_parameter_set_rbsp(h264_stream_t* h, bs_t* b)
 
     // YUV空间
     h->info->chroma_format_idc = sps->chroma_format_idc;
-
-    /* 注：这里的帧率计算还有问题，x264编码25fps，time_scale为50，num_units_in_tick为1，计算得50fps
-    网上说法，当nuit_field_based_flag为1时，再除以2，又说x264将该值设置为0.
-    地址：http://forum.doom9.org/showthread.php?t=153019
-    */
-    if (sps->vui_parameters_present_flag)
-    {
-        h->info->max_framerate = (float)(sps->vui.time_scale) / (float)(sps->vui.num_units_in_tick);
-    }
 }
 
 

@@ -979,6 +979,7 @@ void  h265_read_sps_rbsp(h265_stream_t* h, bs_t* b)
 
         // 根据Table6-1及7.4.3.2.1重新计算宽、高
         // 注意：手册里加1，实际上不用
+        // 参考：https://github.com/mbunkus/mkvtoolnix/issues/1152
         int sub_width_c  = ((1 == sps->chroma_format_idc) || (2 == sps->chroma_format_idc)) && (0 == sps->separate_colour_plane_flag) ? 2 : 1;
         int sub_height_c =  (1 == sps->chroma_format_idc)                                  && (0 == sps->separate_colour_plane_flag) ? 2 : 1;
         h->info->width  -= (sub_width_c*sps->conf_win_right_offset + sub_width_c*sps->conf_win_left_offset);
