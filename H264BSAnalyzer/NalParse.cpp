@@ -766,6 +766,8 @@ static void h264_debug_seis( h264_stream_t* h)
     for (i = 0; i < num_seis; i++)
     {
         sei_t* s = seis[i];
+        my_printf(" payloadType : %d\r\n", s->payloadType );
+        my_printf(" payloadSize : %d\r\n", s->payloadSize );
         switch(s->payloadType)
         {
         case SEI_TYPE_BUFFERING_PERIOD :          sei_type_name = "Buffering period"; break;
@@ -773,7 +775,23 @@ static void h264_debug_seis( h264_stream_t* h)
         case SEI_TYPE_PAN_SCAN_RECT :             sei_type_name = "Pan scan rect"; break;
         case SEI_TYPE_FILLER_PAYLOAD :            sei_type_name = "Filler payload"; break;
         case SEI_TYPE_USER_DATA_REGISTERED_ITU_T_T35 : sei_type_name = "User data registered ITU-T T35"; break;
-        case SEI_TYPE_USER_DATA_UNREGISTERED :    sei_type_name = "User data unregistered"; break;
+        case SEI_TYPE_USER_DATA_UNREGISTERED :
+            {
+                
+                my_printf(" sei_payload()\r\n");
+                my_printf("  user_data_unregistered()\r\n");
+                my_printf("   uuid_iso_iec_11578: ");
+                for (i = 0; i < 16; i++)
+                    my_printf("%X", s->payload[i]);
+                my_printf ("\r\n   ");
+                for (i = 16; i < s->payloadSize; i++)
+                {
+                    my_printf("%c", s->payload[i]);
+                    if ((i+1) % 128 == 0) my_printf ("\r\n");
+                }
+                break;
+            }
+            
         case SEI_TYPE_RECOVERY_POINT :            sei_type_name = "Recovery point"; break;
         case SEI_TYPE_DEC_REF_PIC_MARKING_REPETITION : sei_type_name = "Dec ref pic marking repetition"; break;
         case SEI_TYPE_SPARE_PIC :                 sei_type_name = "Spare pic"; break;
@@ -791,16 +809,6 @@ static void h264_debug_seis( h264_stream_t* h)
         case SEI_TYPE_DEBLOCKING_FILTER_DISPLAY_PREFERENCE : sei_type_name = "Deblocking filter display preference"; break;
         case SEI_TYPE_STEREO_VIDEO_INFO :         sei_type_name = "Stereo video info"; break;
         default: sei_type_name = "Unknown"; break;
-        }
-        my_printf("=== %s ===\r\n", sei_type_name);
-        my_printf(" payloadType : %d\r\n", s->payloadType );
-        my_printf(" payloadSize : %d\r\n", s->payloadSize );
-
-        my_printf(" payload : \r\n" );
-        for (i = 0; i < s->payloadSize; i++)
-        {
-            my_printf("%c", s->payload[i]);
-            if ((i+1) % 128 == 0) { my_printf ("\r\n"); }
         }
     }
 }
@@ -1510,7 +1518,7 @@ static void h265_debug_slice_header(h265_stream_t* h)
     my_printf("slice_segment_address: %d\r\n", hrd->slice_segment_address);
     if (!hrd->dependent_slice_segment_flag)
     {
-        my_printf("dependent_slice_segment_flag");
+        my_printf("dependent_slice_segment_flag\r\n");
         for (int i = 0; i < pps->num_extra_slice_header_bits; i++)
             my_printf(" slice_reserved_flag[%d]: %d\r\n", i, hrd->slice_reserved_flag[i]);
         const char* slice_type_name;
@@ -1615,7 +1623,7 @@ static void h265_debug_slice_header(h265_stream_t* h)
         if (hrd->num_entry_point_offsets > 0)
         {
             my_printf("  offset_len_minus1: %d\r\n", hrd->offset_len_minus1);
-            my_printf(" NumEntryPointOffsets");
+            my_printf(" NumEntryPointOffsets\r\n");
             for (int i = 0; i < hrd->num_entry_point_offsets; i++)
                 my_printf("  entry_point_offset_minus1[%d]: %d\r\n", i, hrd->entry_point_offset_minus1[i]);
         }
@@ -1627,8 +1635,8 @@ static void h265_debug_slice_header(h265_stream_t* h)
             my_printf("slice_segment_header_extension_data_byte[%d]: %d\r\n", hrd->slice_segment_header_extension_data_byte[i]);
     }
     // no need to debug...
-    my_printf("slice_segment_data()");
-    my_printf("rbsp_slice_segment_trailing_bits()");
+    my_printf("slice_segment_data()\r\n");
+    my_printf("rbsp_slice_segment_trailing_bits()\r\n");
 }
 
 static void h265_debug_nal(h265_stream_t* h, h265_nal_t* nal)

@@ -59,6 +59,7 @@ void read_sei_end_bits(h264_stream_t* h, bs_t* b )
 }
 
 // D.1 SEI payload syntax
+// todo：不同的sei，结构体不同，需分别创建
 void read_sei_payload(h264_stream_t* h, bs_t* b, int payloadType, int payloadSize)
 {
     sei_t* s = h->sei;
@@ -67,7 +68,9 @@ void read_sei_payload(h264_stream_t* h, bs_t* b, int payloadType, int payloadSiz
 
     int i;
 
-    for ( i = 0; i < payloadSize; i++ )
+    for (i = 0; i < 16; i++)
+        s->payload[i] = bs_read_u(b, 8);
+    for (i = 16; i < payloadSize; i++)
         s->payload[i] = bs_read_u(b, 8);
         
     read_sei_end_bits(h, b);

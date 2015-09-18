@@ -798,7 +798,7 @@ void h265_read_pred_weight_table(h265_stream_t* h, bs_t* b)
         }
     }
 
-    if (h->sh->slice_type = H265_SH_SLICE_TYPE_B)
+    if (h->sh->slice_type == H265_SH_SLICE_TYPE_B)
     {
         for (int i = 0; i <= h->sh->num_ref_idx_l1_active_minus1; i++)
         {
