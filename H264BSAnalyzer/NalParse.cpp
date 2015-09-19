@@ -781,13 +781,13 @@ static void h264_debug_seis( h264_stream_t* h)
                 my_printf(" sei_payload()\r\n");
                 my_printf("  user_data_unregistered()\r\n");
                 my_printf("   uuid_iso_iec_11578: ");
-                for (i = 0; i < 16; i++)
-                    my_printf("%X", s->payload[i]);
+                for (int j = 0; j < 16; j++)
+                    my_printf("%X", s->payload[j]);
                 my_printf ("\r\n   ");
-                for (i = 16; i < s->payloadSize; i++)
+                for (int j = 16; j < s->payloadSize; j++)
                 {
-                    my_printf("%c", s->payload[i]);
-                    if ((i+1) % 128 == 0) my_printf ("\r\n");
+                    my_printf("%c", s->payload[j]);
+                    if ((j+1) % 128 == 0) my_printf ("\r\n");
                 }
                 break;
             }
@@ -1496,9 +1496,102 @@ static void h265_debug_aud(h265_aud_t* aud)
 }
 
 // sei
-static void h265_debug_sei(h265_stream_t* h)
+static void h265_debug_seis(h265_stream_t* h)
 {
+    h265_sei_t** seis = h->seis;
+    int num_seis = h->num_seis;
+
     my_printf("======= HEVC SEI =======\r\n");
+    const char* sei_type_name;
+    int i;
+    for (i = 0; i < num_seis; i++)
+    {
+        h265_sei_t* s = seis[i];
+        my_printf(" payloadType : %d\r\n", s->payloadType);
+        my_printf(" payloadSize : %d\r\n", s->payloadSize);
+        my_printf(" sei_payload()\r\n");
+        if (h->nal->nal_unit_type == NAL_UNIT_PREFIX_SEI)
+        {
+            switch(s->payloadType)
+            {
+            case 0:
+                my_printf("  buffering_period()\r\n");
+                break;
+            case 1:
+                my_printf("  pic_timing()\r\n");
+                break;
+            case 2:
+                my_printf("  pan_scan_rect()\r\n");
+                break;
+            case 3:
+                my_printf("  pan_scan_rect()\r\n");
+                break;
+            case 4:
+                my_printf("  pan_scan_rect()\r\n");
+                break;
+            case 5:
+                my_printf("  user_data_unregistered()\r\n");
+                my_printf("   uuid_iso_iec_11578: ");
+                for (int j = 0; j < 16; j++)
+                    my_printf("%X", s->payload[j]);
+                my_printf ("\r\n   ");
+                for (int j = 16; j < s->payloadSize; j++)
+                {
+                    my_printf("%c", s->payload[j]);
+                    if ((j+1) % 128 == 0) my_printf ("\r\n");
+                }
+                break;
+            case 6:
+                my_printf("  recovery_point()\r\n");
+                break;
+            case 9:
+                my_printf("  scene_info()\r\n");
+                break;
+            case 15:
+                my_printf("  picture_snapshot()\r\n");
+                break;
+            case 16:
+                my_printf("  progressive_refinement_segment_start()\r\n");
+                break;
+            case 17:
+                my_printf("  progressive_refinement_segment_end()\r\n");
+                break;
+            default:
+                my_printf("  reserved_sei_message()\r\n");
+                break;
+            }
+        }
+        else if (h->nal->nal_unit_type == NAL_UNIT_SUFFIX_SEI)
+        {
+            switch(s->payloadType)
+            {
+            case 3:
+                my_printf("  filler_payload()\r\n");
+                break;
+            case 4:
+                my_printf("  user_data_registered_itu_t_t35()\r\n");
+                break;
+            case 5:
+                my_printf("  user_data_unregistered()\r\n");
+                break;
+            case 17:
+                my_printf("  progressive_refinement_segment_end()\r\n");
+                break;
+            case 22:
+                my_printf("  post_filter_hint()\r\n");
+                break;
+            case 132:
+                my_printf("  decoded_picture_hash()\r\n");
+                break;
+            case 16:
+                my_printf("  progressive_refinement_segment_start()\r\n");
+                break;
+            default:
+                my_printf("  reserved_sei_message()\r\n");
+                break;
+            }
+        }
+    }
 }
 
 static void h265_debug_slice_header(h265_stream_t* h)
@@ -1789,7 +1882,7 @@ static void h265_debug_nal(h265_stream_t* h, h265_nal_t* nal)
     else if(my_nal_type == 3)
         h265_debug_aud(h->aud);
     else if(my_nal_type == 4)
-        h265_debug_sei(h);
+        h265_debug_seis(h);
     else if(my_nal_type == 5)
         h265_debug_slice_header(h);
 }

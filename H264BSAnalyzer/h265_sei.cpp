@@ -38,8 +38,7 @@ void h265_read_sei_end_bits(bs_t* b )
     h265_read_rbsp_trailing_bits(b);
 }
 
-// D.1 SEI payload syntax
-void h265_read_sei_payload(h265_stream_t* h, bs_t* b, int payloadType, int payloadSize)
+static void read_user_data_unregistered(h265_stream_t* h, bs_t* b, int payloadSize)
 {
     h265_sei_t* s = h->sei;
 
@@ -47,9 +46,61 @@ void h265_read_sei_payload(h265_stream_t* h, bs_t* b, int payloadType, int paylo
 
     int i;
 
-    for ( i = 0; i < payloadSize; i++ )
+    for (i = 0; i < 16; i++)
         s->payload[i] = bs_read_u(b, 8);
-        
+    for (i = 16; i < payloadSize; i++)
+        s->payload[i] = bs_read_u(b, 8);
+}
+
+// D.1 SEI payload syntax
+void h265_read_sei_payload(h265_stream_t* h, bs_t* b, int payloadType, int payloadSize)
+{
+    int sei_type = h->nal->nal_unit_type;
+    h265_sei_t* s = h->sei;
+
+    if (sei_type == NAL_UNIT_PREFIX_SEI)
+    {
+        switch (payloadType)
+        {
+        case 0:
+            break;
+        case 1:
+            break;
+        case 2:
+            break;
+        case 3:
+            break;
+        case 4:
+            break;
+        case 5:
+            read_user_data_unregistered(h, b, payloadSize);
+            break;
+        default:
+            break;
+        }
+    }
+    else if (sei_type == NAL_UNIT_SUFFIX_SEI)
+    {
+        switch (payloadType)
+        {
+        case 3:
+            break;
+        case 4:
+            break;
+        case 5:
+            break;
+        case 17:
+            break;
+        case 22:
+            break;
+        case 132:
+            break;
+        default:
+            break;
+        }
+    }
+
+
     h265_read_sei_end_bits(b);
 }
 

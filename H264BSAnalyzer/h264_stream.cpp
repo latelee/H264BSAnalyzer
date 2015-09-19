@@ -541,7 +541,8 @@ void read_seq_parameter_set_rbsp(h264_stream_t* h, bs_t* b)
         网上说法，当nuit_field_based_flag为1时，再除以2，又说x264将该值设置为0.
         地址：http://forum.doom9.org/showthread.php?t=153019
         */
-        h->info->max_framerate = (float)(sps->vui.time_scale) / (float)(sps->vui.num_units_in_tick);
+        if (sps->vui.num_units_in_tick != 0)
+            h->info->max_framerate = (float)(sps->vui.time_scale) / (float)(sps->vui.num_units_in_tick);
     }
     read_rbsp_trailing_bits(h, b);
 

@@ -121,14 +121,14 @@ int h265_read_nal_unit(h265_stream_t* h, uint8_t* buf, int size)
             nal->sizeof_parsed = sizeof(h265_pps_t);
             break;
         case NAL_UNIT_PREFIX_SEI:
-            //h265_read_sei_rbsp(h, b);
-            //nal->parsed = h->sei;
-            //nal->sizeof_parsed = sizeof(h265_sei_t);
-            //break;
-        case NAL_UNIT_SUFFIX_SEI: // todo
-            //h265_read_sei_rbsp(h, b);
-            //nal->parsed = h->sei;
-            //nal->sizeof_parsed = sizeof(h265_sei_t);
+            h265_read_sei_rbsp(h, b);
+            nal->parsed = h->sei;
+            nal->sizeof_parsed = sizeof(h265_sei_t);
+            break;
+        case NAL_UNIT_SUFFIX_SEI: 
+            h265_read_sei_rbsp(h, b);
+            nal->parsed = h->sei;
+            nal->sizeof_parsed = sizeof(h265_sei_t);
             break;
         case NAL_UNIT_AUD:
             h265_read_aud_rbsp(h, b);
@@ -628,17 +628,17 @@ void h265_read_short_term_ref_pic_set(bs_t* b, h265_sps_t* sps, st_ref_pic_set_t
         rps->m_numberOfNegativePictures = st->num_negative_pics;
         rps->m_numberOfPositivePictures = st->num_positive_pics;
 
-        // todo...
-        //st->delta_poc_s0_minus1.resize(st->num_negative_pics);
-        //st->used_by_curr_pic_s0_flag.resize(st->num_negative_pics);
+        // to check...
+        st->delta_poc_s0_minus1.resize(st->num_negative_pics);
+        st->used_by_curr_pic_s0_flag.resize(st->num_negative_pics);
         for (int i = 0; i < st->num_negative_pics; i++)
         {
             st->delta_poc_s0_minus1[i] = bs_read_ue(b);
             st->used_by_curr_pic_s0_flag[i] = bs_read_u1(b);
             rps->m_used[i] = st->used_by_curr_pic_s0_flag[i];
         }
-        //st->delta_poc_s1_minus1.resize(st->num_positive_pics);
-        //st->used_by_curr_pic_s1_flag.resize(st->num_positive_pics);
+        st->delta_poc_s1_minus1.resize(st->num_positive_pics);
+        st->used_by_curr_pic_s1_flag.resize(st->num_positive_pics);
         for (int i = 0; i < st->num_positive_pics; i++)
         {
             st->delta_poc_s1_minus1[i] = bs_read_ue(b);
@@ -1067,7 +1067,8 @@ void  h265_read_sps_rbsp(h265_stream_t* h, bs_t* b)
     {
         h265_read_vui_parameters(&(sps->vui), b, sps->sps_max_sub_layers_minus1);
         // calc fps
-        h->info->max_framerate = (float)(sps->vui.vui_time_scale) / (float)(sps->vui.vui_num_units_in_tick);
+        if (sps->vui.vui_num_units_in_tick != 0)
+            h->info->max_framerate = (float)(sps->vui.vui_time_scale) / (float)(sps->vui.vui_num_units_in_tick);
     }
 
     sps->sps_extension_present_flag = bs_read_u1(b);
@@ -1541,6 +1542,15 @@ void h265_read_end_of_stream_rbsp(h265_stream_t* h, bs_t* b)
 {
 }
 
+int h265_more_rbsp_data(bs_t* b) 
+{
+    if ( bs_eof(b) ) { return 0; }
+    if ( bs_peek_u1(b) == 1 ) { return 0; } // if next bit is 1, we've reached the stop bit
+    return 1;
+}
+
+int h265_more_rbsp_trailing_data(bs_t* b) { return !bs_eof(b); }
+
 int __read_ff_coded_number(bs_t* b)
 {
     int n1 = 0;
@@ -1552,9 +1562,8 @@ int __read_ff_coded_number(bs_t* b)
     } while (n2 == 0xff);
     return n1;
 }
-//7.3.2.4 Supplemental enhancement information RBSP syntax
-// to check
-void h265_read_sei_rbsp(h265_stream_t* h, bs_t* b)
+
+void h265_read_sei(h265_stream_t* h, bs_t* b)
 {
     h->sei->payloadType = __read_ff_coded_number(b);
     h->sei->payloadSize = __read_ff_coded_number(b);
@@ -1562,7 +1571,26 @@ void h265_read_sei_rbsp(h265_stream_t* h, bs_t* b)
     h265_read_rbsp_trailing_bits(b);
 }
 
-int h265_more_rbsp_trailing_data(bs_t* b) { return !bs_eof(b); }
+//7.3.2.4 Supplemental enhancement information RBSP syntax
+void h265_read_sei_rbsp(h265_stream_t* h, bs_t* b)
+{
+    //return;
+    for (int i = 0; i < h->num_seis; i++)
+    {
+        h265_sei_free(h->seis[i]);
+    }
+
+    h->num_seis = 0;
+    do {
+        h->num_seis++;
+        h->seis = (h265_sei_t**)realloc(h->seis, h->num_seis * sizeof(sei_t*));
+        h->seis[h->num_seis - 1] = h265_sei_new();
+        h->sei = h->seis[h->num_seis - 1];
+        h265_read_sei(h, b);
+    } while(h265_more_rbsp_data(b));
+
+    h265_more_rbsp_trailing_data(b);
+}
 
 //7.3.2.10 RBSP slice trailing bits syntax
 // 与h.264略有不同

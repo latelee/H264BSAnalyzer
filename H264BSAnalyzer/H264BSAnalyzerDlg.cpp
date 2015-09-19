@@ -496,28 +496,29 @@ void CH264BSAnalyzerDlg::ReadFile(void)
 
         videoinfo_t videoInfo;
         m_cParser.getVideoInfo(&videoInfo);
+        // H.265
         if (videoInfo.type)
         {
             // profile¿‡–Õ
             switch (videoInfo.profile_idc)
             {
-            case 0:
+            case PROFILE_NONE:
                 strProfileInfo.Format(_T("None"));
                 break;
-            case 1:
+            case PROFILE_MAIN:
                 strProfileInfo.Format(_T("Main"));
                 break;
-            case 2:
-                strProfileInfo.Format(_T("Main 10"));
+            case PROFILE_MAIN10:
+                strProfileInfo.Format(_T("Main10"));
                 break;
-            case 3:
+            case PROFILE_MAINSTILLPICTURE:
                 strProfileInfo.Format(_T("Main Still Picture"));
                 break;
-            case 4:
-                strProfileInfo.Format(_T("PROFILE_MAINREXT"));
+            case PROFILE_MAINREXT:
+                strProfileInfo.Format(_T("Main RExt"));
                 break;
-            case 5:
-                strProfileInfo.Format(_T("PROFILE_HIGHTHROUGHPUTREXT"));
+            case PROFILE_HIGHTHROUGHPUTREXT:
+                strProfileInfo.Format(_T("High Throughput RExt"));
                 break;
                 break;
             default:
@@ -527,7 +528,7 @@ void CH264BSAnalyzerDlg::ReadFile(void)
             switch (videoInfo.level_idc)
             {
             case LEVEL_NONE:
-                strLevelInfo.Format(_T("LEVEL_NONE"));
+                strLevelInfo.Format(_T("none(%d)"), LEVEL_NONE);
                 break;
             case LEVEL1:
                 strLevelInfo.Format(_T("1(%d)"), LEVEL1);
@@ -582,7 +583,7 @@ void CH264BSAnalyzerDlg::ReadFile(void)
                 break;
             case 0:
             default:
-                strTierInfo.Format(_T("Tier Low"));
+                strTierInfo.Format(_T("Tier Main"));
                 break;
             }
         }
