@@ -827,28 +827,35 @@ static void h264_debug_slice_header(h264_stream_t* h)
         my_printf("=== Ref Pic List Modification ===\r\n");
         if( ! is_slice_type( sh->slice_type, SH_SLICE_TYPE_I ) && ! is_slice_type( sh->slice_type, SH_SLICE_TYPE_SI ) )
         {
-            my_printf(" ref_pic_list_modification_flag_l0 : %d\r\n", sh->rplr.ref_pic_list_modification_flag_l0 );
-            if( sh->rplr.ref_pic_list_modification_flag_l0 )
+            my_printf("  ref_pic_list_modification_flag_l0 : %d\r\n", sh->rplm.ref_pic_list_modification_flag_l0 );
+            if( sh->rplm.ref_pic_list_modification_flag_l0 )
             {
-                my_printf(" modification_of_pic_nums_idc : %d\r\n", sh->rplr.modification_of_pic_nums_idc );
-                if( sh->rplr.modification_of_pic_nums_idc == 0 ||
-                    sh->rplr.modification_of_pic_nums_idc == 1 )
-                    my_printf(" abs_diff_pic_num_minus1 : %d\r\n", sh->rplr.abs_diff_pic_num_minus1 );
-                else if( sh->rplr.modification_of_pic_nums_idc == 2 )
-                    my_printf(" long_term_pic_num : %d\r\n", sh->rplr.long_term_pic_num );
+                for (unsigned int i = 0; i < sh->rplm.rplm.size(); i++)
+                {
+                    my_printf("  modification_of_pic_nums_idc : %d\r\n", sh->rplm.rplm[i].modification_of_pic_nums_idc);
+                    if( sh->rplm.rplm[i].modification_of_pic_nums_idc == 0 ||
+                        sh->rplm.rplm[i].modification_of_pic_nums_idc == 1 )
+                        my_printf("  abs_diff_pic_num_minus1 : %d\r\n", sh->rplm.rplm[i].abs_diff_pic_num_minus1 );
+                    else if( sh->rplm.rplm[i].modification_of_pic_nums_idc == 2 )
+                        my_printf("  long_term_pic_num : %d\r\n", sh->rplm.rplm[i].long_term_pic_num );
+                }
+
             }
         }
         if( is_slice_type( sh->slice_type, SH_SLICE_TYPE_B ) )
         {
-            my_printf(" ref_pic_list_modification_flag_l1 : %d\r\n", sh->rplr.ref_pic_list_modification_flag_l1 );
-            if( sh->rplr.ref_pic_list_modification_flag_l1 )
+            my_printf("  ref_pic_list_modification_flag_l1 : %d\r\n", sh->rplm.ref_pic_list_modification_flag_l1 );
+            if( sh->rplm.ref_pic_list_modification_flag_l1 )
             {
-                my_printf(" modification_of_pic_nums_idc : %d\r\n", sh->rplr.modification_of_pic_nums_idc );
-                if( sh->rplr.modification_of_pic_nums_idc == 0 ||
-                    sh->rplr.modification_of_pic_nums_idc == 1 )
-                    my_printf(" abs_diff_pic_num_minus1 : %d\r\n", sh->rplr.abs_diff_pic_num_minus1 );
-                else if( sh->rplr.modification_of_pic_nums_idc == 2 )
-                    my_printf(" long_term_pic_num : %d\r\n", sh->rplr.long_term_pic_num );
+                for (unsigned int i = 0; i < sh->rplm.rplm.size(); i++)
+                {
+                    my_printf("  modification_of_pic_nums_idc : %d\r\n", sh->rplm.rplm[i].modification_of_pic_nums_idc );
+                    if( sh->rplm.rplm[i].modification_of_pic_nums_idc == 0 ||
+                        sh->rplm.rplm[i].modification_of_pic_nums_idc == 1 )
+                        my_printf("  abs_diff_pic_num_minus1 : %d\r\n", sh->rplm.rplm[i].abs_diff_pic_num_minus1 );
+                    else if( sh->rplm.rplm[i].modification_of_pic_nums_idc == 2 )
+                        my_printf("  long_term_pic_num : %d\r\n", sh->rplm.rplm[i].long_term_pic_num );
+                }
             }
         }
         
@@ -922,17 +929,20 @@ static void h264_debug_slice_header(h264_stream_t* h)
             my_printf("  adaptive_ref_pic_marking_mode_flag : %d\r\n", sh->drpm.adaptive_ref_pic_marking_mode_flag );
             if( sh->drpm.adaptive_ref_pic_marking_mode_flag )
             {
-                my_printf("  memory_management_control_operation : %d\r\n", sh->drpm.memory_management_control_operation );
-                if( sh->drpm.memory_management_control_operation == 1 ||
-                    sh->drpm.memory_management_control_operation == 3 )
-                    my_printf("  difference_of_pic_nums_minus1 : %d\r\n", sh->drpm.difference_of_pic_nums_minus1 );
-                if(sh->drpm.memory_management_control_operation == 2 )
-                    my_printf("  long_term_pic_num : %d\r\n", sh->drpm.long_term_pic_num );
-                if( sh->drpm.memory_management_control_operation == 3 ||
-                    sh->drpm.memory_management_control_operation == 6 )
-                    my_printf("  long_term_frame_idx : %d\r\n", sh->drpm.long_term_frame_idx );
-                if( sh->drpm.memory_management_control_operation == 4 )
-                    my_printf("  max_long_term_frame_idx_plus1 : %d\r\n", sh->drpm.max_long_term_frame_idx_plus1 );
+                for (unsigned int i = 0; i < sh->drpm.drpm.size(); i++)
+                {
+                    my_printf("  memory_management_control_operation : %d\r\n", sh->drpm.drpm[i].memory_management_control_operation );
+                    if( sh->drpm.drpm[i].memory_management_control_operation == 1 ||
+                        sh->drpm.drpm[i].memory_management_control_operation == 3 )
+                        my_printf("  difference_of_pic_nums_minus1 : %d\r\n", sh->drpm.drpm[i].difference_of_pic_nums_minus1 );
+                    if(sh->drpm.drpm[i].memory_management_control_operation == 2 )
+                        my_printf("  long_term_pic_num : %d\r\n", sh->drpm.drpm[i].long_term_pic_num );
+                    if( sh->drpm.drpm[i].memory_management_control_operation == 3 ||
+                        sh->drpm.drpm[i].memory_management_control_operation == 6 )
+                        my_printf("  long_term_frame_idx : %d\r\n", sh->drpm.drpm[i].long_term_frame_idx );
+                    if( sh->drpm.drpm[i].memory_management_control_operation == 4 )
+                        my_printf("  max_long_term_frame_idx_plus1 : %d\r\n", sh->drpm.drpm[i].max_long_term_frame_idx_plus1 );
+                }
             }
         }
     }

@@ -1118,46 +1118,48 @@ void read_slice_header(h264_stream_t* h, bs_t* b)
 void read_ref_pic_list_modification(h264_stream_t* h, bs_t* b)
 {
     slice_header_t* sh = h->sh;
-    // FIXME should be an array
+    rplm_tt rplmtt;
 
     if( ! is_slice_type( sh->slice_type, SH_SLICE_TYPE_I ) && ! is_slice_type( sh->slice_type, SH_SLICE_TYPE_SI ) )
     {
-        sh->rplr.ref_pic_list_modification_flag_l0 = bs_read_u1(b);
-        if( sh->rplr.ref_pic_list_modification_flag_l0 )
+        sh->rplm.ref_pic_list_modification_flag_l0 = bs_read_u1(b);
+        if( sh->rplm.ref_pic_list_modification_flag_l0 )
         {
             do
             {
-                sh->rplr.modification_of_pic_nums_idc = bs_read_ue(b);
-                if( sh->rplr.modification_of_pic_nums_idc == 0 ||
-                    sh->rplr.modification_of_pic_nums_idc == 1 )
+                rplmtt.modification_of_pic_nums_idc = bs_read_ue(b);
+                if( rplmtt.modification_of_pic_nums_idc == 0 ||
+                    rplmtt.modification_of_pic_nums_idc == 1 )
                 {
-                    sh->rplr.abs_diff_pic_num_minus1 = bs_read_ue(b);
+                    rplmtt.abs_diff_pic_num_minus1 = bs_read_ue(b);
                 }
-                else if( sh->rplr.modification_of_pic_nums_idc == 2 )
+                else if( rplmtt.modification_of_pic_nums_idc == 2 )
                 {
-                    sh->rplr.long_term_pic_num = bs_read_ue(b);
+                    rplmtt.long_term_pic_num = bs_read_ue(b);
                 }
-            } while( sh->rplr.modification_of_pic_nums_idc != 3 && ! bs_eof(b) );
+                sh->rplm.rplm.push_back(rplmtt);
+            } while( rplmtt.modification_of_pic_nums_idc != 3 && ! bs_eof(b) );
         }
     }
     if( is_slice_type( sh->slice_type, SH_SLICE_TYPE_B ) )
     {
-        sh->rplr.ref_pic_list_modification_flag_l1 = bs_read_u1(b);
-        if( sh->rplr.ref_pic_list_modification_flag_l1 )
+        sh->rplm.ref_pic_list_modification_flag_l1 = bs_read_u1(b);
+        if( sh->rplm.ref_pic_list_modification_flag_l1 )
         {
             do
             {
-                sh->rplr.modification_of_pic_nums_idc = bs_read_ue(b);
-                if( sh->rplr.modification_of_pic_nums_idc == 0 ||
-                    sh->rplr.modification_of_pic_nums_idc == 1 )
+                rplmtt.modification_of_pic_nums_idc = bs_read_ue(b);
+                if( rplmtt.modification_of_pic_nums_idc == 0 ||
+                    rplmtt.modification_of_pic_nums_idc == 1 )
                 {
-                    sh->rplr.abs_diff_pic_num_minus1 = bs_read_ue(b);
+                    rplmtt.abs_diff_pic_num_minus1 = bs_read_ue(b);
                 }
-                else if( sh->rplr.modification_of_pic_nums_idc == 2 )
+                else if( rplmtt.modification_of_pic_nums_idc == 2 )
                 {
-                    sh->rplr.long_term_pic_num = bs_read_ue(b);
+                    rplmtt.long_term_pic_num = bs_read_ue(b);
                 }
-            } while( sh->rplr.modification_of_pic_nums_idc != 3 && ! bs_eof(b) );
+                sh->rplm.rplm.push_back(rplmtt);
+            } while( rplmtt.modification_of_pic_nums_idc != 3 && ! bs_eof(b) );
         }
     }
 }
@@ -1227,7 +1229,7 @@ void read_pred_weight_table(h264_stream_t* h, bs_t* b)
 void read_dec_ref_pic_marking(h264_stream_t* h, bs_t* b)
 {
     slice_header_t* sh = h->sh;
-    // FIXME should be an array
+    drpm_tt drpmtt;
 
     if( h->nal->nal_unit_type == 5 )
     {
@@ -1241,26 +1243,27 @@ void read_dec_ref_pic_marking(h264_stream_t* h, bs_t* b)
         {
             do
             {
-                sh->drpm.memory_management_control_operation = bs_read_ue(b);
-                if( sh->drpm.memory_management_control_operation == 1 ||
-                    sh->drpm.memory_management_control_operation == 3 )
+                drpmtt.memory_management_control_operation = bs_read_ue(b);
+                if( drpmtt.memory_management_control_operation == 1 ||
+                    drpmtt.memory_management_control_operation == 3 )
                 {
-                    sh->drpm.difference_of_pic_nums_minus1 = bs_read_ue(b);
+                    drpmtt.difference_of_pic_nums_minus1 = bs_read_ue(b);
                 }
-                if(sh->drpm.memory_management_control_operation == 2 )
+                if(drpmtt.memory_management_control_operation == 2 )
                 {
-                    sh->drpm.long_term_pic_num = bs_read_ue(b);
+                    drpmtt.long_term_pic_num = bs_read_ue(b);
                 }
-                if( sh->drpm.memory_management_control_operation == 3 ||
-                    sh->drpm.memory_management_control_operation == 6 )
+                if( drpmtt.memory_management_control_operation == 3 ||
+                    drpmtt.memory_management_control_operation == 6 )
                 {
-                    sh->drpm.long_term_frame_idx = bs_read_ue(b);
+                    drpmtt.long_term_frame_idx = bs_read_ue(b);
                 }
-                if( sh->drpm.memory_management_control_operation == 4 )
+                if( drpmtt.memory_management_control_operation == 4 )
                 {
-                    sh->drpm.max_long_term_frame_idx_plus1 = bs_read_ue(b);
+                    drpmtt.max_long_term_frame_idx_plus1 = bs_read_ue(b);
                 }
-            } while( sh->drpm.memory_management_control_operation != 0 && ! bs_eof(b) );
+                sh->drpm.drpm.push_back(drpmtt);
+            } while( drpmtt.memory_management_control_operation != 0 && ! bs_eof(b) );
         }
     }
 }
@@ -2009,7 +2012,7 @@ void write_ref_pic_list_modification(h264_stream_t* h, bs_t* b)
 {
     slice_header_t* sh = h->sh;
     // FIXME should be an array
-
+#if 0   // by latelee
     if( ! is_slice_type( sh->slice_type, SH_SLICE_TYPE_I ) && ! is_slice_type( sh->slice_type, SH_SLICE_TYPE_SI ) )
     {
         bs_write_u1(b, sh->rplr.ref_pic_list_modification_flag_l0);
@@ -2050,6 +2053,7 @@ void write_ref_pic_list_modification(h264_stream_t* h, bs_t* b)
             } while( sh->rplr.modification_of_pic_nums_idc != 3 );
         }
     }
+#endif
 }
 
 //7.3.3.2 Prediction weight table syntax
@@ -2118,7 +2122,7 @@ void write_dec_ref_pic_marking(h264_stream_t* h, bs_t* b)
 {
     slice_header_t* sh = h->sh;
     // FIXME should be an array
-
+#if 0   // by latelee
     if( h->nal->nal_unit_type == 5 )
     {
         bs_write_u1(b, sh->drpm.no_output_of_prior_pics_flag);
@@ -2153,6 +2157,7 @@ void write_dec_ref_pic_marking(h264_stream_t* h, bs_t* b)
             } while( sh->drpm.memory_management_control_operation != 0 );
         }
     }
+#endif
 }
 
 /*

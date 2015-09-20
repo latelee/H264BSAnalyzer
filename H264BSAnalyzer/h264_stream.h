@@ -30,9 +30,8 @@
 #include "bs.h"
 #include "h264_sei.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include <vector>
+using std::vector;
 
 /**
    Sequence Parameter Set
@@ -186,6 +185,58 @@ typedef struct
     int second_chroma_qp_index_offset;
 } pps_t;
 
+// predictive weight table
+typedef struct
+{
+    int luma_log2_weight_denom;
+    int chroma_log2_weight_denom;
+    int luma_weight_l0_flag[64];
+    int luma_weight_l0[64];
+    int luma_offset_l0[64];
+    int chroma_weight_l0_flag[64];
+    int chroma_weight_l0[64][2];
+    int chroma_offset_l0[64][2];
+    int luma_weight_l1_flag[64];
+    int luma_weight_l1[64];
+    int luma_offset_l1[64];
+    int chroma_weight_l1_flag[64];
+    int chroma_weight_l1[64][2];
+    int chroma_offset_l1[64][2];
+} pwt_t;
+
+// ref pic list modification
+typedef struct
+{
+    int modification_of_pic_nums_idc;
+    int abs_diff_pic_num_minus1;
+    int long_term_pic_num;
+} rplm_tt;
+
+typedef struct
+{
+    int ref_pic_list_modification_flag_l0;
+    int ref_pic_list_modification_flag_l1;
+
+    vector<rplm_tt> rplm;
+} rplm_t;
+
+// decoded ref pic marking
+typedef struct
+{
+    int memory_management_control_operation;
+    int difference_of_pic_nums_minus1;
+    int long_term_pic_num;
+    int long_term_frame_idx;
+    int max_long_term_frame_idx_plus1;
+} drpm_tt;
+typedef struct
+{
+    int no_output_of_prior_pics_flag;
+    int long_term_reference_flag;
+    int adaptive_ref_pic_marking_mode_flag;
+
+    vector<drpm_tt> drpm;
+} drpm_t;
 
 /**
   Slice Header
@@ -223,46 +274,9 @@ typedef struct
     int slice_beta_offset_div2;
     int slice_group_change_cycle;
 
-
-    struct
-    {
-        int luma_log2_weight_denom;
-        int chroma_log2_weight_denom;
-        int luma_weight_l0_flag[64];
-        int luma_weight_l0[64];
-        int luma_offset_l0[64];
-        int chroma_weight_l0_flag[64];
-        int chroma_weight_l0[64][2];
-        int chroma_offset_l0[64][2];
-        int luma_weight_l1_flag[64];
-        int luma_weight_l1[64];
-        int luma_offset_l1[64];
-        int chroma_weight_l1_flag[64];
-        int chroma_weight_l1[64][2];
-        int chroma_offset_l1[64][2];
-    } pwt; // predictive weight table
-
-    struct // FIXME stack or array
-    {
-        int ref_pic_list_modification_flag_l0;
-        int ref_pic_list_modification_flag_l1;
-        int modification_of_pic_nums_idc;
-        int abs_diff_pic_num_minus1;
-        int long_term_pic_num;
-    } rplr; // ref pic list reorder
-
-    struct // FIXME stack or array
-    {
-        int no_output_of_prior_pics_flag;
-        int long_term_reference_flag;
-        int adaptive_ref_pic_marking_mode_flag;
-        int memory_management_control_operation;
-        int difference_of_pic_nums_minus1;
-        int long_term_pic_num;
-        int long_term_frame_idx;
-        int max_long_term_frame_idx_plus1;
-    } drpm; // decoded ref pic marking
-
+    pwt_t pwt;
+    rplm_t rplm;
+    drpm_t drpm;
 } slice_header_t;
 
 
@@ -550,9 +564,5 @@ void write_sei_payload( h264_stream_t* h, bs_t* b, int payloadType, int payloadS
 
 // file handle for debug output
 extern FILE* h264_dbgfile;
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif
