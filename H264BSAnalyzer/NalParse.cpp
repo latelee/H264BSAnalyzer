@@ -1313,11 +1313,11 @@ static void h265_debug_vps(h265_vps_t* vps)
     my_printf("vps_temporal_id_nesting_flag: %d\r\n", vps->vps_temporal_id_nesting_flag);
     my_printf("vps_reserved_0xffff_16bits: %d\r\n", vps->vps_reserved_0xffff_16bits);
     // ptl
-    my_printf("profile_tier_level()");
+    my_printf("profile_tier_level()\r\n");
     h265_debug_ptl(&vps->ptl, 1, vps->vps_max_layers_minus1);
     
     my_printf("vps_sub_layer_ordering_info_present_flag: %d\r\n", vps->vps_sub_layer_ordering_info_present_flag);
-    my_printf("SubLayers");
+    my_printf("SubLayers\r\n");
     for (i = (vps->vps_sub_layer_ordering_info_present_flag ? 0 : vps->vps_max_sub_layers_minus1);
         i <= vps->vps_max_sub_layers_minus1; i++ )
     {
@@ -1392,7 +1392,8 @@ void h265_debug_short_term_ref_pic_set(h265_sps_t* sps, st_ref_pic_set_t*st, ref
 {
     my_printf(" st_ref_pic_set[%d]\r\n", stRpsIdx);
 
-    my_printf(" inter_ref_pic_set_prediction_flag: %d\r\n", st->inter_ref_pic_set_prediction_flag);
+    if (stRpsIdx != 0)
+        my_printf(" inter_ref_pic_set_prediction_flag: %d\r\n", st->inter_ref_pic_set_prediction_flag);
     if (st->inter_ref_pic_set_prediction_flag)
     {
         my_printf("  delta_idx_minus1: %d\r\n", st->delta_idx_minus1);
@@ -1510,7 +1511,7 @@ static void h265_debug_sps(h265_sps_t* sps)
     my_printf("sps_max_sub_layers_minus1: %d\r\n", sps->sps_max_sub_layers_minus1);
     my_printf("sps_temporal_id_nesting_flag: %d\r\n", sps->sps_temporal_id_nesting_flag);
     // ptl
-    my_printf("profile_tier_level()");
+    my_printf("profile_tier_level()\r\n");
     h265_debug_ptl(&sps->ptl, 1, sps->sps_max_sub_layers_minus1);
 
     my_printf("sps_seq_parameter_set_id: %d\r\n", sps->sps_seq_parameter_set_id);
@@ -1848,10 +1849,16 @@ static void h265_debug_slice_header(h265_stream_t* h)
 
     my_printf("======= HEVC Slice Header =======\r\n");
     my_printf("first_slice_segment_in_pic_flag: %d\r\n", hrd->first_slice_segment_in_pic_flag);
-    my_printf("no_output_of_prior_pics_flag: %d\r\n", hrd->no_output_of_prior_pics_flag);
+    if (nal_unit_type >= NAL_UNIT_CODED_SLICE_BLA_W_LP && nal_unit_type <= NAL_UNIT_RESERVED_IRAP_VCL23)
+        my_printf("no_output_of_prior_pics_flag: %d\r\n", hrd->no_output_of_prior_pics_flag);
     my_printf("slice_pic_parameter_set_id: %d\r\n", hrd->slice_pic_parameter_set_id);
-    my_printf("dependent_slice_segment_flag: %d\r\n", hrd->dependent_slice_segment_flag);
-    my_printf("slice_segment_address: %d\r\n", hrd->slice_segment_address);
+    if (!hrd->first_slice_segment_in_pic_flag)
+    {
+        if (pps->dependent_slice_segments_enabled_flag)
+            my_printf("dependent_slice_segment_flag: %d\r\n", hrd->dependent_slice_segment_flag);
+        my_printf("slice_segment_address: %d\r\n", hrd->slice_segment_address);
+    }
+
     if (!hrd->dependent_slice_segment_flag)
     {
         my_printf("dependent_slice_segment_flag\r\n");
@@ -1870,39 +1877,47 @@ static void h265_debug_slice_header(h265_stream_t* h)
             my_printf("  pic_output_flag: %d\r\n", hrd->pic_output_flag);
         if (sps->separate_colour_plane_flag == 1)
             my_printf("  colour_plane_id: %d\r\n", hrd->colour_plane_id);
-        my_printf(" slice_pic_order_cnt_lsb: %d\r\n", hrd->slice_pic_order_cnt_lsb);
-        my_printf(" short_term_ref_pic_set_sps_flag: %d\r\n", hrd->short_term_ref_pic_set_sps_flag);
-        if (!hrd->short_term_ref_pic_set_sps_flag)
+        if (nal_unit_type == NAL_UNIT_CODED_SLICE_IDR_W_RADL || nal_unit_type == NAL_UNIT_CODED_SLICE_IDR_N_LP)
         {
-            referencePictureSets_t* rps = &hrd->m_localRPS;
-            h265_debug_short_term_ref_pic_set(sps, &hrd->st_ref_pic_set, rps, sps->num_short_term_ref_pic_sets);
+            // do nothing...
         }
-        else if (sps->num_short_term_ref_pic_sets > 1)
+        else
         {
-            my_printf("  short_term_ref_pic_set_idx: %d\r\n", hrd->short_term_ref_pic_set_idx);
-        }
-        if (sps->long_term_ref_pics_present_flag)
-        {
-            my_printf("  num_long_term_sps: %d\r\n", hrd->num_long_term_sps);
-            my_printf("  num_long_term_pics: %d\r\n", hrd->num_long_term_pics);
-            for (int i = 0; i < (int)hrd->lt_idx_sps.size(); i++)
+            my_printf(" slice_pic_order_cnt_lsb: %d\r\n", hrd->slice_pic_order_cnt_lsb);
+            my_printf(" short_term_ref_pic_set_sps_flag: %d\r\n", hrd->short_term_ref_pic_set_sps_flag);
+            if (!hrd->short_term_ref_pic_set_sps_flag)
             {
-                if (i < hrd->num_long_term_sps)
-                    my_printf("   hrd->lt_idx_sps[%d]: %d\r\n", i, hrd->lt_idx_sps[i]);
-                else
+                referencePictureSets_t* rps = &hrd->m_localRPS;
+                h265_debug_short_term_ref_pic_set(sps, &hrd->st_ref_pic_set, rps, sps->num_short_term_ref_pic_sets);
+            }
+            else if (sps->num_short_term_ref_pic_sets > 1)
+            {
+                my_printf("  short_term_ref_pic_set_idx: %d\r\n", hrd->short_term_ref_pic_set_idx);
+            }
+            if (sps->long_term_ref_pics_present_flag)
+            {
+                my_printf("  num_long_term_sps: %d\r\n", hrd->num_long_term_sps);
+                my_printf("  num_long_term_pics: %d\r\n", hrd->num_long_term_pics);
+                for (int i = 0; i < (int)hrd->lt_idx_sps.size(); i++)
                 {
-                    my_printf("   hrd->poc_lsb_lt[%d]: %d\r\n", i, hrd->poc_lsb_lt[i]);
-                    my_printf("   hrd->used_by_curr_pic_lt_flag[%d]: %d\r\n", i, hrd->used_by_curr_pic_lt_flag[i]);
+                    if (i < hrd->num_long_term_sps)
+                        my_printf("   hrd->lt_idx_sps[%d]: %d\r\n", i, hrd->lt_idx_sps[i]);
+                    else
+                    {
+                        my_printf("   hrd->poc_lsb_lt[%d]: %d\r\n", i, hrd->poc_lsb_lt[i]);
+                        my_printf("   hrd->used_by_curr_pic_lt_flag[%d]: %d\r\n", i, hrd->used_by_curr_pic_lt_flag[i]);
+                    }
+                    my_printf("  hrd->delta_poc_msb_present_flag[%d]: %d\r\n", i, hrd->delta_poc_msb_present_flag[i]);
+                    if (hrd->delta_poc_msb_present_flag[i])
+                        my_printf("  hrd->delta_poc_msb_cycle_lt[%d]: %d\r\n", i, hrd->delta_poc_msb_cycle_lt[i]);
                 }
-                my_printf("  hrd->delta_poc_msb_present_flag[%d]: %d\r\n", i, hrd->delta_poc_msb_present_flag[i]);
-                if (hrd->delta_poc_msb_present_flag[i])
-                    my_printf("  hrd->delta_poc_msb_cycle_lt[%d]: %d\r\n", i, hrd->delta_poc_msb_cycle_lt[i]);
+            }
+            if(sps->sps_temporal_mvp_enabled_flag)
+            {
+                my_printf(" slice_temporal_mvp_enabled_flag: %d\r\n", hrd->slice_temporal_mvp_enabled_flag);
             }
         }
-        if(sps->sps_temporal_mvp_enabled_flag)
-        {
-            my_printf(" slice_temporal_mvp_enabled_flag: %d\r\n", hrd->slice_temporal_mvp_enabled_flag);
-        }
+
         if(sps->sample_adaptive_offset_enabled_flag)
         {
             my_printf(" slice_sao_luma_flag: %d\r\n", hrd->slice_sao_luma_flag);
@@ -2110,10 +2125,10 @@ static void h265_debug_nal(h265_stream_t* h, h265_nal_t* nal)
     }
     // nal header
     my_printf("==================== HEVC NAL ====================\r\n");
-    my_printf(" forbidden_zero_bit : %d\r\n", nal->forbidden_zero_bit);
-    my_printf(" nal_unit_type : %d ( %s )\r\n", nal->nal_unit_type, nal_unit_type_name);
-    my_printf(" nal_ref_idc : %d\r\n", nal->nuh_layer_id);
-    my_printf(" nal_ref_idc : %d\r\n", nal->nuh_temporal_id_plus1);
+    my_printf("forbidden_zero_bit : %d\r\n", nal->forbidden_zero_bit);
+    my_printf("nal_unit_type : %d ( %s )\r\n", nal->nal_unit_type, nal_unit_type_name);
+    my_printf("nal_ref_idc : %d\r\n", nal->nuh_layer_id);
+    my_printf("nal_ref_idc : %d\r\n", nal->nuh_temporal_id_plus1);
     
     // nal unit
     if(my_nal_type == 0)
