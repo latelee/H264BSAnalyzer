@@ -54,7 +54,8 @@ typedef struct
     int level_idc;
     int seq_parameter_set_id;
     int chroma_format_idc;
-    int residual_colour_transform_flag;
+    int separate_colour_plane_flag;
+    int ChromaArrayType;
     int bit_depth_luma_minus8;
     int bit_depth_chroma_minus8;
     int qpprime_y_zero_transform_bypass_flag;
@@ -172,7 +173,7 @@ typedef struct
     int constrained_intra_pred_flag;
     int redundant_pic_cnt_present_flag;
 
-    // set iff we carry any of the optional headers
+    // see if we carry any of the optional headers
     int _more_rbsp_data_present;
 
     int transform_8x8_mode_flag;
@@ -200,6 +201,7 @@ typedef struct
     int first_mb_in_slice;
     int slice_type;
     int pic_parameter_set_id;
+    int colour_plane_id;
     int frame_num;
     int field_pic_flag;
       int bottom_field_flag;
@@ -242,9 +244,9 @@ typedef struct
 
     struct // FIXME stack or array
     {
-        int ref_pic_list_reordering_flag_l0;
-        int ref_pic_list_reordering_flag_l1;
-        int reordering_of_pic_nums_idc;
+        int ref_pic_list_modification_flag_l0;
+        int ref_pic_list_modification_flag_l1;
+        int modification_of_pic_nums_idc;
         int abs_diff_pic_num_minus1;
         int long_term_pic_num;
     } rplr; // ref pic list reorder
@@ -415,11 +417,13 @@ void read_slice_layer_rbsp(h264_stream_t* h, bs_t* b);
 void read_rbsp_slice_trailing_bits(h264_stream_t* h, bs_t* b);
 void read_rbsp_trailing_bits(h264_stream_t* h, bs_t* b);
 void read_slice_header(h264_stream_t* h, bs_t* b);
-void read_ref_pic_list_reordering(h264_stream_t* h, bs_t* b);
+void read_ref_pic_list_modification(h264_stream_t* h, bs_t* b);
 void read_pred_weight_table(h264_stream_t* h, bs_t* b);
 void read_dec_ref_pic_marking(h264_stream_t* h, bs_t* b);
 
 int more_rbsp_trailing_data(h264_stream_t* h, bs_t* b);
+
+int is_slice_type(int slice_type, int cmp_type);
 
 int write_nal_unit(h264_stream_t* h, uint8_t* buf, int size);
 
@@ -441,7 +445,7 @@ void write_slice_layer_rbsp(h264_stream_t* h, bs_t* b);
 void write_rbsp_slice_trailing_bits(h264_stream_t* h, bs_t* b);
 void write_rbsp_trailing_bits(h264_stream_t* h, bs_t* b);
 void write_slice_header(h264_stream_t* h, bs_t* b);
-void write_ref_pic_list_reordering(h264_stream_t* h, bs_t* b);
+void write_ref_pic_list_modification(h264_stream_t* h, bs_t* b);
 void write_pred_weight_table(h264_stream_t* h, bs_t* b);
 void write_dec_ref_pic_marking(h264_stream_t* h, bs_t* b);
 
@@ -514,7 +518,7 @@ void write_sei_payload( h264_stream_t* h, bs_t* b, int payloadType, int payloadS
                                      // 14..254           Reserved
 #define SAR_Extended      255        // Extended_SAR
 
-//7.4.3.1 Table 7-7 reordering_of_pic_nums_idc operations for reordering of reference picture lists
+//7.4.3.1 Table 7-7 modification_of_pic_nums_idc operations for modification of reference picture lists
 #define RPLR_IDC_ABS_DIFF_ADD       0
 #define RPLR_IDC_ABS_DIFF_SUBTRACT  1
 #define RPLR_IDC_LONG_TERM          2

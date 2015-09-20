@@ -149,7 +149,8 @@ static inline uint32_t bs_peek_u1(bs_t* b)
 
     if (! bs_eof(b))
     {
-        r = ((*(b->p)) >> ( b->bits_left - 1 )) & 0x01;
+        r = ((*(b->p)) >> ( b->bits_left - 1 ));
+        r &= 0x01;
     }
     return r;
 }

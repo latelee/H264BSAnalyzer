@@ -163,9 +163,10 @@ int find_nal_unit(uint8_t* buf, int size, int* nal_start, int* nal_end)
     return (*nal_end - *nal_start);
 }
 
-
+// sth wrong here
 int more_rbsp_data(h264_stream_t* h, bs_t* b) 
 {
+    if (bs_bytes_left(b)) {return 1;};  // fix me...
     if ( bs_eof(b) ) { return 0; }
     if ( bs_peek_u1(b) == 1 ) { return 0; } // if next bit is 1, we've reached the stop bit
     return 1;
@@ -469,9 +470,11 @@ void read_seq_parameter_set_rbsp(h264_stream_t* h, bs_t* b)
         sps->profile_idc == 122 || sps->profile_idc == 144 )
     {
         sps->chroma_format_idc = bs_read_ue(b);
+        sps->ChromaArrayType = sps->chroma_format_idc;
         if( sps->chroma_format_idc == 3 )
         {
-            sps->residual_colour_transform_flag = bs_read_u1(b);
+            sps->separate_colour_plane_flag = bs_read_u1(b);
+            if (sps->separate_colour_plane_flag) sps->ChromaArrayType = 0;
         }
         sps->bit_depth_luma_minus8 = bs_read_ue(b);
         sps->bit_depth_chroma_minus8 = bs_read_ue(b);
@@ -587,8 +590,8 @@ void read_seq_parameter_set_rbsp(h264_stream_t* h, bs_t* b)
     }
 #else
     // 根据Table6-1及7.4.2.1.1计算宽、高
-    int sub_width_c  = ((1 == sps->chroma_format_idc) || (2 == sps->chroma_format_idc)) && (0 == sps->residual_colour_transform_flag) ? 2 : 1;
-    int sub_height_c =  (1 == sps->chroma_format_idc)                                   && (0 == sps->residual_colour_transform_flag) ? 2 : 1;
+    int sub_width_c  = ((1 == sps->chroma_format_idc) || (2 == sps->chroma_format_idc)) && (0 == sps->separate_colour_plane_flag) ? 2 : 1;
+    int sub_height_c =  (1 == sps->chroma_format_idc)                                   && (0 == sps->separate_colour_plane_flag) ? 2 : 1;
 
     h->info->width = ((sps->pic_width_in_mbs_minus1 +1)*16) - sps->frame_crop_left_offset*sub_width_c - sps->frame_crop_right_offset*sub_width_c;
     h->info->height= ((2 - sps->frame_mbs_only_flag)* (sps->pic_height_in_map_units_minus1 +1) * 16) - (sps->frame_crop_top_offset * sub_height_c) - (sps->frame_crop_bottom_offset * sub_height_c);
@@ -1007,6 +1010,10 @@ void read_slice_header(h264_stream_t* h, bs_t* b)
     pps = h->pps = h->pps_table[sh->pic_parameter_set_id];
     sps = h->sps = h->sps_table[pps->seq_parameter_set_id];
 
+    if (sps->separate_colour_plane_flag == 1)
+    {
+        sh->colour_plane_id = bs_read_u(b, 2);
+    }
     sh->frame_num = bs_read_u(b, sps->log2_max_frame_num_minus4 + 4 ); // was u(v)
     if( !sps->frame_mbs_only_flag )
     {
@@ -1056,7 +1063,16 @@ void read_slice_header(h264_stream_t* h, bs_t* b)
             }
         }
     }
-    read_ref_pic_list_reordering(h, b);
+    if (nal->nal_unit_type == 20 || nal->nal_unit_type == 21)
+    {
+        // todo
+        // read_ref_pic_list_mvc_modification(h, b);
+    }
+    else
+    {
+        read_ref_pic_list_modification(h, b);
+    }
+    
     if( ( pps->weighted_pred_flag && ( is_slice_type( sh->slice_type, SH_SLICE_TYPE_P ) || is_slice_type( sh->slice_type, SH_SLICE_TYPE_SP ) ) ) ||
         ( pps->weighted_bipred_idc == 1 && is_slice_type( sh->slice_type, SH_SLICE_TYPE_B ) ) )
     {
@@ -1098,50 +1114,50 @@ void read_slice_header(h264_stream_t* h, bs_t* b)
     // bs_print_state(b);
 }
 
-//7.3.3.1 Reference picture list reordering syntax
-void read_ref_pic_list_reordering(h264_stream_t* h, bs_t* b)
+//7.3.3.1 Reference picture list modification syntax
+void read_ref_pic_list_modification(h264_stream_t* h, bs_t* b)
 {
     slice_header_t* sh = h->sh;
     // FIXME should be an array
 
     if( ! is_slice_type( sh->slice_type, SH_SLICE_TYPE_I ) && ! is_slice_type( sh->slice_type, SH_SLICE_TYPE_SI ) )
     {
-        sh->rplr.ref_pic_list_reordering_flag_l0 = bs_read_u1(b);
-        if( sh->rplr.ref_pic_list_reordering_flag_l0 )
+        sh->rplr.ref_pic_list_modification_flag_l0 = bs_read_u1(b);
+        if( sh->rplr.ref_pic_list_modification_flag_l0 )
         {
             do
             {
-                sh->rplr.reordering_of_pic_nums_idc = bs_read_ue(b);
-                if( sh->rplr.reordering_of_pic_nums_idc == 0 ||
-                    sh->rplr.reordering_of_pic_nums_idc == 1 )
+                sh->rplr.modification_of_pic_nums_idc = bs_read_ue(b);
+                if( sh->rplr.modification_of_pic_nums_idc == 0 ||
+                    sh->rplr.modification_of_pic_nums_idc == 1 )
                 {
                     sh->rplr.abs_diff_pic_num_minus1 = bs_read_ue(b);
                 }
-                else if( sh->rplr.reordering_of_pic_nums_idc == 2 )
+                else if( sh->rplr.modification_of_pic_nums_idc == 2 )
                 {
                     sh->rplr.long_term_pic_num = bs_read_ue(b);
                 }
-            } while( sh->rplr.reordering_of_pic_nums_idc != 3 && ! bs_eof(b) );
+            } while( sh->rplr.modification_of_pic_nums_idc != 3 && ! bs_eof(b) );
         }
     }
     if( is_slice_type( sh->slice_type, SH_SLICE_TYPE_B ) )
     {
-        sh->rplr.ref_pic_list_reordering_flag_l1 = bs_read_u1(b);
-        if( sh->rplr.ref_pic_list_reordering_flag_l1 )
+        sh->rplr.ref_pic_list_modification_flag_l1 = bs_read_u1(b);
+        if( sh->rplr.ref_pic_list_modification_flag_l1 )
         {
             do
             {
-                sh->rplr.reordering_of_pic_nums_idc = bs_read_ue(b);
-                if( sh->rplr.reordering_of_pic_nums_idc == 0 ||
-                    sh->rplr.reordering_of_pic_nums_idc == 1 )
+                sh->rplr.modification_of_pic_nums_idc = bs_read_ue(b);
+                if( sh->rplr.modification_of_pic_nums_idc == 0 ||
+                    sh->rplr.modification_of_pic_nums_idc == 1 )
                 {
                     sh->rplr.abs_diff_pic_num_minus1 = bs_read_ue(b);
                 }
-                else if( sh->rplr.reordering_of_pic_nums_idc == 2 )
+                else if( sh->rplr.modification_of_pic_nums_idc == 2 )
                 {
                     sh->rplr.long_term_pic_num = bs_read_ue(b);
                 }
-            } while( sh->rplr.reordering_of_pic_nums_idc != 3 && ! bs_eof(b) );
+            } while( sh->rplr.modification_of_pic_nums_idc != 3 && ! bs_eof(b) );
         }
     }
 }
@@ -1156,11 +1172,11 @@ void read_pred_weight_table(h264_stream_t* h, bs_t* b)
     int i, j;
 
     sh->pwt.luma_log2_weight_denom = bs_read_ue(b);
-    if( sps->chroma_format_idc != 0 )
+    if( sps->ChromaArrayType != 0 )
     {
         sh->pwt.chroma_log2_weight_denom = bs_read_ue(b);
     }
-    for( i = 0; i <= pps->num_ref_idx_l0_active_minus1; i++ )
+    for( i = 0; i <= sh->num_ref_idx_l0_active_minus1; i++ )
     {
         sh->pwt.luma_weight_l0_flag[i] = bs_read_u1(b);
         if( sh->pwt.luma_weight_l0_flag[i] )
@@ -1168,7 +1184,7 @@ void read_pred_weight_table(h264_stream_t* h, bs_t* b)
             sh->pwt.luma_weight_l0[ i ] = bs_read_se(b);
             sh->pwt.luma_offset_l0[ i ] = bs_read_se(b);
         }
-        if ( sps->chroma_format_idc != 0 )
+        if ( sps->ChromaArrayType != 0 )
         {
             sh->pwt.chroma_weight_l0_flag[i] = bs_read_u1(b);
             if( sh->pwt.chroma_weight_l0_flag[i] )
@@ -1183,7 +1199,7 @@ void read_pred_weight_table(h264_stream_t* h, bs_t* b)
     }
     if( is_slice_type( sh->slice_type, SH_SLICE_TYPE_B ) )
     {
-        for( i = 0; i <= pps->num_ref_idx_l1_active_minus1; i++ )
+        for( i = 0; i <= sh->num_ref_idx_l1_active_minus1; i++ )
         {
             sh->pwt.luma_weight_l1_flag[i] = bs_read_u1(b);
             if( sh->pwt.luma_weight_l1_flag[i] )
@@ -1191,7 +1207,7 @@ void read_pred_weight_table(h264_stream_t* h, bs_t* b)
                 sh->pwt.luma_weight_l1[ i ] = bs_read_se(b);
                 sh->pwt.luma_offset_l1[ i ] = bs_read_se(b);
             }
-            if( sps->chroma_format_idc != 0 )
+            if( sps->ChromaArrayType != 0 )
             {
                 sh->pwt.chroma_weight_l1_flag[i] = bs_read_u1(b);
                 if( sh->pwt.chroma_weight_l1_flag[i] )
@@ -1424,7 +1440,7 @@ void write_seq_parameter_set_rbsp(h264_stream_t* h, bs_t* b)
         bs_write_ue(b, sps->chroma_format_idc);
         if( sps->chroma_format_idc == 3 )
         {
-            bs_write_u1(b, sps->residual_colour_transform_flag);
+            bs_write_u1(b, sps->separate_colour_plane_flag);
         }
         bs_write_ue(b, sps->bit_depth_luma_minus8);
         bs_write_ue(b, sps->bit_depth_chroma_minus8);
@@ -1944,7 +1960,7 @@ void write_slice_header(h264_stream_t* h, bs_t* b)
             }
         }
     }
-    write_ref_pic_list_reordering(h, b);
+    write_ref_pic_list_modification(h, b);
     if( ( pps->weighted_pred_flag && ( is_slice_type( sh->slice_type, SH_SLICE_TYPE_P ) || is_slice_type( sh->slice_type, SH_SLICE_TYPE_SP ) ) ) ||
         ( pps->weighted_bipred_idc == 1 && is_slice_type( sh->slice_type, SH_SLICE_TYPE_B ) ) )
     {
@@ -1988,50 +2004,50 @@ void write_slice_header(h264_stream_t* h, bs_t* b)
     //DBG_END
 }
 
-//7.3.3.1 Reference picture list reordering syntax
-void write_ref_pic_list_reordering(h264_stream_t* h, bs_t* b)
+//7.3.3.1 Reference picture list modification syntax
+void write_ref_pic_list_modification(h264_stream_t* h, bs_t* b)
 {
     slice_header_t* sh = h->sh;
     // FIXME should be an array
 
     if( ! is_slice_type( sh->slice_type, SH_SLICE_TYPE_I ) && ! is_slice_type( sh->slice_type, SH_SLICE_TYPE_SI ) )
     {
-        bs_write_u1(b, sh->rplr.ref_pic_list_reordering_flag_l0);
-        if( sh->rplr.ref_pic_list_reordering_flag_l0 )
+        bs_write_u1(b, sh->rplr.ref_pic_list_modification_flag_l0);
+        if( sh->rplr.ref_pic_list_modification_flag_l0 )
         {
             do
             {
-                bs_write_ue(b, sh->rplr.reordering_of_pic_nums_idc);
-                if( sh->rplr.reordering_of_pic_nums_idc == 0 ||
-                    sh->rplr.reordering_of_pic_nums_idc == 1 )
+                bs_write_ue(b, sh->rplr.modification_of_pic_nums_idc);
+                if( sh->rplr.modification_of_pic_nums_idc == 0 ||
+                    sh->rplr.modification_of_pic_nums_idc == 1 )
                 {
                     bs_write_ue(b, sh->rplr.abs_diff_pic_num_minus1);
                 }
-                else if( sh->rplr.reordering_of_pic_nums_idc == 2 )
+                else if( sh->rplr.modification_of_pic_nums_idc == 2 )
                 {
                     bs_write_ue(b, sh->rplr.long_term_pic_num);
                 }
-            } while( sh->rplr.reordering_of_pic_nums_idc != 3 );
+            } while( sh->rplr.modification_of_pic_nums_idc != 3 );
         }
     }
     if( is_slice_type( sh->slice_type, SH_SLICE_TYPE_B ) )
     {
-        bs_write_u1(b, sh->rplr.ref_pic_list_reordering_flag_l1);
-        if( sh->rplr.ref_pic_list_reordering_flag_l1 )
+        bs_write_u1(b, sh->rplr.ref_pic_list_modification_flag_l1);
+        if( sh->rplr.ref_pic_list_modification_flag_l1 )
         {
             do
             {
-                bs_write_ue(b, sh->rplr.reordering_of_pic_nums_idc);
-                if( sh->rplr.reordering_of_pic_nums_idc == 0 ||
-                    sh->rplr.reordering_of_pic_nums_idc == 1 )
+                bs_write_ue(b, sh->rplr.modification_of_pic_nums_idc);
+                if( sh->rplr.modification_of_pic_nums_idc == 0 ||
+                    sh->rplr.modification_of_pic_nums_idc == 1 )
                 {
                     bs_write_ue(b, sh->rplr.abs_diff_pic_num_minus1);
                 }
-                else if( sh->rplr.reordering_of_pic_nums_idc == 2 )
+                else if( sh->rplr.modification_of_pic_nums_idc == 2 )
                 {
                     bs_write_ue(b, sh->rplr.long_term_pic_num);
                 }
-            } while( sh->rplr.reordering_of_pic_nums_idc != 3 );
+            } while( sh->rplr.modification_of_pic_nums_idc != 3 );
         }
     }
 }
@@ -2205,7 +2221,7 @@ void debug_sps(sps_t* sps)
     printf(" level_idc : %d \n", sps->level_idc );
     printf(" seq_parameter_set_id : %d \n", sps->seq_parameter_set_id );
     printf(" chroma_format_idc : %d \n", sps->chroma_format_idc );
-    printf(" residual_colour_transform_flag : %d \n", sps->residual_colour_transform_flag );
+    printf(" separate_colour_plane_flag : %d \n", sps->separate_colour_plane_flag );
     printf(" bit_depth_luma_minus8 : %d \n", sps->bit_depth_luma_minus8 );
     printf(" bit_depth_chroma_minus8 : %d \n", sps->bit_depth_chroma_minus8 );
     printf(" qpprime_y_zero_transform_bypass_flag : %d \n", sps->qpprime_y_zero_transform_bypass_flag );
@@ -2385,9 +2401,9 @@ void debug_slice_header(slice_header_t* sh)
         // int chroma_offset_l1[64][2];
 
     printf("=== Ref Pic List Reordering ===\n");
-        printf(" ref_pic_list_reordering_flag_l0 : %d \n", sh->rplr.ref_pic_list_reordering_flag_l0 );
-        printf(" ref_pic_list_reordering_flag_l1 : %d \n", sh->rplr.ref_pic_list_reordering_flag_l1 );
-        // int reordering_of_pic_nums_idc;
+        printf(" ref_pic_list_modification_flag_l0 : %d \n", sh->rplr.ref_pic_list_modification_flag_l0 );
+        printf(" ref_pic_list_modification_flag_l1 : %d \n", sh->rplr.ref_pic_list_modification_flag_l1 );
+        // int modification_of_pic_nums_idc;
         // int abs_diff_pic_num_minus1;
         // int long_term_pic_num;
 

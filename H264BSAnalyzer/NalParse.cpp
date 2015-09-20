@@ -119,8 +119,6 @@ int CNalParser::probeNALU(vector<NALU_t>& vNal, int num)
 
 int CNalParser::parseNALU(NALU_t& vNal, char** naluData, char** naluInfo)
 {
-    int nal_start,nal_end;
-
     memset(g_outputInfo, '\0', OUTPUT_SIZE);
 
     if (m_naluData == NULL)
@@ -486,6 +484,7 @@ FileType CNalParser::judeVideoFile(const char* filename)
         int startcode = 0;
         unsigned char nalHader = 0;
         unsigned char nalType = 0;
+
         fp = fopen(filename, "r+b");
         offset = findFirstNALU(fp, &startcode);
         fseek(fp, offset+startcode, SEEK_SET);
@@ -527,7 +526,8 @@ static void h264_debug_sps(sps_t* sps)
     my_printf(" level_idc : %d\r\n", sps->level_idc );
     my_printf(" seq_parameter_set_id : %d\r\n", sps->seq_parameter_set_id );
     my_printf(" chroma_format_idc : %d\r\n", sps->chroma_format_idc );
-    my_printf(" residual_colour_transform_flag : %d\r\n", sps->residual_colour_transform_flag );
+    if (sps->chroma_format_idc == 3)
+        my_printf(" separate_colour_plane_flag : %d\r\n", sps->separate_colour_plane_flag );
     my_printf(" bit_depth_luma_minus8 : %d\r\n", sps->bit_depth_luma_minus8 );
     my_printf(" bit_depth_chroma_minus8 : %d\r\n", sps->bit_depth_chroma_minus8 );
     my_printf(" qpprime_y_zero_transform_bypass_flag : %d\r\n", sps->qpprime_y_zero_transform_bypass_flag );
@@ -537,27 +537,38 @@ static void h264_debug_sps(sps_t* sps)
         for (int i = 0; i < ((sps->chroma_format_idc!=3) ? 8 : 12); i++)
         {
             my_printf("   seq_scaling_list_present_flag[%d] : %d\r\n", i, sps->seq_scaling_list_present_flag[i]);
+            if( sps->seq_scaling_list_present_flag[ i ] )
+            {
+                if( i < 6 )
+                    my_printf("   ScalingList4x4[%d] : %d\r\n", i, sps->ScalingList4x4[i] );
+                else
+                    my_printf("   ScalingList4xScalingList8x84[%d] : %d\r\n", i, sps->ScalingList8x8[i] );
+            }
         }
     }
-    //  int seq_scaling_list_present_flag[8];
-    //  void* ScalingList4x4[6];
-    //  int UseDefaultScalingMatrix4x4Flag[6];
-    //  void* ScalingList8x8[2];
-    //  int UseDefaultScalingMatrix8x8Flag[2];
+
     my_printf(" log2_max_frame_num_minus4 : %d\r\n", sps->log2_max_frame_num_minus4 );
     my_printf(" pic_order_cnt_type : %d\r\n", sps->pic_order_cnt_type );
-    my_printf("   log2_max_pic_order_cnt_lsb_minus4 : %d\r\n", sps->log2_max_pic_order_cnt_lsb_minus4 );
-    my_printf("   delta_pic_order_always_zero_flag : %d\r\n", sps->delta_pic_order_always_zero_flag );
-    my_printf("   offset_for_non_ref_pic : %d\r\n", sps->offset_for_non_ref_pic );
-    my_printf("   offset_for_top_to_bottom_field : %d\r\n", sps->offset_for_top_to_bottom_field );
-    my_printf("   num_ref_frames_in_pic_order_cnt_cycle : %d\r\n", sps->num_ref_frames_in_pic_order_cnt_cycle );
-    //  int offset_for_ref_frame[256];
+    if( sps->pic_order_cnt_type == 0 )
+        my_printf("   log2_max_pic_order_cnt_lsb_minus4 : %d\r\n", sps->log2_max_pic_order_cnt_lsb_minus4 );
+    else if( sps->pic_order_cnt_type == 1 )
+    {
+        my_printf("   delta_pic_order_always_zero_flag : %d\r\n", sps->delta_pic_order_always_zero_flag );
+        my_printf("   offset_for_non_ref_pic : %d\r\n", sps->offset_for_non_ref_pic );
+        my_printf("   offset_for_top_to_bottom_field : %d\r\n", sps->offset_for_top_to_bottom_field );
+        my_printf("   num_ref_frames_in_pic_order_cnt_cycle : %d\r\n", sps->num_ref_frames_in_pic_order_cnt_cycle );
+        for( int i = 0; i < sps->num_ref_frames_in_pic_order_cnt_cycle; i++ )
+        {
+            my_printf("   offset_for_ref_frame[%d] : %d\r\n", i, sps->offset_for_ref_frame[i] );
+        }
+    }
     my_printf(" num_ref_frames : %d\r\n", sps->num_ref_frames );
     my_printf(" gaps_in_frame_num_value_allowed_flag : %d\r\n", sps->gaps_in_frame_num_value_allowed_flag );
     my_printf(" pic_width_in_mbs_minus1 : %d\r\n", sps->pic_width_in_mbs_minus1 );
     my_printf(" pic_height_in_map_units_minus1 : %d\r\n", sps->pic_height_in_map_units_minus1 );
     my_printf(" frame_mbs_only_flag : %d\r\n", sps->frame_mbs_only_flag );
-    my_printf(" mb_adaptive_frame_field_flag : %d\r\n", sps->mb_adaptive_frame_field_flag );
+    if( !sps->frame_mbs_only_flag )
+        my_printf(" mb_adaptive_frame_field_flag : %d\r\n", sps->mb_adaptive_frame_field_flag );
     my_printf(" direct_8x8_inference_flag : %d\r\n", sps->direct_8x8_inference_flag );
     my_printf(" frame_cropping_flag : %d\r\n", sps->frame_cropping_flag );
     if (sps->frame_cropping_flag)
@@ -572,53 +583,99 @@ static void h264_debug_sps(sps_t* sps)
     {
         my_printf("=== VUI ===\r\n");
         my_printf(" aspect_ratio_info_present_flag : %d\r\n", sps->vui.aspect_ratio_info_present_flag );
-        my_printf("   aspect_ratio_idc : %d\r\n", sps->vui.aspect_ratio_idc );
-        my_printf("     sar_width : %d\r\n", sps->vui.sar_width );
-        my_printf("     sar_height : %d\r\n", sps->vui.sar_height );
+        if( sps->vui.aspect_ratio_info_present_flag )
+        {
+            my_printf("   aspect_ratio_idc : %d\r\n", sps->vui.aspect_ratio_idc );
+            if( sps->vui.aspect_ratio_idc == SAR_Extended )
+            {
+                my_printf("     sar_width : %d\r\n", sps->vui.sar_width );
+                my_printf("     sar_height : %d\r\n", sps->vui.sar_height );
+            }
+        }
+
         my_printf(" overscan_info_present_flag : %d\r\n", sps->vui.overscan_info_present_flag );
-        my_printf("   overscan_appropriate_flag : %d\r\n", sps->vui.overscan_appropriate_flag );
+        if( sps->vui.overscan_info_present_flag )
+            my_printf("   overscan_appropriate_flag : %d\r\n", sps->vui.overscan_appropriate_flag );
         my_printf(" video_signal_type_present_flag : %d\r\n", sps->vui.video_signal_type_present_flag );
-        my_printf("   video_format : %d\r\n", sps->vui.video_format );
-        my_printf("   video_full_range_flag : %d\r\n", sps->vui.video_full_range_flag );
-        my_printf("   colour_description_present_flag : %d\r\n", sps->vui.colour_description_present_flag );
-        my_printf("     colour_primaries : %d\r\n", sps->vui.colour_primaries );
-        my_printf("   transfer_characteristics : %d\r\n", sps->vui.transfer_characteristics );
-        my_printf("   matrix_coefficients : %d\r\n", sps->vui.matrix_coefficients );
+        if( sps->vui.video_signal_type_present_flag )
+        {
+            my_printf("   video_format : %d\r\n", sps->vui.video_format );
+            my_printf("   video_full_range_flag : %d\r\n", sps->vui.video_full_range_flag );
+            my_printf("   colour_description_present_flag : %d\r\n", sps->vui.colour_description_present_flag );
+            if( sps->vui.colour_description_present_flag )
+            {
+                my_printf("     colour_primaries : %d\r\n", sps->vui.colour_primaries );
+                my_printf("   transfer_characteristics : %d\r\n", sps->vui.transfer_characteristics );
+                my_printf("   matrix_coefficients : %d\r\n", sps->vui.matrix_coefficients );
+            }
+        }
         my_printf(" chroma_loc_info_present_flag : %d\r\n", sps->vui.chroma_loc_info_present_flag );
-        my_printf("   chroma_sample_loc_type_top_field : %d\r\n", sps->vui.chroma_sample_loc_type_top_field );
-        my_printf("   chroma_sample_loc_type_bottom_field : %d\r\n", sps->vui.chroma_sample_loc_type_bottom_field );
-        my_printf(" timing_info_present_flag : %d\r\n", sps->vui.timing_info_present_flag );
-        my_printf("   num_units_in_tick : %d\r\n", sps->vui.num_units_in_tick );
-        my_printf("   time_scale : %d\r\n", sps->vui.time_scale );
-        my_printf("   fixed_frame_rate_flag : %d\r\n", sps->vui.fixed_frame_rate_flag );
+        if( sps->vui.chroma_loc_info_present_flag )
+        {
+            my_printf("   chroma_sample_loc_type_top_field : %d\r\n", sps->vui.chroma_sample_loc_type_top_field );
+            my_printf("   chroma_sample_loc_type_bottom_field : %d\r\n", sps->vui.chroma_sample_loc_type_bottom_field );
+        }
+        if( sps->vui.timing_info_present_flag )
+        {
+            my_printf(" timing_info_present_flag : %d\r\n", sps->vui.timing_info_present_flag );
+            my_printf("   num_units_in_tick : %d\r\n", sps->vui.num_units_in_tick );
+            my_printf("   time_scale : %d\r\n", sps->vui.time_scale );
+            my_printf("   fixed_frame_rate_flag : %d\r\n", sps->vui.fixed_frame_rate_flag );
+        }
         my_printf(" nal_hrd_parameters_present_flag : %d\r\n", sps->vui.nal_hrd_parameters_present_flag );
+        if( sps->vui.nal_hrd_parameters_present_flag )
+        {
+            my_printf("=== NAL HRD ===\r\n");
+            my_printf(" cpb_cnt_minus1 : %d\r\n", sps->hrd.cpb_cnt_minus1 );
+            my_printf(" bit_rate_scale : %d\r\n", sps->hrd.bit_rate_scale );
+            my_printf(" cpb_size_scale : %d\r\n", sps->hrd.cpb_size_scale );
+            int SchedSelIdx;
+            for( SchedSelIdx = 0; SchedSelIdx <= sps->hrd.cpb_cnt_minus1; SchedSelIdx++ )
+            {
+                my_printf("   bit_rate_value_minus1[%d] : %d\r\n", SchedSelIdx, sps->hrd.bit_rate_value_minus1[SchedSelIdx] ); // up to cpb_cnt_minus1, which is <= 31
+                my_printf("   cpb_size_value_minus1[%d] : %d\r\n", SchedSelIdx, sps->hrd.cpb_size_value_minus1[SchedSelIdx] );
+                my_printf("   cbr_flag[%d] : %d\r\n", SchedSelIdx, sps->hrd.cbr_flag[SchedSelIdx] );
+            }
+            my_printf(" initial_cpb_removal_delay_length_minus1 : %d\r\n", sps->hrd.initial_cpb_removal_delay_length_minus1 );
+            my_printf(" cpb_removal_delay_length_minus1 : %d\r\n", sps->hrd.cpb_removal_delay_length_minus1 );
+            my_printf(" dpb_output_delay_length_minus1 : %d\r\n", sps->hrd.dpb_output_delay_length_minus1 );
+            my_printf(" time_offset_length : %d\r\n", sps->hrd.time_offset_length );
+        }
         my_printf(" vcl_hrd_parameters_present_flag : %d\r\n", sps->vui.vcl_hrd_parameters_present_flag );
-        my_printf("   low_delay_hrd_flag : %d\r\n", sps->vui.low_delay_hrd_flag );
+        if( sps->vui.vcl_hrd_parameters_present_flag )
+        {
+            my_printf("=== VCL HRD ===\r\n");
+            my_printf(" cpb_cnt_minus1 : %d\r\n", sps->hrd.cpb_cnt_minus1 );
+            my_printf(" bit_rate_scale : %d\r\n", sps->hrd.bit_rate_scale );
+            my_printf(" cpb_size_scale : %d\r\n", sps->hrd.cpb_size_scale );
+            int SchedSelIdx;
+            for( SchedSelIdx = 0; SchedSelIdx <= sps->hrd.cpb_cnt_minus1; SchedSelIdx++ )
+            {
+                my_printf("   bit_rate_value_minus1[%d] : %d\r\n", SchedSelIdx, sps->hrd.bit_rate_value_minus1[SchedSelIdx] ); // up to cpb_cnt_minus1, which is <= 31
+                my_printf("   cpb_size_value_minus1[%d] : %d\r\n", SchedSelIdx, sps->hrd.cpb_size_value_minus1[SchedSelIdx] );
+                my_printf("   cbr_flag[%d] : %d\r\n", SchedSelIdx, sps->hrd.cbr_flag[SchedSelIdx] );
+            }
+            my_printf(" initial_cpb_removal_delay_length_minus1 : %d\r\n", sps->hrd.initial_cpb_removal_delay_length_minus1 );
+            my_printf(" cpb_removal_delay_length_minus1 : %d\r\n", sps->hrd.cpb_removal_delay_length_minus1 );
+            my_printf(" dpb_output_delay_length_minus1 : %d\r\n", sps->hrd.dpb_output_delay_length_minus1 );
+            my_printf(" time_offset_length : %d\r\n", sps->hrd.time_offset_length );
+        }
+        if( sps->vui.nal_hrd_parameters_present_flag || sps->vui.vcl_hrd_parameters_present_flag )
+            my_printf("   low_delay_hrd_flag : %d\r\n", sps->vui.low_delay_hrd_flag );
         my_printf(" pic_struct_present_flag : %d\r\n", sps->vui.pic_struct_present_flag );
         my_printf(" bitstream_restriction_flag : %d\r\n", sps->vui.bitstream_restriction_flag );
-        my_printf("   motion_vectors_over_pic_boundaries_flag : %d\r\n", sps->vui.motion_vectors_over_pic_boundaries_flag );
-        my_printf("   max_bytes_per_pic_denom : %d\r\n", sps->vui.max_bytes_per_pic_denom );
-        my_printf("   max_bits_per_mb_denom : %d\r\n", sps->vui.max_bits_per_mb_denom );
-        my_printf("   log2_max_mv_length_horizontal : %d\r\n", sps->vui.log2_max_mv_length_horizontal );
-        my_printf("   log2_max_mv_length_vertical : %d\r\n", sps->vui.log2_max_mv_length_vertical );
-        my_printf("   num_reorder_frames : %d\r\n", sps->vui.num_reorder_frames );
-        my_printf("   max_dec_frame_buffering : %d\r\n", sps->vui.max_dec_frame_buffering );
+        if( sps->vui.bitstream_restriction_flag )
+        {
+            my_printf("   motion_vectors_over_pic_boundaries_flag : %d\r\n", sps->vui.motion_vectors_over_pic_boundaries_flag );
+            my_printf("   max_bytes_per_pic_denom : %d\r\n", sps->vui.max_bytes_per_pic_denom );
+            my_printf("   max_bits_per_mb_denom : %d\r\n", sps->vui.max_bits_per_mb_denom );
+            my_printf("   log2_max_mv_length_horizontal : %d\r\n", sps->vui.log2_max_mv_length_horizontal );
+            my_printf("   log2_max_mv_length_vertical : %d\r\n", sps->vui.log2_max_mv_length_vertical );
+            my_printf("   num_reorder_frames : %d\r\n", sps->vui.num_reorder_frames );
+            my_printf("   max_dec_frame_buffering : %d\r\n", sps->vui.max_dec_frame_buffering );
+        }
     }
-    my_printf("=== HRD ===\r\n");
-    my_printf(" cpb_cnt_minus1 : %d\r\n", sps->hrd.cpb_cnt_minus1 );
-    my_printf(" bit_rate_scale : %d\r\n", sps->hrd.bit_rate_scale );
-    my_printf(" cpb_size_scale : %d\r\n", sps->hrd.cpb_size_scale );
-    int SchedSelIdx;
-    for( SchedSelIdx = 0; SchedSelIdx <= sps->hrd.cpb_cnt_minus1; SchedSelIdx++ )
-    {
-        my_printf("   bit_rate_value_minus1[%d] : %d\r\n", SchedSelIdx, sps->hrd.bit_rate_value_minus1[SchedSelIdx] ); // up to cpb_cnt_minus1, which is <= 31
-        my_printf("   cpb_size_value_minus1[%d] : %d\r\n", SchedSelIdx, sps->hrd.cpb_size_value_minus1[SchedSelIdx] );
-        my_printf("   cbr_flag[%d] : %d\r\n", SchedSelIdx, sps->hrd.cbr_flag[SchedSelIdx] );
-    }
-    my_printf(" initial_cpb_removal_delay_length_minus1 : %d\r\n", sps->hrd.initial_cpb_removal_delay_length_minus1 );
-    my_printf(" cpb_removal_delay_length_minus1 : %d\r\n", sps->hrd.cpb_removal_delay_length_minus1 );
-    my_printf(" dpb_output_delay_length_minus1 : %d\r\n", sps->hrd.dpb_output_delay_length_minus1 );
-    my_printf(" time_offset_length : %d\r\n", sps->hrd.time_offset_length );
+
 }
 
 
@@ -630,14 +687,36 @@ static void h264_debug_pps(pps_t* pps)
     my_printf(" entropy_coding_mode_flag : %d\r\n", pps->entropy_coding_mode_flag );
     my_printf(" pic_order_present_flag : %d\r\n", pps->pic_order_present_flag );
     my_printf(" num_slice_groups_minus1 : %d\r\n", pps->num_slice_groups_minus1 );
-    my_printf(" slice_group_map_type : %d\r\n", pps->slice_group_map_type );
-    //  int run_length_minus1[8]; // up to num_slice_groups_minus1, which is <= 7 in Baseline and Extended, 0 otheriwse
-    //  int top_left[8];
-    //  int bottom_right[8];
-    //  int slice_group_change_direction_flag;
-    //  int slice_group_change_rate_minus1;
-    //  int pic_size_in_map_units_minus1;
-    //  int slice_group_id[256]; // FIXME what size?
+    if( pps->num_slice_groups_minus1 > 0 )
+    {
+        my_printf(" slice_group_map_type : %d\r\n", pps->slice_group_map_type );
+        if( pps->slice_group_map_type == 0 )
+        {
+            for( int i_group = 0; i_group <= pps->num_slice_groups_minus1; i_group++ )
+                my_printf(" run_length_minus1[%d] : %d\r\n", i_group, pps->run_length_minus1[i_group] );
+        }
+        else if( pps->slice_group_map_type == 2 )
+        {
+            for( int i_group = 0; i_group <= pps->num_slice_groups_minus1; i_group++ )
+            {
+                my_printf(" top_left[%d] : %d\r\n", i_group, pps->top_left[i_group] );
+                my_printf(" bottom_right[%d] : %d\r\n", i_group, pps->bottom_right[i_group] );
+            }
+        }
+        else if( pps->slice_group_map_type == 3 ||
+            pps->slice_group_map_type == 4 ||
+            pps->slice_group_map_type == 5 )
+        {
+            my_printf(" slice_group_change_direction_flag : %d\r\n", pps->slice_group_change_direction_flag );
+            my_printf(" slice_group_change_rate_minus1 : %d\r\n", pps->slice_group_change_rate_minus1 );
+        }
+        else if( pps->slice_group_map_type == 6 )
+        {            
+            my_printf(" pic_size_in_map_units_minus1 : %d\r\n", pps->pic_size_in_map_units_minus1 );
+            for( int i = 0; i <= pps->pic_size_in_map_units_minus1; i++ )
+                my_printf(" slice_group_id[%d] : %d\r\n", i, pps->slice_group_id[i] );
+        }
+    }
     my_printf(" num_ref_idx_l0_active_minus1 : %d\r\n", pps->num_ref_idx_l0_active_minus1 );
     my_printf(" num_ref_idx_l1_active_minus1 : %d\r\n", pps->num_ref_idx_l1_active_minus1 );
     my_printf(" weighted_pred_flag : %d\r\n", pps->weighted_pred_flag );
@@ -648,18 +727,36 @@ static void h264_debug_pps(pps_t* pps)
     my_printf(" deblocking_filter_control_present_flag : %d\r\n", pps->deblocking_filter_control_present_flag );
     my_printf(" constrained_intra_pred_flag : %d\r\n", pps->constrained_intra_pred_flag );
     my_printf(" redundant_pic_cnt_present_flag : %d\r\n", pps->redundant_pic_cnt_present_flag );
-    my_printf(" transform_8x8_mode_flag : %d\r\n", pps->transform_8x8_mode_flag );
-    my_printf(" pic_scaling_matrix_present_flag : %d\r\n", pps->pic_scaling_matrix_present_flag );
-    //  int pic_scaling_list_present_flag[8];
-    //  void* ScalingList4x4[6];
-    //  int UseDefaultScalingMatrix4x4Flag[6];
-    //  void* ScalingList8x8[2];
-    //  int UseDefaultScalingMatrix8x8Flag[2];
-    my_printf(" second_chroma_qp_index_offset : %d\r\n", pps->second_chroma_qp_index_offset );
+    if( pps->_more_rbsp_data_present )
+    {
+        my_printf(" more_rbsp_data()\r\n" );
+        my_printf(" transform_8x8_mode_flag : %d\r\n", pps->transform_8x8_mode_flag );
+        my_printf(" pic_scaling_matrix_present_flag : %d\r\n", pps->pic_scaling_matrix_present_flag );
+        if( pps->pic_scaling_matrix_present_flag )
+        {
+            for( int i = 0; i < 6 + 2* pps->transform_8x8_mode_flag; i++ )
+            {
+                my_printf(" pic_scaling_list_present_flag[%d] : %d\r\n", i, pps->pic_scaling_list_present_flag[i] );
+                if( pps->pic_scaling_list_present_flag[ i ] )
+                {
+                    if( i < 6 )
+                        my_printf(" ScalingList4x4[%d] : %d\r\n", i, pps->ScalingList4x4[i] );
+                    else
+                        my_printf(" ScalingList4xScalingList8x84[%d] : %d\r\n", i, pps->ScalingList8x8[i] );
+                }
+            }
+        }
+        my_printf(" second_chroma_qp_index_offset : %d\r\n", pps->second_chroma_qp_index_offset );
+    }
 }
 
-static void h264_debug_slice_header(slice_header_t* sh)
+static void h264_debug_slice_header(h264_stream_t* h)
 {
+    sps_t* sps = h->sps;
+    pps_t* pps = h->pps;
+    slice_header_t* sh = h->sh;
+    nal_t* nal = h->nal;
+
     my_printf("======= Slice Header =======\r\n");
     my_printf(" first_mb_in_slice : %d\r\n", sh->first_mb_in_slice );
     const char* slice_type_name;
@@ -680,60 +777,187 @@ static void h264_debug_slice_header(slice_header_t* sh)
     my_printf(" slice_type : %d ( %s )\r\n", sh->slice_type, slice_type_name );
 
     my_printf(" pic_parameter_set_id : %d\r\n", sh->pic_parameter_set_id );
+    if (sps->separate_colour_plane_flag == 1)
+    {
+        my_printf(" colour_plane_id : %d\r\n", sh->colour_plane_id );
+    }
     my_printf(" frame_num : %d\r\n", sh->frame_num );
-    my_printf(" field_pic_flag : %d\r\n", sh->field_pic_flag );
-      my_printf(" bottom_field_flag : %d\r\n", sh->bottom_field_flag );
-    my_printf(" idr_pic_id : %d\r\n", sh->idr_pic_id );
-    my_printf(" pic_order_cnt_lsb : %d\r\n", sh->pic_order_cnt_lsb );
-    my_printf(" delta_pic_order_cnt_bottom : %d\r\n", sh->delta_pic_order_cnt_bottom );
-    // int delta_pic_order_cnt[ 2 ];
-    my_printf(" redundant_pic_cnt : %d\r\n", sh->redundant_pic_cnt );
-    my_printf(" direct_spatial_mv_pred_flag : %d\r\n", sh->direct_spatial_mv_pred_flag );
-    my_printf(" num_ref_idx_active_override_flag : %d\r\n", sh->num_ref_idx_active_override_flag );
-    my_printf(" num_ref_idx_l0_active_minus1 : %d\r\n", sh->num_ref_idx_l0_active_minus1 );
-    my_printf(" num_ref_idx_l1_active_minus1 : %d\r\n", sh->num_ref_idx_l1_active_minus1 );
-    my_printf(" cabac_init_idc : %d\r\n", sh->cabac_init_idc );
+    if( !sps->frame_mbs_only_flag )
+    {
+        my_printf(" field_pic_flag : %d\r\n", sh->field_pic_flag );
+        if( sh->field_pic_flag )
+            my_printf(" bottom_field_flag : %d\r\n", sh->bottom_field_flag );
+    }
+    if( nal->nal_unit_type == 5 )
+        my_printf(" idr_pic_id : %d\r\n", sh->idr_pic_id );
+    if( sps->pic_order_cnt_type == 0 )
+    {
+        my_printf(" pic_order_cnt_lsb : %d\r\n", sh->pic_order_cnt_lsb );
+        if( pps->pic_order_present_flag && !sh->field_pic_flag )
+            my_printf(" delta_pic_order_cnt_bottom : %d\r\n", sh->delta_pic_order_cnt_bottom );
+    }
+
+    if( sps->pic_order_cnt_type == 1 && !sps->delta_pic_order_always_zero_flag )
+    {
+        my_printf(" delta_pic_order_cnt[0] : %d\r\n", sh->delta_pic_order_cnt[0] );
+        if( pps->pic_order_present_flag && !sh->field_pic_flag )
+            my_printf(" delta_pic_order_cnt[1] : %d\r\n", sh->delta_pic_order_cnt[1] );
+    }
+    if( pps->redundant_pic_cnt_present_flag )
+        my_printf(" redundant_pic_cnt : %d\r\n", sh->redundant_pic_cnt );
+    if( is_slice_type( sh->slice_type, SH_SLICE_TYPE_B ) )
+        my_printf(" direct_spatial_mv_pred_flag : %d\r\n", sh->direct_spatial_mv_pred_flag );
+    if( is_slice_type( sh->slice_type, SH_SLICE_TYPE_P ) || is_slice_type( sh->slice_type, SH_SLICE_TYPE_SP ) || is_slice_type( sh->slice_type, SH_SLICE_TYPE_B ) )
+    {
+        my_printf(" num_ref_idx_active_override_flag : %d\r\n", sh->num_ref_idx_active_override_flag );
+        if( sh->num_ref_idx_active_override_flag )
+        {
+            my_printf(" num_ref_idx_l0_active_minus1 : %d\r\n", sh->num_ref_idx_l0_active_minus1 );
+            if( is_slice_type( sh->slice_type, SH_SLICE_TYPE_B ) )
+                my_printf(" num_ref_idx_l1_active_minus1 : %d\r\n", sh->num_ref_idx_l1_active_minus1 );
+        }
+    }
+    // ref_pic_list_modification
+    if (nal->nal_unit_type == 20 || nal->nal_unit_type == 21)
+    {
+        // todo.....
+    }
+    else
+    {
+        my_printf("=== Ref Pic List Modification ===\r\n");
+        if( ! is_slice_type( sh->slice_type, SH_SLICE_TYPE_I ) && ! is_slice_type( sh->slice_type, SH_SLICE_TYPE_SI ) )
+        {
+            my_printf(" ref_pic_list_modification_flag_l0 : %d\r\n", sh->rplr.ref_pic_list_modification_flag_l0 );
+            if( sh->rplr.ref_pic_list_modification_flag_l0 )
+            {
+                my_printf(" modification_of_pic_nums_idc : %d\r\n", sh->rplr.modification_of_pic_nums_idc );
+                if( sh->rplr.modification_of_pic_nums_idc == 0 ||
+                    sh->rplr.modification_of_pic_nums_idc == 1 )
+                    my_printf(" abs_diff_pic_num_minus1 : %d\r\n", sh->rplr.abs_diff_pic_num_minus1 );
+                else if( sh->rplr.modification_of_pic_nums_idc == 2 )
+                    my_printf(" long_term_pic_num : %d\r\n", sh->rplr.long_term_pic_num );
+            }
+        }
+        if( is_slice_type( sh->slice_type, SH_SLICE_TYPE_B ) )
+        {
+            my_printf(" ref_pic_list_modification_flag_l1 : %d\r\n", sh->rplr.ref_pic_list_modification_flag_l1 );
+            if( sh->rplr.ref_pic_list_modification_flag_l1 )
+            {
+                my_printf(" modification_of_pic_nums_idc : %d\r\n", sh->rplr.modification_of_pic_nums_idc );
+                if( sh->rplr.modification_of_pic_nums_idc == 0 ||
+                    sh->rplr.modification_of_pic_nums_idc == 1 )
+                    my_printf(" abs_diff_pic_num_minus1 : %d\r\n", sh->rplr.abs_diff_pic_num_minus1 );
+                else if( sh->rplr.modification_of_pic_nums_idc == 2 )
+                    my_printf(" long_term_pic_num : %d\r\n", sh->rplr.long_term_pic_num );
+            }
+        }
+        
+    }
+
+    // pred_weight_table()
+    if( ( pps->weighted_pred_flag && ( is_slice_type( sh->slice_type, SH_SLICE_TYPE_P ) || is_slice_type( sh->slice_type, SH_SLICE_TYPE_SP ) ) ) ||
+        ( pps->weighted_bipred_idc == 1 && is_slice_type( sh->slice_type, SH_SLICE_TYPE_B ) ) )
+    {
+        my_printf(" === Prediction Weight Table ===\r\n");
+        my_printf("  luma_log2_weight_denom : %d\r\n", sh->pwt.luma_log2_weight_denom );
+        if( sps->ChromaArrayType != 0 )
+            my_printf("  chroma_log2_weight_denom : %d\r\n", sh->pwt.chroma_log2_weight_denom );
+        for( int i = 0; i <= sh->num_ref_idx_l0_active_minus1; i++ )
+        {
+            my_printf("  luma_weight_l0_flag[%d] : %d\r\n", i, sh->pwt.luma_weight_l0_flag[i] );
+            if( sh->pwt.luma_weight_l0_flag[i] )
+            {
+                my_printf("   luma_weight_l0[%d] : %d\r\n", i, sh->pwt.luma_weight_l0[i] );
+                my_printf("  l uma_offset_l0[%d] : %d\r\n", i, sh->pwt.luma_offset_l0[i] );
+            }
+            if ( sps->ChromaArrayType != 0 )
+            {
+                my_printf("  chroma_weight_l0_flag[%d] : %d\r\n", i, sh->pwt.chroma_weight_l0_flag[i] );
+                if( sh->pwt.chroma_weight_l0_flag[i] )
+                {
+                    for( int j =0; j < 2; j++ )
+                    {
+                        my_printf("   chroma_weight_l0[%d][%d] : %d\r\n", i, j, sh->pwt.chroma_weight_l0[i][j] );
+                        my_printf("   chroma_weight_l0[%d][%d] : %d\r\n", i, j, sh->pwt.chroma_offset_l0[i][j] );
+                    }
+                }
+            }
+        }
+        if( is_slice_type( sh->slice_type, SH_SLICE_TYPE_B ) )
+        {
+            for( int i = 0; i <= sh->num_ref_idx_l1_active_minus1; i++ )
+            {
+                my_printf("  luma_weight_l1_flag[%d] : %d\r\n", i, sh->pwt.luma_weight_l1_flag[i] );
+                if( sh->pwt.luma_weight_l1_flag[i] )
+                {
+                    my_printf("   luma_weight_l1[%d] : %d\r\n", i, sh->pwt.luma_weight_l1[i] );
+                    my_printf("   luma_offset_l1[%d] : %d\r\n", i, sh->pwt.luma_offset_l1[i] );
+                }
+                if ( sps->ChromaArrayType != 0 )
+                {
+                    my_printf("  chroma_weight_l1_flag[%d] : %d\r\n", i, sh->pwt.chroma_weight_l1_flag[i] );
+                    if( sh->pwt.chroma_weight_l1_flag[i] )
+                    {
+                        for( int j =0; j < 2; j++ )
+                        {
+                            my_printf("   chroma_weight_l1[%d][%d] : %d\r\n", i, j, sh->pwt.chroma_weight_l1[i][j] );
+                            my_printf("   chroma_offset_l1[%d][%d] : %d\r\n", i, j, sh->pwt.chroma_offset_l1[i][j] );
+                        }
+                    }
+                }
+            }
+        }
+    }
+    // dec_ref_pic_marking()
+    if( nal->nal_ref_idc != 0 )
+    {
+        my_printf(" === Decoded Ref Pic Marking ===\r\n");
+        if( h->nal->nal_unit_type == 5 )
+        {
+            my_printf("  no_output_of_prior_pics_flag : %d\r\n", sh->drpm.no_output_of_prior_pics_flag );
+            my_printf("  long_term_reference_flag : %d\r\n", sh->drpm.long_term_reference_flag );
+        }
+        else
+        {
+            my_printf("  adaptive_ref_pic_marking_mode_flag : %d\r\n", sh->drpm.adaptive_ref_pic_marking_mode_flag );
+            if( sh->drpm.adaptive_ref_pic_marking_mode_flag )
+            {
+                my_printf("  memory_management_control_operation : %d\r\n", sh->drpm.memory_management_control_operation );
+                if( sh->drpm.memory_management_control_operation == 1 ||
+                    sh->drpm.memory_management_control_operation == 3 )
+                    my_printf("  difference_of_pic_nums_minus1 : %d\r\n", sh->drpm.difference_of_pic_nums_minus1 );
+                if(sh->drpm.memory_management_control_operation == 2 )
+                    my_printf("  long_term_pic_num : %d\r\n", sh->drpm.long_term_pic_num );
+                if( sh->drpm.memory_management_control_operation == 3 ||
+                    sh->drpm.memory_management_control_operation == 6 )
+                    my_printf("  long_term_frame_idx : %d\r\n", sh->drpm.long_term_frame_idx );
+                if( sh->drpm.memory_management_control_operation == 4 )
+                    my_printf("  max_long_term_frame_idx_plus1 : %d\r\n", sh->drpm.max_long_term_frame_idx_plus1 );
+            }
+        }
+    }
+    if( pps->entropy_coding_mode_flag && ! is_slice_type( sh->slice_type, SH_SLICE_TYPE_I ) && ! is_slice_type( sh->slice_type, SH_SLICE_TYPE_SI ) )
+        my_printf(" cabac_init_idc : %d\r\n", sh->cabac_init_idc );
     my_printf(" slice_qp_delta : %d\r\n", sh->slice_qp_delta );
-    my_printf(" sp_for_switch_flag : %d\r\n", sh->sp_for_switch_flag );
-    my_printf(" slice_qs_delta : %d\r\n", sh->slice_qs_delta );
-    my_printf(" disable_deblocking_filter_idc : %d\r\n", sh->disable_deblocking_filter_idc );
-    my_printf(" slice_alpha_c0_offset_div2 : %d\r\n", sh->slice_alpha_c0_offset_div2 );
-    my_printf(" slice_beta_offset_div2 : %d\r\n", sh->slice_beta_offset_div2 );
-    my_printf(" slice_group_change_cycle : %d\r\n", sh->slice_group_change_cycle );
+    if( is_slice_type( sh->slice_type, SH_SLICE_TYPE_SP ) || is_slice_type( sh->slice_type, SH_SLICE_TYPE_SI ) )
+    {
+        if( is_slice_type( sh->slice_type, SH_SLICE_TYPE_SP ) )
+            my_printf(" sp_for_switch_flag : %d\r\n", sh->sp_for_switch_flag );
+        my_printf(" slice_qs_delta : %d\r\n", sh->slice_qs_delta );
+    }
+    if( pps->deblocking_filter_control_present_flag )
+    {
+        my_printf(" disable_deblocking_filter_idc : %d\r\n", sh->disable_deblocking_filter_idc );
+        if( sh->disable_deblocking_filter_idc != 1 )
+        {
+            my_printf(" slice_alpha_c0_offset_div2 : %d\r\n", sh->slice_alpha_c0_offset_div2 );
+            my_printf(" slice_beta_offset_div2 : %d\r\n", sh->slice_beta_offset_div2 );
+        }
+    }
 
-    my_printf("=== Prediction Weight Table ===\r\n");
-    my_printf(" luma_log2_weight_denom : %d\r\n", sh->pwt.luma_log2_weight_denom );
-    my_printf(" chroma_log2_weight_denom : %d\r\n", sh->pwt.chroma_log2_weight_denom );
-     //   my_printf(" luma_weight_l0_flag : %d\r\n", sh->pwt.luma_weight_l0_flag );
-        // int luma_weight_l0[64];
-        // int luma_offset_l0[64];
-    //    my_printf(" chroma_weight_l0_flag : %d\r\n", sh->pwt.chroma_weight_l0_flag );
-        // int chroma_weight_l0[64][2];
-        // int chroma_offset_l0[64][2];
-     //   my_printf(" luma_weight_l1_flag : %d\r\n", sh->pwt.luma_weight_l1_flag );
-        // int luma_weight_l1[64];
-        // int luma_offset_l1[64];
-    //    my_printf(" chroma_weight_l1_flag : %d\r\n", sh->pwt.chroma_weight_l1_flag );
-        // int chroma_weight_l1[64][2];
-        // int chroma_offset_l1[64][2];
-
-    my_printf("=== Ref Pic List Reordering ===\r\n");
-    my_printf(" ref_pic_list_reordering_flag_l0 : %d\r\n", sh->rplr.ref_pic_list_reordering_flag_l0 );
-    my_printf(" ref_pic_list_reordering_flag_l1 : %d\r\n", sh->rplr.ref_pic_list_reordering_flag_l1 );
-        // int reordering_of_pic_nums_idc;
-        // int abs_diff_pic_num_minus1;
-        // int long_term_pic_num;
-
-    my_printf("=== Decoded Ref Pic Marking ===\r\n");
-    my_printf(" no_output_of_prior_pics_flag : %d\r\n", sh->drpm.no_output_of_prior_pics_flag );
-    my_printf(" long_term_reference_flag : %d\r\n", sh->drpm.long_term_reference_flag );
-    my_printf(" adaptive_ref_pic_marking_mode_flag : %d\r\n", sh->drpm.adaptive_ref_pic_marking_mode_flag );
-        // int memory_management_control_operation;
-        // int difference_of_pic_nums_minus1;
-        // int long_term_pic_num;
-        // int long_term_frame_idx;
-        // int max_long_term_frame_idx_plus1;
-
+    if( pps->num_slice_groups_minus1 > 0 &&
+        pps->slice_group_map_type >= 3 && pps->slice_group_map_type <= 5)
+        my_printf(" slice_group_change_cycle : %d\r\n", sh->slice_group_change_cycle );
 }
 
 static void h264_debug_aud(aud_t* aud)
@@ -850,8 +1074,8 @@ static void h264_debug_nal(h264_stream_t* h, nal_t* nal)
     }
     my_printf(" nal_unit_type : %d ( %s )\r\n", nal->nal_unit_type, nal_unit_type_name );
 
-    if( nal->nal_unit_type == NAL_UNIT_TYPE_CODED_SLICE_NON_IDR) { h264_debug_slice_header(h->sh); }
-    else if( nal->nal_unit_type == NAL_UNIT_TYPE_CODED_SLICE_IDR) { h264_debug_slice_header(h->sh); }
+    if( nal->nal_unit_type == NAL_UNIT_TYPE_CODED_SLICE_NON_IDR) { h264_debug_slice_header(h); }
+    else if( nal->nal_unit_type == NAL_UNIT_TYPE_CODED_SLICE_IDR) { h264_debug_slice_header(h); }
     else if( nal->nal_unit_type == NAL_UNIT_TYPE_SPS) { h264_debug_sps(h->sps); }
     else if( nal->nal_unit_type == NAL_UNIT_TYPE_PPS) { h264_debug_pps(h->pps); }
     else if( nal->nal_unit_type == NAL_UNIT_TYPE_AUD) { h264_debug_aud(h->aud); }
