@@ -66,6 +66,7 @@ static void read_user_data_unregistered(h264_stream_t* h, bs_t* b, int payloadSi
 
     int i;
 
+    // uuid_iso_iec_11578 todo...
     for (i = 0; i < 16; i++)
         s->payload[i] = bs_read_u(b, 8);
     for (i = 16; i < payloadSize; i++)

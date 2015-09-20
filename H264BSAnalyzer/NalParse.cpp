@@ -514,7 +514,7 @@ FileType CNalParser::judeVideoFile(const char* filename)
 
 static void h264_debug_sps(sps_t* sps)
 {
-    my_printf("======= SPS =======\r\n");
+    my_printf("seq_parameter_set_data()\r\n");
     my_printf(" profile_idc : %d\r\n", sps->profile_idc );
     my_printf(" constraint_set0_flag : %d\r\n", sps->constraint_set0_flag );
     my_printf(" constraint_set1_flag : %d\r\n", sps->constraint_set1_flag );
@@ -581,22 +581,22 @@ static void h264_debug_sps(sps_t* sps)
     my_printf(" vui_parameters_present_flag : %d\r\n", sps->vui_parameters_present_flag );
     if (sps->vui_parameters_present_flag)
     {
-        my_printf("=== VUI ===\r\n");
-        my_printf(" aspect_ratio_info_present_flag : %d\r\n", sps->vui.aspect_ratio_info_present_flag );
+        my_printf(" vui_parameters()\r\n");
+        my_printf("  aspect_ratio_info_present_flag : %d\r\n", sps->vui.aspect_ratio_info_present_flag );
         if( sps->vui.aspect_ratio_info_present_flag )
         {
             my_printf("   aspect_ratio_idc : %d\r\n", sps->vui.aspect_ratio_idc );
             if( sps->vui.aspect_ratio_idc == SAR_Extended )
             {
-                my_printf("     sar_width : %d\r\n", sps->vui.sar_width );
-                my_printf("     sar_height : %d\r\n", sps->vui.sar_height );
+                my_printf("    sar_width : %d\r\n", sps->vui.sar_width );
+                my_printf("    sar_height : %d\r\n", sps->vui.sar_height );
             }
         }
 
-        my_printf(" overscan_info_present_flag : %d\r\n", sps->vui.overscan_info_present_flag );
+        my_printf("  overscan_info_present_flag : %d\r\n", sps->vui.overscan_info_present_flag );
         if( sps->vui.overscan_info_present_flag )
             my_printf("   overscan_appropriate_flag : %d\r\n", sps->vui.overscan_appropriate_flag );
-        my_printf(" video_signal_type_present_flag : %d\r\n", sps->vui.video_signal_type_present_flag );
+        my_printf("  video_signal_type_present_flag : %d\r\n", sps->vui.video_signal_type_present_flag );
         if( sps->vui.video_signal_type_present_flag )
         {
             my_printf("   video_format : %d\r\n", sps->vui.video_format );
@@ -604,12 +604,12 @@ static void h264_debug_sps(sps_t* sps)
             my_printf("   colour_description_present_flag : %d\r\n", sps->vui.colour_description_present_flag );
             if( sps->vui.colour_description_present_flag )
             {
-                my_printf("     colour_primaries : %d\r\n", sps->vui.colour_primaries );
+                my_printf("   colour_primaries : %d\r\n", sps->vui.colour_primaries );
                 my_printf("   transfer_characteristics : %d\r\n", sps->vui.transfer_characteristics );
                 my_printf("   matrix_coefficients : %d\r\n", sps->vui.matrix_coefficients );
             }
         }
-        my_printf(" chroma_loc_info_present_flag : %d\r\n", sps->vui.chroma_loc_info_present_flag );
+        my_printf("  chroma_loc_info_present_flag : %d\r\n", sps->vui.chroma_loc_info_present_flag );
         if( sps->vui.chroma_loc_info_present_flag )
         {
             my_printf("   chroma_sample_loc_type_top_field : %d\r\n", sps->vui.chroma_sample_loc_type_top_field );
@@ -617,18 +617,18 @@ static void h264_debug_sps(sps_t* sps)
         }
         if( sps->vui.timing_info_present_flag )
         {
-            my_printf(" timing_info_present_flag : %d\r\n", sps->vui.timing_info_present_flag );
+            my_printf("  timing_info_present_flag : %d\r\n", sps->vui.timing_info_present_flag );
             my_printf("   num_units_in_tick : %d\r\n", sps->vui.num_units_in_tick );
             my_printf("   time_scale : %d\r\n", sps->vui.time_scale );
             my_printf("   fixed_frame_rate_flag : %d\r\n", sps->vui.fixed_frame_rate_flag );
         }
-        my_printf(" nal_hrd_parameters_present_flag : %d\r\n", sps->vui.nal_hrd_parameters_present_flag );
+        my_printf("  nal_hrd_parameters_present_flag : %d\r\n", sps->vui.nal_hrd_parameters_present_flag );
         if( sps->vui.nal_hrd_parameters_present_flag )
         {
-            my_printf("=== NAL HRD ===\r\n");
-            my_printf(" cpb_cnt_minus1 : %d\r\n", sps->hrd.cpb_cnt_minus1 );
-            my_printf(" bit_rate_scale : %d\r\n", sps->hrd.bit_rate_scale );
-            my_printf(" cpb_size_scale : %d\r\n", sps->hrd.cpb_size_scale );
+            my_printf("  hrd_parameters()\r\n");
+            my_printf("   cpb_cnt_minus1 : %d\r\n", sps->hrd.cpb_cnt_minus1 );
+            my_printf("   bit_rate_scale : %d\r\n", sps->hrd.bit_rate_scale );
+            my_printf("   cpb_size_scale : %d\r\n", sps->hrd.cpb_size_scale );
             int SchedSelIdx;
             for( SchedSelIdx = 0; SchedSelIdx <= sps->hrd.cpb_cnt_minus1; SchedSelIdx++ )
             {
@@ -636,18 +636,18 @@ static void h264_debug_sps(sps_t* sps)
                 my_printf("   cpb_size_value_minus1[%d] : %d\r\n", SchedSelIdx, sps->hrd.cpb_size_value_minus1[SchedSelIdx] );
                 my_printf("   cbr_flag[%d] : %d\r\n", SchedSelIdx, sps->hrd.cbr_flag[SchedSelIdx] );
             }
-            my_printf(" initial_cpb_removal_delay_length_minus1 : %d\r\n", sps->hrd.initial_cpb_removal_delay_length_minus1 );
-            my_printf(" cpb_removal_delay_length_minus1 : %d\r\n", sps->hrd.cpb_removal_delay_length_minus1 );
-            my_printf(" dpb_output_delay_length_minus1 : %d\r\n", sps->hrd.dpb_output_delay_length_minus1 );
-            my_printf(" time_offset_length : %d\r\n", sps->hrd.time_offset_length );
+            my_printf("  initial_cpb_removal_delay_length_minus1 : %d\r\n", sps->hrd.initial_cpb_removal_delay_length_minus1 );
+            my_printf("  cpb_removal_delay_length_minus1 : %d\r\n", sps->hrd.cpb_removal_delay_length_minus1 );
+            my_printf("  dpb_output_delay_length_minus1 : %d\r\n", sps->hrd.dpb_output_delay_length_minus1 );
+            my_printf("  time_offset_length : %d\r\n", sps->hrd.time_offset_length );
         }
-        my_printf(" vcl_hrd_parameters_present_flag : %d\r\n", sps->vui.vcl_hrd_parameters_present_flag );
+        my_printf("  vcl_hrd_parameters_present_flag : %d\r\n", sps->vui.vcl_hrd_parameters_present_flag );
         if( sps->vui.vcl_hrd_parameters_present_flag )
         {
-            my_printf("=== VCL HRD ===\r\n");
-            my_printf(" cpb_cnt_minus1 : %d\r\n", sps->hrd.cpb_cnt_minus1 );
-            my_printf(" bit_rate_scale : %d\r\n", sps->hrd.bit_rate_scale );
-            my_printf(" cpb_size_scale : %d\r\n", sps->hrd.cpb_size_scale );
+            my_printf("  hrd_parameters()\r\n");
+            my_printf("  cpb_cnt_minus1 : %d\r\n", sps->hrd.cpb_cnt_minus1 );
+            my_printf("  bit_rate_scale : %d\r\n", sps->hrd.bit_rate_scale );
+            my_printf("  cpb_size_scale : %d\r\n", sps->hrd.cpb_size_scale );
             int SchedSelIdx;
             for( SchedSelIdx = 0; SchedSelIdx <= sps->hrd.cpb_cnt_minus1; SchedSelIdx++ )
             {
@@ -655,15 +655,15 @@ static void h264_debug_sps(sps_t* sps)
                 my_printf("   cpb_size_value_minus1[%d] : %d\r\n", SchedSelIdx, sps->hrd.cpb_size_value_minus1[SchedSelIdx] );
                 my_printf("   cbr_flag[%d] : %d\r\n", SchedSelIdx, sps->hrd.cbr_flag[SchedSelIdx] );
             }
-            my_printf(" initial_cpb_removal_delay_length_minus1 : %d\r\n", sps->hrd.initial_cpb_removal_delay_length_minus1 );
-            my_printf(" cpb_removal_delay_length_minus1 : %d\r\n", sps->hrd.cpb_removal_delay_length_minus1 );
-            my_printf(" dpb_output_delay_length_minus1 : %d\r\n", sps->hrd.dpb_output_delay_length_minus1 );
-            my_printf(" time_offset_length : %d\r\n", sps->hrd.time_offset_length );
+            my_printf("  initial_cpb_removal_delay_length_minus1 : %d\r\n", sps->hrd.initial_cpb_removal_delay_length_minus1 );
+            my_printf("  cpb_removal_delay_length_minus1 : %d\r\n", sps->hrd.cpb_removal_delay_length_minus1 );
+            my_printf("  dpb_output_delay_length_minus1 : %d\r\n", sps->hrd.dpb_output_delay_length_minus1 );
+            my_printf("  time_offset_length : %d\r\n", sps->hrd.time_offset_length );
         }
         if( sps->vui.nal_hrd_parameters_present_flag || sps->vui.vcl_hrd_parameters_present_flag )
             my_printf("   low_delay_hrd_flag : %d\r\n", sps->vui.low_delay_hrd_flag );
-        my_printf(" pic_struct_present_flag : %d\r\n", sps->vui.pic_struct_present_flag );
-        my_printf(" bitstream_restriction_flag : %d\r\n", sps->vui.bitstream_restriction_flag );
+        my_printf("  pic_struct_present_flag : %d\r\n", sps->vui.pic_struct_present_flag );
+        my_printf("  bitstream_restriction_flag : %d\r\n", sps->vui.bitstream_restriction_flag );
         if( sps->vui.bitstream_restriction_flag )
         {
             my_printf("   motion_vectors_over_pic_boundaries_flag : %d\r\n", sps->vui.motion_vectors_over_pic_boundaries_flag );
@@ -675,13 +675,12 @@ static void h264_debug_sps(sps_t* sps)
             my_printf("   max_dec_frame_buffering : %d\r\n", sps->vui.max_dec_frame_buffering );
         }
     }
-
 }
 
 
 static void h264_debug_pps(pps_t* pps)
 {
-    my_printf("======= PPS =======\r\n");
+    my_printf("pic_parameter_set_rbsp()\r\n");
     my_printf(" pic_parameter_set_id : %d\r\n", pps->pic_parameter_set_id );
     my_printf(" seq_parameter_set_id : %d\r\n", pps->seq_parameter_set_id );
     my_printf(" entropy_coding_mode_flag : %d\r\n", pps->entropy_coding_mode_flag );
@@ -730,24 +729,25 @@ static void h264_debug_pps(pps_t* pps)
     if( pps->_more_rbsp_data_present )
     {
         my_printf(" more_rbsp_data()\r\n" );
-        my_printf(" transform_8x8_mode_flag : %d\r\n", pps->transform_8x8_mode_flag );
-        my_printf(" pic_scaling_matrix_present_flag : %d\r\n", pps->pic_scaling_matrix_present_flag );
+        my_printf("  transform_8x8_mode_flag : %d\r\n", pps->transform_8x8_mode_flag );
+        my_printf("  pic_scaling_matrix_present_flag : %d\r\n", pps->pic_scaling_matrix_present_flag );
         if( pps->pic_scaling_matrix_present_flag )
         {
             for( int i = 0; i < 6 + 2* pps->transform_8x8_mode_flag; i++ )
             {
-                my_printf(" pic_scaling_list_present_flag[%d] : %d\r\n", i, pps->pic_scaling_list_present_flag[i] );
+                my_printf("  pic_scaling_list_present_flag[%d] : %d\r\n", i, pps->pic_scaling_list_present_flag[i] );
                 if( pps->pic_scaling_list_present_flag[ i ] )
                 {
                     if( i < 6 )
-                        my_printf(" ScalingList4x4[%d] : %d\r\n", i, pps->ScalingList4x4[i] );
+                        my_printf("   ScalingList4x4[%d] : %d\r\n", i, pps->ScalingList4x4[i] );
                     else
-                        my_printf(" ScalingList4xScalingList8x84[%d] : %d\r\n", i, pps->ScalingList8x8[i] );
+                        my_printf("   ScalingList4xScalingList8x84[%d] : %d\r\n", i, pps->ScalingList8x8[i] );
                 }
             }
         }
         my_printf(" second_chroma_qp_index_offset : %d\r\n", pps->second_chroma_qp_index_offset );
     }
+    my_printf(" rbsp_trailing_bits()\r\n");
 }
 
 static void h264_debug_slice_header(h264_stream_t* h)
@@ -757,7 +757,8 @@ static void h264_debug_slice_header(h264_stream_t* h)
     slice_header_t* sh = h->sh;
     nal_t* nal = h->nal;
 
-    my_printf("======= Slice Header =======\r\n");
+    my_printf("slice_layer_without_partitioning_rbsp()\r\n");
+    my_printf("slice_header()\r\n");
     my_printf(" first_mb_in_slice : %d\r\n", sh->first_mb_in_slice );
     const char* slice_type_name;
     switch(sh->slice_type)
@@ -821,10 +822,11 @@ static void h264_debug_slice_header(h264_stream_t* h)
     if (nal->nal_unit_type == 20 || nal->nal_unit_type == 21)
     {
         // todo.....
+        my_printf(" ref_pic_list_mvc_modification()\r\n");
     }
     else
     {
-        my_printf("=== Ref Pic List Modification ===\r\n");
+        my_printf(" ref_pic_list_modification()\r\n");
         if( ! is_slice_type( sh->slice_type, SH_SLICE_TYPE_I ) && ! is_slice_type( sh->slice_type, SH_SLICE_TYPE_SI ) )
         {
             my_printf("  ref_pic_list_modification_flag_l0 : %d\r\n", sh->rplm.ref_pic_list_modification_flag_l0 );
@@ -865,50 +867,65 @@ static void h264_debug_slice_header(h264_stream_t* h)
     if( ( pps->weighted_pred_flag && ( is_slice_type( sh->slice_type, SH_SLICE_TYPE_P ) || is_slice_type( sh->slice_type, SH_SLICE_TYPE_SP ) ) ) ||
         ( pps->weighted_bipred_idc == 1 && is_slice_type( sh->slice_type, SH_SLICE_TYPE_B ) ) )
     {
-        my_printf(" === Prediction Weight Table ===\r\n");
+        my_printf(" pred_weight_table()\r\n");
         my_printf("  luma_log2_weight_denom : %d\r\n", sh->pwt.luma_log2_weight_denom );
         if( sps->ChromaArrayType != 0 )
             my_printf("  chroma_log2_weight_denom : %d\r\n", sh->pwt.chroma_log2_weight_denom );
+        // 将luma和chroma分开显示
+        if (sh->num_ref_idx_l0_active_minus1 > 0)
+            my_printf("  luma_weight_l0()\r\n");
         for( int i = 0; i <= sh->num_ref_idx_l0_active_minus1; i++ )
         {
-            my_printf("  luma_weight_l0_flag[%d] : %d\r\n", i, sh->pwt.luma_weight_l0_flag[i] );
+            my_printf("   luma_weight_l0_flag[%d] : %d\r\n", i, sh->pwt.luma_weight_l0_flag[i] );
             if( sh->pwt.luma_weight_l0_flag[i] )
             {
-                my_printf("   luma_weight_l0[%d] : %d\r\n", i, sh->pwt.luma_weight_l0[i] );
-                my_printf("  l uma_offset_l0[%d] : %d\r\n", i, sh->pwt.luma_offset_l0[i] );
+                my_printf("    luma_weight_l0[%d] : %d\r\n", i, sh->pwt.luma_weight_l0[i] );
+                my_printf("    luma_offset_l0[%d] : %d\r\n", i, sh->pwt.luma_offset_l0[i] );
             }
+        }
+        if (sh->num_ref_idx_l0_active_minus1 > 0)
+            my_printf("  chroma_weight_l0()\r\n");
+        for( int i = 0; i <= sh->num_ref_idx_l0_active_minus1; i++ )
+        {
             if ( sps->ChromaArrayType != 0 )
             {
-                my_printf("  chroma_weight_l0_flag[%d] : %d\r\n", i, sh->pwt.chroma_weight_l0_flag[i] );
+                my_printf("   chroma_weight_l0_flag[%d] : %d\r\n", i, sh->pwt.chroma_weight_l0_flag[i] );
                 if( sh->pwt.chroma_weight_l0_flag[i] )
                 {
                     for( int j =0; j < 2; j++ )
                     {
-                        my_printf("   chroma_weight_l0[%d][%d] : %d\r\n", i, j, sh->pwt.chroma_weight_l0[i][j] );
-                        my_printf("   chroma_weight_l0[%d][%d] : %d\r\n", i, j, sh->pwt.chroma_offset_l0[i][j] );
+                        my_printf("    chroma_weight_l0[%d][%d] : %d\r\n", i, j, sh->pwt.chroma_weight_l0[i][j] );
+                        my_printf("    chroma_weight_l0[%d][%d] : %d\r\n", i, j, sh->pwt.chroma_offset_l0[i][j] );
                     }
                 }
             }
         }
         if( is_slice_type( sh->slice_type, SH_SLICE_TYPE_B ) )
         {
+            if (sh->num_ref_idx_l1_active_minus1 > 0)
+                my_printf("  luma_weight_l1()\r\n");
             for( int i = 0; i <= sh->num_ref_idx_l1_active_minus1; i++ )
             {
-                my_printf("  luma_weight_l1_flag[%d] : %d\r\n", i, sh->pwt.luma_weight_l1_flag[i] );
+                my_printf("   luma_weight_l1_flag[%d] : %d\r\n", i, sh->pwt.luma_weight_l1_flag[i] );
                 if( sh->pwt.luma_weight_l1_flag[i] )
                 {
-                    my_printf("   luma_weight_l1[%d] : %d\r\n", i, sh->pwt.luma_weight_l1[i] );
-                    my_printf("   luma_offset_l1[%d] : %d\r\n", i, sh->pwt.luma_offset_l1[i] );
+                    my_printf("    luma_weight_l1[%d] : %d\r\n", i, sh->pwt.luma_weight_l1[i] );
+                    my_printf("    luma_offset_l1[%d] : %d\r\n", i, sh->pwt.luma_offset_l1[i] );
                 }
+            }
+            if (sh->num_ref_idx_l1_active_minus1 > 0)
+                my_printf("  chroma_weight_l1()\r\n");
+            for( int i = 0; i <= sh->num_ref_idx_l1_active_minus1; i++ )
+            {
                 if ( sps->ChromaArrayType != 0 )
                 {
-                    my_printf("  chroma_weight_l1_flag[%d] : %d\r\n", i, sh->pwt.chroma_weight_l1_flag[i] );
+                    my_printf("   chroma_weight_l1_flag[%d] : %d\r\n", i, sh->pwt.chroma_weight_l1_flag[i] );
                     if( sh->pwt.chroma_weight_l1_flag[i] )
                     {
                         for( int j =0; j < 2; j++ )
                         {
-                            my_printf("   chroma_weight_l1[%d][%d] : %d\r\n", i, j, sh->pwt.chroma_weight_l1[i][j] );
-                            my_printf("   chroma_offset_l1[%d][%d] : %d\r\n", i, j, sh->pwt.chroma_offset_l1[i][j] );
+                            my_printf("    chroma_weight_l1[%d][%d] : %d\r\n", i, j, sh->pwt.chroma_weight_l1[i][j] );
+                            my_printf("    chroma_offset_l1[%d][%d] : %d\r\n", i, j, sh->pwt.chroma_offset_l1[i][j] );
                         }
                     }
                 }
@@ -918,7 +935,7 @@ static void h264_debug_slice_header(h264_stream_t* h)
     // dec_ref_pic_marking()
     if( nal->nal_ref_idc != 0 )
     {
-        my_printf(" === Decoded Ref Pic Marking ===\r\n");
+        my_printf(" dec_ref_pic_marking()\r\n");
         if( h->nal->nal_unit_type == 5 )
         {
             my_printf("  no_output_of_prior_pics_flag : %d\r\n", sh->drpm.no_output_of_prior_pics_flag );
@@ -931,17 +948,17 @@ static void h264_debug_slice_header(h264_stream_t* h)
             {
                 for (unsigned int i = 0; i < sh->drpm.drpm.size(); i++)
                 {
-                    my_printf("  memory_management_control_operation : %d\r\n", sh->drpm.drpm[i].memory_management_control_operation );
+                    my_printf("   memory_management_control_operation : %d\r\n", sh->drpm.drpm[i].memory_management_control_operation );
                     if( sh->drpm.drpm[i].memory_management_control_operation == 1 ||
                         sh->drpm.drpm[i].memory_management_control_operation == 3 )
-                        my_printf("  difference_of_pic_nums_minus1 : %d\r\n", sh->drpm.drpm[i].difference_of_pic_nums_minus1 );
+                        my_printf("   difference_of_pic_nums_minus1 : %d\r\n", sh->drpm.drpm[i].difference_of_pic_nums_minus1 );
                     if(sh->drpm.drpm[i].memory_management_control_operation == 2 )
-                        my_printf("  long_term_pic_num : %d\r\n", sh->drpm.drpm[i].long_term_pic_num );
+                        my_printf("   long_term_pic_num : %d\r\n", sh->drpm.drpm[i].long_term_pic_num );
                     if( sh->drpm.drpm[i].memory_management_control_operation == 3 ||
                         sh->drpm.drpm[i].memory_management_control_operation == 6 )
-                        my_printf("  long_term_frame_idx : %d\r\n", sh->drpm.drpm[i].long_term_frame_idx );
+                        my_printf("   long_term_frame_idx : %d\r\n", sh->drpm.drpm[i].long_term_frame_idx );
                     if( sh->drpm.drpm[i].memory_management_control_operation == 4 )
-                        my_printf("  max_long_term_frame_idx_plus1 : %d\r\n", sh->drpm.drpm[i].max_long_term_frame_idx_plus1 );
+                        my_printf("   max_long_term_frame_idx_plus1 : %d\r\n", sh->drpm.drpm[i].max_long_term_frame_idx_plus1 );
                 }
             }
         }
@@ -968,6 +985,9 @@ static void h264_debug_slice_header(h264_stream_t* h)
     if( pps->num_slice_groups_minus1 > 0 &&
         pps->slice_group_map_type >= 3 && pps->slice_group_map_type <= 5)
         my_printf(" slice_group_change_cycle : %d\r\n", sh->slice_group_change_cycle );
+
+    my_printf("slice_data()\r\n");
+    my_printf("rbsp_slice_trailing_bits()\r\n");
 }
 
 static void h264_debug_aud(aud_t* aud)
@@ -1056,8 +1076,8 @@ static void h264_debug_seis( h264_stream_t* h)
 static void h264_debug_nal(h264_stream_t* h, nal_t* nal)
 {
     my_printf("==================== NAL ====================\r\n");
-    my_printf(" forbidden_zero_bit : %d\r\n", nal->forbidden_zero_bit );
-    my_printf(" nal_ref_idc : %d\r\n", nal->nal_ref_idc );
+    my_printf("forbidden_zero_bit : %d\r\n", nal->forbidden_zero_bit );
+    my_printf("nal_ref_idc : %d\r\n", nal->nal_ref_idc );
     // TODO make into subroutine
     const char* nal_unit_type_name;
     switch (nal->nal_unit_type)
@@ -1082,7 +1102,7 @@ static void h264_debug_nal(h264_stream_t* h, nal_t* nal)
         // 24..31    // Unspecified
     default :                                           nal_unit_type_name = "Unknown"; break;
     }
-    my_printf(" nal_unit_type : %d ( %s )\r\n", nal->nal_unit_type, nal_unit_type_name );
+    my_printf("nal_unit_type : %d ( %s )\r\n", nal->nal_unit_type, nal_unit_type_name );
 
     if( nal->nal_unit_type == NAL_UNIT_TYPE_CODED_SLICE_NON_IDR) { h264_debug_slice_header(h); }
     else if( nal->nal_unit_type == NAL_UNIT_TYPE_CODED_SLICE_IDR) { h264_debug_slice_header(h); }
@@ -1090,17 +1110,6 @@ static void h264_debug_nal(h264_stream_t* h, nal_t* nal)
     else if( nal->nal_unit_type == NAL_UNIT_TYPE_PPS) { h264_debug_pps(h->pps); }
     else if( nal->nal_unit_type == NAL_UNIT_TYPE_AUD) { h264_debug_aud(h->aud); }
     else if( nal->nal_unit_type == NAL_UNIT_TYPE_SEI) { h264_debug_seis( h ); }
-}
-
-static void debug_bytes(uint8_t* buf, int len)
-{
-    int i;
-    for (i = 0; i < len; i++)
-    {
-        my_printf("%02X ", buf[i]);
-        if ((i+1) % 16 == 0) { my_printf ("\r\n"); }
-    }
-    my_printf("\r\n");
 }
 
 ////////////////////////////////////////////////////////

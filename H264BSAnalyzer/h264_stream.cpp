@@ -166,9 +166,29 @@ int find_nal_unit(uint8_t* buf, int size, int* nal_start, int* nal_end)
 // sth wrong here
 int more_rbsp_data(h264_stream_t* h, bs_t* b) 
 {
-    if (bs_bytes_left(b)) {return 1;};  // fix me...
+    //if (bs_bytes_left(b)) {return 1;};  // fix me...
     if ( bs_eof(b) ) { return 0; }
     if ( bs_peek_u1(b) == 1 ) { return 0; } // if next bit is 1, we've reached the stop bit
+    return 1;
+}
+
+// see ffmpeg h264_ps.c
+int more_rbsp_data_in_pps(h264_stream_t* h, bs_t* b) 
+{
+    int profile_idc = h->sps->profile_idc;
+    int constraint_set_flags = 0;
+    constraint_set_flags |= h->sps->constraint_set0_flag << 0;   // constraint_set0_flag
+    constraint_set_flags |= h->sps->constraint_set1_flag << 1;   // constraint_set1_flag
+    constraint_set_flags |= h->sps->constraint_set2_flag << 2;   // constraint_set2_flag
+    constraint_set_flags |= h->sps->constraint_set3_flag << 3;   // constraint_set3_flag
+    constraint_set_flags |= h->sps->constraint_set4_flag << 4;   // constraint_set4_flag
+    constraint_set_flags |= h->sps->constraint_set5_flag << 5;   // constraint_set5_flag
+
+    if ((profile_idc == 66 || profile_idc == 77 ||
+        profile_idc == 88) && (constraint_set_flags & 7)) 
+    {
+        return 0;
+    }
     return 1;
 }
 
@@ -811,7 +831,7 @@ void read_pic_parameter_set_rbsp(h264_stream_t* h, bs_t* b)
     pps->constrained_intra_pred_flag = bs_read_u1(b);
     pps->redundant_pic_cnt_present_flag = bs_read_u1(b);
 
-    pps->_more_rbsp_data_present = more_rbsp_data(h, b);
+    pps->_more_rbsp_data_present = more_rbsp_data_in_pps(h, b);
     if( pps->_more_rbsp_data_present )
     {
         pps->transform_8x8_mode_flag = bs_read_u1(b);
