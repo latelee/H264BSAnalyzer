@@ -736,7 +736,7 @@ void h265_read_ref_pic_lists_modification(bs_t* b, h265_slice_header_t* hrd)
 void h265_read_pred_weight_table(h265_stream_t* h, bs_t* b)
 {
     pred_weight_table_t* pwt = &h->sh->pred_weight_table;
-    h265_sps_t* sps = h->sps;
+
     int l0_size = h->sh->num_ref_idx_l0_active_minus1+1;
     int l1_size = h->sh->num_ref_idx_l1_active_minus1+1;
 
@@ -1260,13 +1260,13 @@ void h265_read_slice_header(h265_stream_t* h, bs_t* b)
         hrd->no_output_of_prior_pics_flag = bs_read_u1(b);
     }
     hrd->slice_pic_parameter_set_id       = bs_read_ue(b);
-    // tocheck
+
     pps = h->pps = h->pps_table[hrd->slice_pic_parameter_set_id];
     sps = h->sps = h->sps_table[pps->pps_seq_parameter_set_id];
 
+    hrd->dependent_slice_segment_flag = 0;
     if (!hrd->first_slice_segment_in_pic_flag)
     {
-        hrd->dependent_slice_segment_flag = 0;
         if (pps->dependent_slice_segments_enabled_flag)
         {
             hrd->dependent_slice_segment_flag = bs_read_u1(b);
@@ -1440,7 +1440,7 @@ void h265_read_slice_header(h265_stream_t* h, bs_t* b)
                 h265_read_pred_weight_table(h, b);
             }
             hrd->five_minus_max_num_merge_cand = bs_read_ue(b);
-        } // end of slice_type
+        } // end of slice_type P || B
         hrd->slice_qp_delta = bs_read_se(b);
         if (pps->pps_slice_chroma_qp_offsets_present_flag)
         {
@@ -1483,7 +1483,7 @@ void h265_read_slice_header(h265_stream_t* h, bs_t* b)
             for (int i = 0; i < hrd->num_entry_point_offsets; i++)
             {
                 // to confirm
-                // tocheck entry_point_offset_minus1的值是否要加上1？
+                // entry_point_offset_minus1为u(u),长度在offset_len_minus1的值加上1
                 hrd->entry_point_offset_minus1[i] = bs_read_u(b, hrd->offset_len_minus1+1); // u(v) 
             }
         }

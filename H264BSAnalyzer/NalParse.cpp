@@ -1838,6 +1838,85 @@ static void h265_debug_seis(h265_stream_t* h)
     }
 }
 
+void h265_debug_ref_pic_lists_modification(h265_slice_header_t* hrd)
+{
+    my_printf(" ref_pic_list_modification_flag_l0: %d\r\n", hrd->ref_pic_lists_modification.ref_pic_list_modification_flag_l0);
+    if (hrd->ref_pic_lists_modification.ref_pic_list_modification_flag_l0)
+    {
+        for (int i = 0; i <= hrd->num_ref_idx_l0_active_minus1; i++)
+            my_printf("  list_entry_l0[%d]: %d\r\n", i, hrd->ref_pic_lists_modification.list_entry_l0[i]);
+    }
+    if (hrd->slice_type == H265_SH_SLICE_TYPE_B)
+    {
+        my_printf(" ref_pic_list_modification_flag_l1: %d\r\n", hrd->ref_pic_lists_modification.ref_pic_list_modification_flag_l1);
+        for (int i = 0; i <= hrd->num_ref_idx_l1_active_minus1; i++)
+            my_printf("  list_entry_l1[%d]: %d\r\n", i, hrd->ref_pic_lists_modification.list_entry_l1[i]);
+    }
+}
+void h265_debug_pred_weight_table(h265_stream_t* h)
+{
+    pred_weight_table_t* pwt = &h->sh->pred_weight_table;
+    h265_sps_t* sps = h->sps;
+    int l0_size = h->sh->num_ref_idx_l0_active_minus1+1;
+    int l1_size = h->sh->num_ref_idx_l1_active_minus1+1;
+
+    my_printf("pred_weight_table()\r\n");
+
+    my_printf(" luma_log2_weight_denom: %d\r\n", pwt->luma_log2_weight_denom);
+    if (h->sps->chroma_format_idc != 0)
+        my_printf(" delta_chroma_log2_weight_denom: %d\r\n", pwt->delta_chroma_log2_weight_denom);
+    for (int i = 0; i <= h->sh->num_ref_idx_l0_active_minus1; i++)
+        my_printf(" luma_weight_l0_flag[%d]: %d\r\n", i, pwt->luma_weight_l0_flag[i]);
+    if (h->sps->chroma_format_idc != 0)
+    {
+        for (int i = 0; i <= h->sh->num_ref_idx_l0_active_minus1; i++)
+            my_printf(" chroma_weight_l0_flag[%d]: %d\r\n", i, pwt->chroma_weight_l0_flag[i]);
+    }
+
+    for (int i = 0; i <= h->sh->num_ref_idx_l0_active_minus1; i++)
+    {
+        if (pwt->luma_weight_l0_flag[i])
+        {
+            my_printf("  delta_luma_weight_l0[%d]: %d\r\n", i, pwt->delta_luma_weight_l0[i]);
+            my_printf("  luma_offset_l0[%d]: %d\r\n", i, pwt->luma_offset_l0[i]);
+        }
+        if (pwt->chroma_weight_l0_flag[i])
+        {
+            for (int j = 0; j < 2; j++)
+            {
+                my_printf("  delta_chroma_weight_l0[%d][%d]: %d\r\n", i, j, pwt->delta_chroma_weight_l0[i][j]);
+                my_printf("  delta_chroma_offset_l0[%d][%d]: %d\r\n", i, j, pwt->delta_chroma_offset_l0[i][j]);
+            }
+        }
+    }
+
+    if (h->sh->slice_type == H265_SH_SLICE_TYPE_B)
+    {
+        for (int i = 0; i <= h->sh->num_ref_idx_l1_active_minus1; i++)
+            my_printf(" luma_weight_l1_flag[%d]: %d\r\n", i, pwt->luma_weight_l1_flag[i]);
+        if (h->sps->chroma_format_idc != 0)
+            for (int i = 0; i <= h->sh->num_ref_idx_l1_active_minus1; i++)
+                my_printf(" chroma_weight_l1_flag[%d]: %d\r\n", i, pwt->chroma_weight_l1_flag[i]);
+        for (int i = 0; i <= h->sh->num_ref_idx_l1_active_minus1; i++)
+        {
+            if (pwt->luma_weight_l1_flag[i])
+            {
+                my_printf("  delta_luma_weight_l1[%d]: %d\r\n", i, pwt->delta_luma_weight_l1[i]);
+                my_printf("  luma_offset_l1[%d]: %d\r\n", i, pwt->luma_offset_l1[i]);
+                
+            }
+            if (pwt->chroma_weight_l1_flag[i])
+            {
+                for (int j = 0; j < 2; j++)
+                {
+                    my_printf("  delta_chroma_weight_l1[%d][%d]: %d\r\n", i, j, pwt->delta_chroma_weight_l1[i][j]);
+                    my_printf("  delta_chroma_offset_l1[%d][%d]: %d\r\n", i, j, pwt->delta_chroma_offset_l1[i][j]);
+                }
+            }
+        }
+    }
+}
+
 static void h265_debug_slice_header(h265_stream_t* h)
 {
     h265_slice_header_t* hrd = h->sh;
@@ -1925,47 +2004,56 @@ static void h265_debug_slice_header(h265_stream_t* h)
         }
         if (hrd->slice_type == H265_SH_SLICE_TYPE_P || hrd->slice_type == H265_SH_SLICE_TYPE_B)
         {
-            my_printf("  num_ref_idx_active_override_flag: %d\r\n", hrd->num_ref_idx_active_override_flag);
+            my_printf(" num_ref_idx_active_override_flag: %d\r\n", hrd->num_ref_idx_active_override_flag);
             if (hrd->num_ref_idx_active_override_flag)
             {
-                my_printf("  num_ref_idx_l0_active_minus1: %d\r\n", hrd->num_ref_idx_l0_active_minus1);
-                my_printf("  num_ref_idx_l1_active_minus1: %d\r\n", hrd->num_ref_idx_l1_active_minus1);
+                my_printf(" num_ref_idx_l0_active_minus1: %d\r\n", hrd->num_ref_idx_l0_active_minus1);
+                my_printf(" num_ref_idx_l1_active_minus1: %d\r\n", hrd->num_ref_idx_l1_active_minus1);
             }
             if(pps->lists_modification_present_flag)
             {
-                // h265_read_ref_pic_lists_modification
+                h265_debug_ref_pic_lists_modification(hrd);
             }
-            my_printf("  mvd_l1_zero_flag: %d\r\n", hrd->mvd_l1_zero_flag);
-            my_printf("  cabac_init_flag: %d\r\n", hrd->cabac_init_flag);
-            my_printf("  collocated_from_l0_flag: %d\r\n", hrd->collocated_from_l0_flag);
-            my_printf("  collocated_ref_idx: %d\r\n", hrd->collocated_ref_idx);
-            // h265_read_pred_weight_table
-            my_printf("  five_minus_max_num_merge_cand: %d\r\n", hrd->five_minus_max_num_merge_cand);
+            my_printf(" mvd_l1_zero_flag: %d\r\n", hrd->mvd_l1_zero_flag);
+            if (pps->cabac_init_present_flag)
+                my_printf(" cabac_init_flag: %d\r\n", hrd->cabac_init_flag);
+            if (hrd->slice_temporal_mvp_enabled_flag)
+            {
+                if (hrd->slice_type == H265_SH_SLICE_TYPE_B)
+                    my_printf(" collocated_from_l0_flag: %d\r\n", hrd->collocated_from_l0_flag);
+                if ((hrd->collocated_from_l0_flag && hrd->num_ref_idx_l0_active_minus1 > 0) ||
+                    (!hrd->collocated_from_l0_flag && hrd->num_ref_idx_l1_active_minus1 > 0))
+                    my_printf(" collocated_ref_idx: %d\r\n", hrd->collocated_ref_idx);
+            }
+            if ((pps->weighted_pred_flag && hrd->slice_type == H265_SH_SLICE_TYPE_P) ||
+                (pps->weighted_pred_flag && hrd->slice_type == H265_SH_SLICE_TYPE_B))
+                h265_debug_pred_weight_table(h);
+            my_printf(" five_minus_max_num_merge_cand: %d\r\n", hrd->five_minus_max_num_merge_cand);
         }
-        my_printf(" slice_qp_delta: %d\r\n", hrd->slice_qp_delta);
+        my_printf("slice_qp_delta: %d\r\n", hrd->slice_qp_delta);
         if (pps->pps_slice_chroma_qp_offsets_present_flag)
         {
-            my_printf("  slice_cb_qp_offset: %d\r\n", hrd->slice_cb_qp_offset);
-            my_printf("  slice_cr_qp_offset: %d\r\n", hrd->slice_cr_qp_offset);
+            my_printf(" slice_cb_qp_offset: %d\r\n", hrd->slice_cb_qp_offset);
+            my_printf(" slice_cr_qp_offset: %d\r\n", hrd->slice_cr_qp_offset);
         }
         if (pps->pps_range_extension.chroma_qp_offset_list_enabled_flag)
         {
-            my_printf("  cu_chroma_qp_offset_enabled_flag: %d\r\n", hrd->cu_chroma_qp_offset_enabled_flag);
+            my_printf(" cu_chroma_qp_offset_enabled_flag: %d\r\n", hrd->cu_chroma_qp_offset_enabled_flag);
         }
         if (pps->deblocking_filter_override_enabled_flag)
         {
-            my_printf("  deblocking_filter_override_flag: %d\r\n", hrd->deblocking_filter_override_flag);
+            my_printf(" deblocking_filter_override_flag: %d\r\n", hrd->deblocking_filter_override_flag);
         }
         if (hrd->deblocking_filter_override_flag)
         {
-            my_printf("  slice_deblocking_filter_disabled_flag: %d\r\n", hrd->slice_deblocking_filter_disabled_flag);
+            my_printf(" slice_deblocking_filter_disabled_flag: %d\r\n", hrd->slice_deblocking_filter_disabled_flag);
             if (!hrd->slice_deblocking_filter_disabled_flag)
             {
-                my_printf("   slice_beta_offset_div2: %d\r\n", hrd->slice_beta_offset_div2);
-                my_printf("   slice_tc_offset_div2: %d\r\n", hrd->slice_tc_offset_div2);
+                my_printf("  slice_beta_offset_div2: %d\r\n", hrd->slice_beta_offset_div2);
+                my_printf("  slice_tc_offset_div2: %d\r\n", hrd->slice_tc_offset_div2);
             }
         }
-        my_printf(" slice_loop_filter_across_slices_enabled_flag: %d\r\n", hrd->slice_loop_filter_across_slices_enabled_flag);
+        my_printf("slice_loop_filter_across_slices_enabled_flag: %d\r\n", hrd->slice_loop_filter_across_slices_enabled_flag);
         
     }
     if (pps->tiles_enabled_flag || pps->entropy_coding_sync_enabled_flag)
