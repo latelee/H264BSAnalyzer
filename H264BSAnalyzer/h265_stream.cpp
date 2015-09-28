@@ -1435,7 +1435,7 @@ void h265_read_slice_header(h265_stream_t* h, bs_t* b)
                 }
             }
             if ((pps->weighted_pred_flag && hrd->slice_type == H265_SH_SLICE_TYPE_P) ||
-                (pps->weighted_pred_flag && hrd->slice_type == H265_SH_SLICE_TYPE_B))
+                (pps->weighted_bipred_flag && hrd->slice_type == H265_SH_SLICE_TYPE_B))
             {
                 h265_read_pred_weight_table(h, b);
             }

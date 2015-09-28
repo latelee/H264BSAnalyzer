@@ -2008,7 +2008,8 @@ static void h265_debug_slice_header(h265_stream_t* h)
             if (hrd->num_ref_idx_active_override_flag)
             {
                 my_printf(" num_ref_idx_l0_active_minus1: %d\r\n", hrd->num_ref_idx_l0_active_minus1);
-                my_printf(" num_ref_idx_l1_active_minus1: %d\r\n", hrd->num_ref_idx_l1_active_minus1);
+                if (hrd->slice_type == H265_SH_SLICE_TYPE_B)
+                    my_printf(" num_ref_idx_l1_active_minus1: %d\r\n", hrd->num_ref_idx_l1_active_minus1);
             }
             if(pps->lists_modification_present_flag)
             {
@@ -2026,7 +2027,7 @@ static void h265_debug_slice_header(h265_stream_t* h)
                     my_printf(" collocated_ref_idx: %d\r\n", hrd->collocated_ref_idx);
             }
             if ((pps->weighted_pred_flag && hrd->slice_type == H265_SH_SLICE_TYPE_P) ||
-                (pps->weighted_pred_flag && hrd->slice_type == H265_SH_SLICE_TYPE_B))
+                (pps->weighted_bipred_flag && hrd->slice_type == H265_SH_SLICE_TYPE_B))
                 h265_debug_pred_weight_table(h);
             my_printf(" five_minus_max_num_merge_cand: %d\r\n", hrd->five_minus_max_num_merge_cand);
         }
