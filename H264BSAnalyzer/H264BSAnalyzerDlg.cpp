@@ -657,7 +657,8 @@ void CH264BSAnalyzerDlg::ReadFile(void)
             "Video Format \t: %s %s\r\n"
             "Stream Type \t: %s Profile @ Level %s %s\r\n"
             "Encoding Type \t: %s\r\n"
-            "Max fps \t\t: %.03f\r\n",
+            "Max fps \t\t: %.03f\r\n"
+            "Frame Count \t: %d\r\n",
             videoInfo.type ? "H.265/HEVC" : "H.264/AVC",
             videoInfo.width, videoInfo.height,
             videoInfo.crop_left, videoInfo.crop_right,
@@ -665,7 +666,7 @@ void CH264BSAnalyzerDlg::ReadFile(void)
             strVideoFormat, strBitDepth, 
             strProfileInfo, strLevelInfo, strTierInfo,
             videoInfo.encoding_type ? "CABAC" : "CAVLC",
-            videoInfo.max_framerate
+            videoInfo.max_framerate, m_nSliceIndex
             );
         GetDlgItem(IDC_EDIT_SIMINFO)->SetWindowText(strSimpleInfo);
     }
