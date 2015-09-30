@@ -1404,7 +1404,7 @@ void h265_read_slice_header(h265_stream_t* h, bs_t* b)
                 hrd->num_ref_idx_l0_active_minus1 = bs_read_ue(b);
                 if (hrd->slice_type == H265_SH_SLICE_TYPE_B)
                 {
-                    hrd->num_ref_idx_l1_active_minus1 = bs_read_u1(b);
+                    hrd->num_ref_idx_l1_active_minus1 = bs_read_ue(b);
                 }
             }
             // to confirm... 
@@ -1611,6 +1611,6 @@ void h265_read_rbsp_trailing_bits(bs_t* b)
 
     while( !bs_byte_aligned(b) )
     {
-        int rbsp_alignment_zero_bit = bs_read_u1( b ); // equal to 0
+        int rbsp_alignment_zero_bit = bs_read_u1( b ); // equal to 0 7 bits
     }
 }
