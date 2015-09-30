@@ -1203,11 +1203,11 @@ static void h265_debug_ptl(profile_tier_level_t* ptl, int profilePresentFlag, in
                 my_printf("  sub_layer_intra_constraint_flag[%d]: %d\r\n", i, ptl->sub_layer_intra_constraint_flag[i]);
                 my_printf("  sub_layer_one_picture_only_constraint_flag[%d]: %d\r\n", i, ptl->sub_layer_one_picture_only_constraint_flag[i]);
                 my_printf("  sub_layer_lower_bit_rate_constraint_flag[%d]: %d\r\n", i, ptl->sub_layer_lower_bit_rate_constraint_flag[i]);
-                my_printf("  sub_layer_reserved_zero_34bits[%d]: %ul\r\n", i, ptl->sub_layer_reserved_zero_34bits[i]);// todo
+                my_printf("  sub_layer_reserved_zero_34bits[%d]: %ul\r\n", i, ptl->sub_layer_reserved_zero_34bits[i]);
             }
             else
             {
-                my_printf("  sub_layer_reserved_zero_43bits: %ul\r\n", ptl->sub_layer_reserved_zero_43bits);// todo
+                my_printf("  sub_layer_reserved_zero_43bits: %ul\r\n", ptl->sub_layer_reserved_zero_43bits);
             }
             // to check
             if ((ptl->sub_layer_profile_idc[i]>=1 && ptl->sub_layer_profile_idc[i]<=5) ||
