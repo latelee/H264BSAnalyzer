@@ -79,4 +79,5 @@ public:
     afx_msg void OnHelpAbout();
     afx_msg void OnHowtoUsage();
     afx_msg void OnLvnKeydownH264Nallist(NMHDR *pNMHDR, LRESULT *pResult);
+    CTreeCtrl m_cTree;
 };

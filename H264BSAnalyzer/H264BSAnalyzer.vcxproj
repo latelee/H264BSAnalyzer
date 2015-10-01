@@ -127,6 +127,8 @@
     <ClCompile Include="h265_sei.cpp" />
     <ClCompile Include="h265_stream.cpp" />
     <ClCompile Include="hexeditctrl.cpp" />
+    <ClCompile Include="NalDebugTree.cpp" />
+    <ClCompile Include="NalDebugTxt.cpp" />
     <ClCompile Include="NalParse.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>

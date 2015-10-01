@@ -66,6 +66,7 @@ void CH264BSAnalyzerDlg::DoDataExchange(CDataExchange* pDX)
     DDX_Control(pDX, IDC_H264_NALINFO, m_h264NalInfo);
     DDX_Control(pDX, IDC_H264_NALLIST, m_h264NalList);
     DDX_Control(pDX, IDC_EDIT_HEX, m_edHexInfo);
+    DDX_Control(pDX, IDC_TREE1, m_cTree);
 }
 
 BEGIN_MESSAGE_MAP(CH264BSAnalyzerDlg, CDialogEx)
@@ -155,6 +156,40 @@ BOOL CH264BSAnalyzerDlg::OnInitDialog()
         m_hNALThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadFuncPaseNal, this, NULL, NULL );
     }
     */
+
+    return TRUE;
+
+#define AddTreeItem(item, buffer) m_cTree.InsertItem(buffer,item)
+
+    
+
+    HTREEITEM hItem = m_cTree.InsertItem("NAL",TVI_ROOT);///root
+    CString strTemp;
+    strTemp.Format("nal_unit_header");
+    HTREEITEM hSubItem = AddTreeItem(hItem, strTemp.GetBuffer());
+
+    strTemp.Format("forbidden_zero_bit \t\t:0 (1 bit)");
+    AddTreeItem(hSubItem, strTemp.GetBuffer());
+    strTemp.Format("nal_unit_type \t\t:32 (6 bit)");
+    AddTreeItem(hSubItem, strTemp.GetBuffer());
+    strTemp.Format("nal_ref_idc \t\t:0 (6 bit)");
+    AddTreeItem(hSubItem, strTemp.GetBuffer());
+    strTemp.Format("nuh_temporal_id_plus1 \t\t:0 (3 bit)");
+    AddTreeItem(hSubItem, strTemp.GetBuffer());
+
+    strTemp.Format("video_parameter_set_rbsp()");
+    HTREEITEM hItem1 = AddTreeItem(hItem, strTemp.GetBuffer());
+
+    strTemp.Format("header()");
+    HTREEITEM hItem2 = AddTreeItem(hItem1, strTemp.GetBuffer());
+    strTemp.Format("fist slice)");
+    AddTreeItem(hItem2, strTemp.GetBuffer());
+    strTemp.Format("no output");
+    AddTreeItem(hItem2, strTemp.GetBuffer());
+
+    strTemp.Format("data()");
+    AddTreeItem(hItem1, strTemp.GetBuffer());
+
     return TRUE;  // return TRUE  unless you set the focus to a control
 }
 
@@ -718,7 +753,7 @@ void CH264BSAnalyzerDlg::OnLvnItemActivateH264Nallist(NMHDR *pNMHDR, LRESULT *pR
         AfxMessageBox("解析NAL时出错，可能是文件读取出错。");
     }
     // 把NAL详细信息显示到界面上
-    m_h264NalInfo.SetWindowText((LPCTSTR)nalInfo);
+    //m_h264NalInfo.SetWindowText((LPCTSTR)nalInfo);
     // 显示十六进制
     m_edHexInfo.SetData((LPBYTE)nalData, m_vNalTypeVector[nIndex].len);
     ::SendMessage(GetDlgItem(IDC_EDIT_HEX)->m_hWnd,WM_KILLFOCUS,-1,0); // 不要控件焦点
@@ -789,7 +824,7 @@ void CH264BSAnalyzerDlg::OnLvnKeydownH264Nallist(NMHDR *pNMHDR, LRESULT *pResult
         AfxMessageBox("解析NAL时出错，可能是文件读取出错。");
     }
      // 把NAL详细信息显示到界面上
-    m_h264NalInfo.SetWindowText((LPCTSTR)nalInfo);
+    //m_h264NalInfo.SetWindowText((LPCTSTR)nalInfo);
     // 显示十六进制
     m_edHexInfo.SetData((LPBYTE)nalData, m_vNalTypeVector[nIndex].len);
     ::SendMessage(GetDlgItem(IDC_EDIT_HEX)->m_hWnd,WM_KILLFOCUS,-1,0); // 不要控件焦点
@@ -900,7 +935,7 @@ void CH264BSAnalyzerDlg::OnDropFiles(HDROP hDropInfo)
     }
     fclose(fp);
 
-    m_cParser.init(m_strFileUrl.GetBuffer());
+    m_cParser.init(m_strFileUrl.GetBuffer(), &m_cTree);
     
     OnBnClickedH264InputurlOpen();
 }
@@ -926,7 +961,7 @@ void CH264BSAnalyzerDlg::OnFileOpen()
     }
     fclose(fp);
 
-    m_cParser.init(m_strFileUrl.GetBuffer());
+    m_cParser.init(m_strFileUrl.GetBuffer(), &m_cTree);
 
     OnBnClickedH264InputurlOpen();
 }
