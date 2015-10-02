@@ -1279,6 +1279,7 @@ void h265_read_slice_header(h265_stream_t* h, bs_t* b)
         {
             bitsSliceSegmentAddress++;
         }
+        hrd->slice_segment_address_bytes = bitsSliceSegmentAddress;
         hrd->slice_segment_address = bs_read_u(b, bitsSliceSegmentAddress); // u(v)
     }
     if (!hrd->dependent_slice_segment_flag)
@@ -1334,6 +1335,7 @@ void h265_read_slice_header(h265_stream_t* h, bs_t* b)
                 }
                 if (numBits)
                 {
+                    hrd->short_term_ref_pic_set_idx_bytes = numBits;
                     hrd->short_term_ref_pic_set_idx = bs_read_u(b, numBits);
                 }
                 else
@@ -1353,6 +1355,7 @@ void h265_read_slice_header(h265_stream_t* h, bs_t* b)
                     numLtrpInSPS++;
                 }
                 hrd->num_long_term_pics = bs_read_ue(b);
+
                 int cnt = hrd->num_long_term_sps + hrd->num_long_term_pics;
                 hrd->lt_idx_sps.resize(cnt);
                 hrd->poc_lsb_lt.resize(cnt);

@@ -729,9 +729,9 @@ void CNalParser::h265_debug_ptl(profile_tier_level_t* ptl, int profilePresentFla
     
 }
 
-void CNalParser::h265_debug_sub_layer_hrd_parameters(sub_layer_hrd_parameters_t* subhrd, int sub_pic_hrd_params_present_flag, int CpbCnt, const char* p)
+void CNalParser::h265_debug_sub_layer_hrd_parameters(sub_layer_hrd_parameters_t* subhrd, int sub_pic_hrd_params_present_flag, int CpbCnt, int subLayerId, const char* p)
 {
-    my_printf("  [%s] sub_layer_hrd_parameters(%d)\r\n", p);
+    my_printf("  [%s] sub_layer_hrd_parameters(%d)\r\n", p, subLayerId);
     for (int i = 0; i <= CpbCnt; i++)
     {
         my_printf("   bit_rate_value_minus1[%d]: %d\r\n", i, subhrd->bit_rate_value_minus1[i]);
@@ -789,11 +789,11 @@ void CNalParser::h265_debug_hrd_parameters(hrd_parameters_t* hrd, int commonInfP
             
         if(hrd->nal_hrd_parameters_present_flag)
         {
-            h265_debug_sub_layer_hrd_parameters(&(hrd->sub_layer_hrd_parameters), hrd->sub_pic_hrd_params_present_flag, hrd->cpb_cnt_minus1[i], "nal");
+            h265_debug_sub_layer_hrd_parameters(&(hrd->sub_layer_hrd_parameters), hrd->sub_pic_hrd_params_present_flag, hrd->cpb_cnt_minus1[i], i, "nal");
         }
         if(hrd->vcl_hrd_parameters_present_flag)
         {
-            h265_debug_sub_layer_hrd_parameters(&(hrd->sub_layer_hrd_parameters), hrd->sub_pic_hrd_params_present_flag, hrd->cpb_cnt_minus1[i], "vcl");
+            h265_debug_sub_layer_hrd_parameters(&(hrd->sub_layer_hrd_parameters), hrd->sub_pic_hrd_params_present_flag, hrd->cpb_cnt_minus1[i], i, "vcl");
         }
     }
 }

@@ -4,31 +4,48 @@
 
 
 #define my_printf(...) do { \
-    sprintf(m_tmpStore, __VA_ARGS__);\
+    sprintf(m_outputInfo, __VA_ARGS__);\
     } while(0)
 
-#define AddTreeItem(_item) m_pTree->InsertItem(m_tmpStore, _item)
+#define my_printf_flag(buffer, value) do { \
+    sprintf(m_tmpStore, "%s: %d  [%s] (1 bit)", buffer,value,value?"True":"False");\
+    sprintf(m_outputInfo, m_tmpStore);\
+    } while(0)
+
+#define my_printf_flag2(buffer, idx, value) do { \
+    sprintf(m_tmpStore, "%s[%d]: %d  [%s] (1 bit)", buffer,idx, value,value?"True":"False");\
+    sprintf(m_outputInfo, m_tmpStore);\
+    } while(0)
+
+#define my_printf_flag3(buffer, idx1, idx2, value) do { \
+    sprintf(m_tmpStore, "%s[%d][%d]: %d  [%s] (1 bit)", buffer,idx1,idx2,value,value?"True":"False");\
+    sprintf(m_outputInfo, m_tmpStore);\
+    } while(0)
+
+#define AddTreeItem(_item) m_pTree->InsertItem(m_outputInfo, _item)
 
 // 以下代码来自h264_stream.c，单独出来
 /***************************** debug ******************************/
 
-void CNalParser::h264_debug_sps_t(sps_t* sps, HTREEITEM root)
+void CNalParser::h264_debug_sps(sps_t* sps, HTREEITEM root)
 {
     my_printf("seq_parameter_set_data()");
     HTREEITEM isps = AddTreeItem(root);
     my_printf("profile_idc: %d", sps->profile_idc ); AddTreeItem(isps);
-    my_printf("constraint_set0_flag: %d", sps->constraint_set0_flag ); AddTreeItem(isps);
-    my_printf("constraint_set1_flag: %d", sps->constraint_set1_flag ); AddTreeItem(isps);
-    my_printf("constraint_set2_flag: %d", sps->constraint_set2_flag ); AddTreeItem(isps);
-    my_printf("constraint_set3_flag: %d", sps->constraint_set3_flag ); AddTreeItem(isps);
-    my_printf("constraint_set4_flag: %d", sps->constraint_set4_flag ); AddTreeItem(isps);
-    my_printf("constraint_set5_flag: %d", sps->constraint_set5_flag ); AddTreeItem(isps);
+    my_printf_flag("constraint_set0_flag", sps->constraint_set0_flag ); AddTreeItem(isps);
+    my_printf_flag("constraint_set1_flag", sps->constraint_set1_flag ); AddTreeItem(isps);
+    my_printf_flag("constraint_set2_flag", sps->constraint_set2_flag ); AddTreeItem(isps);
+    my_printf_flag("constraint_set3_flag", sps->constraint_set3_flag ); AddTreeItem(isps);
+    my_printf_flag("constraint_set4_flag", sps->constraint_set4_flag ); AddTreeItem(isps);
+    my_printf_flag("constraint_set5_flag", sps->constraint_set5_flag ); AddTreeItem(isps);
     my_printf("reserved_zero_2bits: %d", sps->reserved_zero_2bits ); AddTreeItem(isps);
     my_printf("level_idc: %d", sps->level_idc ); AddTreeItem(isps);
     my_printf("seq_parameter_set_id: %d", sps->seq_parameter_set_id ); AddTreeItem(isps);
     my_printf("chroma_format_idc: %d", sps->chroma_format_idc ); AddTreeItem(isps);
     if (sps->chroma_format_idc == 3)
+    {
         my_printf("separate_colour_plane_flag: %d", sps->separate_colour_plane_flag ); AddTreeItem(isps);
+    }
     my_printf("bit_depth_luma_minus8: %d", sps->bit_depth_luma_minus8 ); AddTreeItem(isps);
     my_printf("bit_depth_chroma_minus8: %d", sps->bit_depth_chroma_minus8 ); AddTreeItem(isps);
     my_printf("qpprime_y_zero_transform_bypass_flag: %d", sps->qpprime_y_zero_transform_bypass_flag ); AddTreeItem(isps);
@@ -178,8 +195,7 @@ void CNalParser::h264_debug_sps_t(sps_t* sps, HTREEITEM root)
     }
 }
 
-#if 0
-void CNalParser::h264_debug_pps(pps_t* pps)
+void CNalParser::h264_debug_pps(pps_t* pps, HTREEITEM root)
 {
     my_printf("pic_parameter_set_rbsp()");
     my_printf("pic_parameter_set_id: %d", pps->pic_parameter_set_id );
@@ -251,7 +267,7 @@ void CNalParser::h264_debug_pps(pps_t* pps)
     my_printf("rbsp_trailing_bits()");
 }
 
-void CNalParser::h264_debug_slice_header(h264_stream_t* h)
+void CNalParser::h264_debug_slice_header(h264_stream_t* h, HTREEITEM root)
 {
     sps_t* sps = h->sps;
     pps_t* pps = h->pps;
@@ -491,7 +507,7 @@ void CNalParser::h264_debug_slice_header(h264_stream_t* h)
     my_printf("rbsp_slice_trailing_bits()");
 }
 
-void CNalParser::h264_debug_aud(aud_t* aud)
+void CNalParser::h264_debug_aud(aud_t* aud, HTREEITEM root)
 {
     my_printf("======= Access Unit Delimiter =======");
     const char* primary_pic_type_name;
@@ -510,7 +526,7 @@ void CNalParser::h264_debug_aud(aud_t* aud)
     my_printf("primary_pic_type: %d (%s)", aud->primary_pic_type, primary_pic_type_name );
 }
 
-void CNalParser::h264_debug_seis( h264_stream_t* h)
+void CNalParser::h264_debug_seis( h264_stream_t* h, HTREEITEM root)
 {
     sei_t** seis = h->seis;
     int num_seis = h->num_seis;
@@ -567,7 +583,7 @@ void CNalParser::h264_debug_seis( h264_stream_t* h)
         }
     }
 }
-#endif
+
 /**
  Print the contents of a NAL unit to standard output.
  The NAL which is printed out has a type determined by nal and data which comes from other fields within h depending on its type.
@@ -609,110 +625,111 @@ void CNalParser::h264_debug_nal_t(h264_stream_t* h, nal_t* nal)
     my_printf("nal_unit_type: %d (%s) (5 bits)", nal->nal_unit_type, nal_unit_type_name );
     AddTreeItem(root);
 
-    if( nal->nal_unit_type == NAL_UNIT_TYPE_CODED_SLICE_NON_IDR) { h264_debug_slice_header(h); }
-    else if( nal->nal_unit_type == NAL_UNIT_TYPE_CODED_SLICE_IDR) { h264_debug_slice_header(h); }
-    else if( nal->nal_unit_type == NAL_UNIT_TYPE_SPS) { h264_debug_sps_t(h->sps, root); }
-    else if( nal->nal_unit_type == NAL_UNIT_TYPE_PPS) { h264_debug_pps(h->pps); }
-    else if( nal->nal_unit_type == NAL_UNIT_TYPE_AUD) { h264_debug_aud(h->aud); }
-    else if( nal->nal_unit_type == NAL_UNIT_TYPE_SEI) { h264_debug_seis(h); }
+    if( nal->nal_unit_type == NAL_UNIT_TYPE_CODED_SLICE_NON_IDR) { h264_debug_slice_header(h, root); }
+    else if( nal->nal_unit_type == NAL_UNIT_TYPE_CODED_SLICE_IDR) { h264_debug_slice_header(h, root); }
+    else if( nal->nal_unit_type == NAL_UNIT_TYPE_SPS) { h264_debug_sps(h->sps, root); }
+    else if( nal->nal_unit_type == NAL_UNIT_TYPE_PPS) { h264_debug_pps(h->pps, root); }
+    else if( nal->nal_unit_type == NAL_UNIT_TYPE_AUD) { h264_debug_aud(h->aud, root); }
+    else if( nal->nal_unit_type == NAL_UNIT_TYPE_SEI) { h264_debug_seis(h, root); }
 }
 
 ////////////////////////////////////////////////////////
-void CNalParser::h265_debug_ptl_t(profile_tier_level_t* ptl, int profilePresentFlag, int max_sub_layers_minus1, HTREEITEM root)
+void CNalParser::h265_debug_ptl(profile_tier_level_t* ptl, int profilePresentFlag, int max_sub_layers_minus1, HTREEITEM root)
 {
     if (profilePresentFlag)
     {
-        my_printf("general_profile_space: %d", ptl->general_profile_space); AddTreeItem(root);
-        my_printf("general_tier_flag: %d", ptl->general_tier_flag); AddTreeItem(root);
-        my_printf("general_profile_idc: %d", ptl->general_profile_idc); AddTreeItem(root);
+        my_printf("general_profile_space: %d  (2 bits)", ptl->general_profile_space); AddTreeItem(root);
+        my_printf_flag("general_tier_flag", ptl->general_tier_flag); AddTreeItem(root);
+        my_printf("general_profile_idc: %d  (5 bits)", ptl->general_profile_idc); AddTreeItem(root);
         for (int i = 0; i < 32; i++)
         {
-            my_printf("general_profile_compatibility_flag[%d]: %d", i, ptl->general_profile_compatibility_flag[i]); AddTreeItem(root);
+            my_printf_flag2("general_profile_compatibility_flag", i, ptl->general_profile_compatibility_flag[i]); AddTreeItem(root);
         }
-        my_printf("general_progressive_source_flag: %d", ptl->general_progressive_source_flag); AddTreeItem(root);
-        my_printf("general_interlaced_source_flag: %d", ptl->general_interlaced_source_flag); AddTreeItem(root);
-        my_printf("general_non_packed_constraint_flag: %d", ptl->general_non_packed_constraint_flag); AddTreeItem(root);
-        my_printf("general_frame_only_constraint_flag: %d", ptl->general_frame_only_constraint_flag); AddTreeItem(root);
+        my_printf_flag("general_progressive_source_flag", ptl->general_progressive_source_flag); AddTreeItem(root);
+        my_printf_flag("general_interlaced_source_flag", ptl->general_interlaced_source_flag); AddTreeItem(root);
+        my_printf_flag("general_non_packed_constraint_flag", ptl->general_non_packed_constraint_flag); AddTreeItem(root);
+        my_printf_flag("general_frame_only_constraint_flag", ptl->general_frame_only_constraint_flag); AddTreeItem(root);
         if (ptl->general_profile_idc==4 || ptl->general_profile_compatibility_flag[4] ||
             ptl->general_profile_idc==5 || ptl->general_profile_compatibility_flag[5] ||
             ptl->general_profile_idc==6 || ptl->general_profile_compatibility_flag[6] ||
             ptl->general_profile_idc==7 || ptl->general_profile_compatibility_flag[7])
         {
-            my_printf("general_max_12bit_constraint_flag: %d", ptl->general_max_12bit_constraint_flag); AddTreeItem(root);
-            my_printf("general_max_10bit_constraint_flag: %d", ptl->general_max_10bit_constraint_flag); AddTreeItem(root);
-            my_printf("general_max_8bit_constraint_flag: %d", ptl->general_max_8bit_constraint_flag); AddTreeItem(root);
-            my_printf("general_max_422chroma_constraint_flag: %d", ptl->general_max_422chroma_constraint_flag); AddTreeItem(root);
-            my_printf("general_max_420chroma_constraint_flag: %d", ptl->general_max_420chroma_constraint_flag); AddTreeItem(root);
-            my_printf("general_max_monochrome_constraint_flag: %d", ptl->general_max_monochrome_constraint_flag); AddTreeItem(root);
-            my_printf("general_intra_constraint_flag: %d", ptl->general_intra_constraint_flag); AddTreeItem(root);
-            my_printf("general_one_picture_only_constraint_flag: %d", ptl->general_one_picture_only_constraint_flag); AddTreeItem(root);
-            my_printf("general_lower_bit_rate_constraint_flag: %d", ptl->general_lower_bit_rate_constraint_flag); AddTreeItem(root);
-            my_printf("general_reserved_zero_34bits: %u", ptl->general_reserved_zero_34bits); AddTreeItem(root); // tocheck
+            my_printf_flag("general_max_12bit_constraint_flag", ptl->general_max_12bit_constraint_flag); AddTreeItem(root);
+            my_printf_flag("general_max_10bit_constraint_flag", ptl->general_max_10bit_constraint_flag); AddTreeItem(root);
+            my_printf_flag("general_max_8bit_constraint_flag", ptl->general_max_8bit_constraint_flag); AddTreeItem(root);
+            my_printf_flag("general_max_422chroma_constraint_flag", ptl->general_max_422chroma_constraint_flag); AddTreeItem(root);
+            my_printf_flag("general_max_420chroma_constraint_flag", ptl->general_max_420chroma_constraint_flag); AddTreeItem(root);
+            my_printf_flag("general_max_monochrome_constraint_flag", ptl->general_max_monochrome_constraint_flag); AddTreeItem(root);
+            my_printf_flag("general_intra_constraint_flag", ptl->general_intra_constraint_flag); AddTreeItem(root);
+            my_printf_flag("general_one_picture_only_constraint_flag", ptl->general_one_picture_only_constraint_flag); AddTreeItem(root);
+            my_printf_flag("general_lower_bit_rate_constraint_flag", ptl->general_lower_bit_rate_constraint_flag); AddTreeItem(root);
+            my_printf("general_reserved_zero_34bits: %u  (34 bits)", ptl->general_reserved_zero_34bits); AddTreeItem(root); // tocheck
         }
         else
         {
-            my_printf("general_reserved_zero_43bits: %u", ptl->general_reserved_zero_43bits); AddTreeItem(root);// tocheck
+            my_printf("general_reserved_zero_43bits: %u  (43 bits)", ptl->general_reserved_zero_43bits); AddTreeItem(root);// tocheck
         }
         if ((ptl->general_profile_idc>=1 && ptl->general_profile_idc<=5) ||
             ptl->general_profile_compatibility_flag[1] || ptl->general_profile_compatibility_flag[2] ||
             ptl->general_profile_compatibility_flag[3] || ptl->general_profile_compatibility_flag[4] ||
             ptl->general_profile_compatibility_flag[5])
         {
-            my_printf("general_inbld_flag: %d", ptl->general_inbld_flag); AddTreeItem(root);
+            my_printf_flag("general_inbld_flag", ptl->general_inbld_flag); AddTreeItem(root);
         }
         else
         {
-            my_printf("general_reserved_zero_bit: %d", ptl->general_reserved_zero_bit); AddTreeItem(root);
+            my_printf("general_reserved_zero_bit: %d  (1 bit)", ptl->general_reserved_zero_bit); AddTreeItem(root);
         }
     }
         
-    my_printf("general_level_idc: %d", ptl->general_level_idc); AddTreeItem(root);
+    my_printf("general_level_idc: %d  (8 bits)", ptl->general_level_idc); AddTreeItem(root);
     for (int i = 0; i < max_sub_layers_minus1; i++)
     {
-        my_printf("sub_layer_profile_present_flag[%d]: %d", i, ptl->sub_layer_profile_present_flag[i]); AddTreeItem(root);
-        my_printf("sub_layer_level_present_flag[%d]: %d", i, ptl->sub_layer_level_present_flag[i]); AddTreeItem(root);
+        my_printf_flag2("sub_layer_profile_present_flag", i, ptl->sub_layer_profile_present_flag[i]); AddTreeItem(root);
+        my_printf_flag2("sub_layer_level_present_flag", i, ptl->sub_layer_level_present_flag[i]); AddTreeItem(root);
     }
     if (max_sub_layers_minus1 > 0)
     {
         for (int i = max_sub_layers_minus1; i < 8; i++)
         {
-            my_printf("reserved_zero_2bits[%d]: %d", i, ptl->reserved_zero_2bits[i]); AddTreeItem(root);
+            my_printf("reserved_zero_2bits[%d]: %d  (2 bits)", i, ptl->reserved_zero_2bits[i]); AddTreeItem(root);
         }
     }
     for (int i = 0; i < max_sub_layers_minus1; i++)
     {
         if (ptl->sub_layer_profile_present_flag[i])
         {
-            my_printf("sub_layer_profile_space[%d]: %d", i, ptl->sub_layer_profile_space[i]); AddTreeItem(root);
-            my_printf("sub_layer_tier_flag[%d]: %d", i, ptl->sub_layer_tier_flag[i]); AddTreeItem(root);
-            my_printf("sub_layer_profile_idc[%d]: %d", i, ptl->sub_layer_profile_idc[i]); AddTreeItem(root);
+            my_printf("sub_layer_profile_space[%d]: %d  (2 bits)", i, ptl->sub_layer_profile_space[i]); AddTreeItem(root);
+            my_printf_flag2("sub_layer_tier_flag", i, ptl->sub_layer_tier_flag[i]); AddTreeItem(root);
+            my_printf("sub_layer_profile_idc[%d]: %d  (5 bits)", i, ptl->sub_layer_profile_idc[i]); AddTreeItem(root);
             for (int j = 0; j < 32; j++)
             {
-                my_printf("sub_layer_profile_compatibility_flag[%d][%d]: %d", i, j, ptl->sub_layer_profile_compatibility_flag[i][j]);
+                my_printf_flag3("sub_layer_profile_compatibility_flag", i, j, ptl->sub_layer_profile_compatibility_flag[i][j]);
+                AddTreeItem(root);
             }
-            my_printf("sub_layer_progressive_source_flag[%d]: %d", i, ptl->sub_layer_progressive_source_flag[i]);
-            my_printf("sub_layer_interlaced_source_flag[%d]: %d", i, ptl->sub_layer_interlaced_source_flag[i]);
-            my_printf("sub_layer_non_packed_constraint_flag[%d]: %d", i, ptl->sub_layer_non_packed_constraint_flag[i]);
-            my_printf("sub_layer_frame_only_constraint_flag[%d]: %d", i, ptl->sub_layer_frame_only_constraint_flag[i]);
+            my_printf_flag2("sub_layer_progressive_source_flag", i, ptl->sub_layer_progressive_source_flag[i]);AddTreeItem(root);
+            my_printf_flag2("sub_layer_interlaced_source_flag", i, ptl->sub_layer_interlaced_source_flag[i]);AddTreeItem(root);
+            my_printf_flag2("sub_layer_non_packed_constraint_flag", i, ptl->sub_layer_non_packed_constraint_flag[i]);AddTreeItem(root);
+            my_printf_flag2("sub_layer_frame_only_constraint_flag", i, ptl->sub_layer_frame_only_constraint_flag[i]);AddTreeItem(root);
             if (ptl->sub_layer_profile_idc[i]==4 || ptl->sub_layer_profile_compatibility_flag[i][4] ||
                 ptl->sub_layer_profile_idc[i]==5 || ptl->sub_layer_profile_compatibility_flag[i][5] ||
                 ptl->sub_layer_profile_idc[i]==6 || ptl->sub_layer_profile_compatibility_flag[i][6] ||
                 ptl->sub_layer_profile_idc[i]==7 || ptl->sub_layer_profile_compatibility_flag[i][7])
             {
-                my_printf("sub_layer_max_12bit_constraint_flag[%d]: %d", i, ptl->sub_layer_max_12bit_constraint_flag[i]);
-                my_printf("sub_layer_max_10bit_constraint_flag[%d]: %d", i, ptl->sub_layer_max_10bit_constraint_flag[i]);
-                my_printf("sub_layer_max_8bit_constraint_flag[%d]: %d", i, ptl->sub_layer_max_8bit_constraint_flag[i]);
-                my_printf("sub_layer_max_422chroma_constraint_flag[%d]: %d", i, ptl->sub_layer_max_422chroma_constraint_flag[i]);
-                my_printf("sub_layer_max_420chroma_constraint_flag[%d]: %d", i, ptl->sub_layer_max_420chroma_constraint_flag[i]);
-                my_printf("sub_layer_max_monochrome_constraint_flag[%d]: %d", i, ptl->sub_layer_max_monochrome_constraint_flag[i]);
-                my_printf("sub_layer_intra_constraint_flag[%d]: %d", i, ptl->sub_layer_intra_constraint_flag[i]);
-                my_printf("sub_layer_one_picture_only_constraint_flag[%d]: %d", i, ptl->sub_layer_one_picture_only_constraint_flag[i]);
-                my_printf("sub_layer_lower_bit_rate_constraint_flag[%d]: %d", i, ptl->sub_layer_lower_bit_rate_constraint_flag[i]);
-                my_printf("sub_layer_reserved_zero_34bits[%d]: %ul", i, ptl->sub_layer_reserved_zero_34bits[i]);
+                my_printf_flag2("sub_layer_max_12bit_constraint_flag", i, ptl->sub_layer_max_12bit_constraint_flag[i]);AddTreeItem(root);
+                my_printf_flag2("sub_layer_max_10bit_constraint_flag", i, ptl->sub_layer_max_10bit_constraint_flag[i]);AddTreeItem(root);
+                my_printf_flag2("sub_layer_max_8bit_constraint_flag", i, ptl->sub_layer_max_8bit_constraint_flag[i]);AddTreeItem(root);
+                my_printf_flag2("sub_layer_max_422chroma_constraint_flag", i, ptl->sub_layer_max_422chroma_constraint_flag[i]);AddTreeItem(root);
+                my_printf_flag2("sub_layer_max_420chroma_constraint_flag", i, ptl->sub_layer_max_420chroma_constraint_flag[i]);AddTreeItem(root);
+                my_printf_flag2("sub_layer_max_monochrome_constraint_flag", i, ptl->sub_layer_max_monochrome_constraint_flag[i]);AddTreeItem(root);
+                my_printf_flag2("sub_layer_intra_constraint_flag", i, ptl->sub_layer_intra_constraint_flag[i]);AddTreeItem(root);
+                my_printf_flag2("sub_layer_one_picture_only_constraint_flag", i, ptl->sub_layer_one_picture_only_constraint_flag[i]);AddTreeItem(root);
+                my_printf_flag2("sub_layer_lower_bit_rate_constraint_flag", i, ptl->sub_layer_lower_bit_rate_constraint_flag[i]);AddTreeItem(root);
+                my_printf("sub_layer_reserved_zero_34bits[%d]: %ul  (34 bits)", i, ptl->sub_layer_reserved_zero_34bits[i]);AddTreeItem(root);
             }
             else
             {
-                my_printf("sub_layer_reserved_zero_43bits: %ul", ptl->sub_layer_reserved_zero_43bits);
+                my_printf("sub_layer_reserved_zero_43bits: %ul  (43 bits)", ptl->sub_layer_reserved_zero_43bits);AddTreeItem(root);
             }
             // to check
             if ((ptl->sub_layer_profile_idc[i]>=1 && ptl->sub_layer_profile_idc[i]<=5) ||
@@ -722,111 +739,119 @@ void CNalParser::h265_debug_ptl_t(profile_tier_level_t* ptl, int profilePresentF
                 ptl->sub_layer_profile_compatibility_flag[i][4] ||
                 ptl->sub_layer_profile_compatibility_flag[i][5])
             {
-                my_printf("sub_layer_inbld_flag[%d]: %d", i, ptl->sub_layer_inbld_flag[i]);
+                my_printf_flag2("sub_layer_inbld_flag", i, ptl->sub_layer_inbld_flag[i]);AddTreeItem(root);
             }
             else
             {
-                my_printf("sub_layer_reserved_zero_bit[%d]: %d", i, ptl->sub_layer_reserved_zero_bit[i]);
+                my_printf("sub_layer_reserved_zero_bit[%d]: %d  (1 bit)", i, ptl->sub_layer_reserved_zero_bit[i]);AddTreeItem(root);
             }
         }
         if (ptl->sub_layer_level_present_flag[i])
         {
-            my_printf("sub_layer_level_idc[%d]: %d", i, ptl->sub_layer_level_idc[i]);
+            my_printf("sub_layer_level_idc[%d]: %d  (8 bits)", i, ptl->sub_layer_level_idc[i]);AddTreeItem(root);
         }
     }
-    
 }
 
-void CNalParser::h265_debug_sub_layer_hrd_parameters_t(sub_layer_hrd_parameters_t* subhrd, int sub_pic_hrd_params_present_flag, int CpbCnt, const char* p, HTREEITEM root)
+void CNalParser::h265_debug_sub_layer_hrd_parameters(sub_layer_hrd_parameters_t* subhrd, int sub_pic_hrd_params_present_flag, int CpbCnt, int subLayerId, const char* p, HTREEITEM root)
 {
-    my_printf("[%s] sub_layer_hrd_parameters(%d)", p);
+    my_printf("[%s] sub_layer_hrd_parameters(%d)", p, subLayerId);
+    HTREEITEM slhp = AddTreeItem(root);
     for (int i = 0; i <= CpbCnt; i++)
     {
-        my_printf("bit_rate_value_minus1[%d]: %d", i, subhrd->bit_rate_value_minus1[i]);
-        my_printf("cpb_size_value_minus1[%d]: %d", i, subhrd->cpb_size_value_minus1[i]);
+        my_printf("bit_rate_value_minus1[%d]: %d  (v bits)", i, subhrd->bit_rate_value_minus1[i]);AddTreeItem(slhp);
+        my_printf("cpb_size_value_minus1[%d]: %d  (v bits)", i, subhrd->cpb_size_value_minus1[i]);AddTreeItem(slhp);
         if (sub_pic_hrd_params_present_flag)
         {
-            my_printf("cpb_size_du_value_minus1[%d]: %d", i, subhrd->cpb_size_du_value_minus1[i]);
-            my_printf("bit_rate_du_value_minus1[%d]: %d", i, subhrd->bit_rate_du_value_minus1[i]);
+            my_printf("cpb_size_du_value_minus1[%d]: %d  (v bits)", i, subhrd->cpb_size_du_value_minus1[i]);AddTreeItem(slhp);
+            my_printf("bit_rate_du_value_minus1[%d]: %d  (v bits)", i, subhrd->bit_rate_du_value_minus1[i]);AddTreeItem(slhp);
         }
-        my_printf("cbr_flag[%d]: %d", i, subhrd->cbr_flag[i]);
+        my_printf_flag2("cbr_flag", i, subhrd->cbr_flag[i]);AddTreeItem(slhp);
     }
 }
-void CNalParser::h265_debug_hrd_parameters_t(hrd_parameters_t* hrd, int commonInfPresentFlag, int maxNumSubLayersMinus1, HTREEITEM root)
+void CNalParser::h265_debug_hrd_parameters(hrd_parameters_t* hrd, int commonInfPresentFlag, int maxNumSubLayersMinus1, HTREEITEM root)
 {
     my_printf("hrd_parameters()");
     HTREEITEM ihrd = AddTreeItem(root);
     if(commonInfPresentFlag)
     {
-        my_printf("nal_hrd_parameters_present_flag: %d", hrd->nal_hrd_parameters_present_flag); AddTreeItem(ihrd);
-        my_printf("vcl_hrd_parameters_present_flag: %d", hrd->vcl_hrd_parameters_present_flag); AddTreeItem(ihrd);
+        my_printf_flag("nal_hrd_parameters_present_flag", hrd->nal_hrd_parameters_present_flag); AddTreeItem(ihrd);
+        my_printf_flag("vcl_hrd_parameters_present_flag", hrd->vcl_hrd_parameters_present_flag); AddTreeItem(ihrd);
         if (hrd->nal_hrd_parameters_present_flag ||
             hrd->vcl_hrd_parameters_present_flag)
         {
             
-            my_printf("sub_pic_hrd_params_present_flag: %d", hrd->sub_pic_hrd_params_present_flag); AddTreeItem(ihrd);
+            my_printf_flag("sub_pic_hrd_params_present_flag", hrd->sub_pic_hrd_params_present_flag); AddTreeItem(ihrd);
             if (hrd->sub_pic_hrd_params_present_flag)
             {
-                my_printf("tick_divisor_minus2: %d", hrd->tick_divisor_minus2); AddTreeItem(ihrd);
-                my_printf("du_cpb_removal_delay_increment_length_minus1: %d", hrd->du_cpb_removal_delay_increment_length_minus1); AddTreeItem(ihrd);
-                my_printf("sub_pic_cpb_params_in_pic_timing_sei_flag: %d", hrd->sub_pic_cpb_params_in_pic_timing_sei_flag); AddTreeItem(ihrd);
-                my_printf("dpb_output_delay_du_length_minus1: %d", hrd->dpb_output_delay_du_length_minus1); AddTreeItem(ihrd);
+                my_printf("tick_divisor_minus2: %d  (8 bits)", hrd->tick_divisor_minus2); AddTreeItem(ihrd);
+                my_printf("du_cpb_removal_delay_increment_length_minus1: %d  (8 bits)", hrd->du_cpb_removal_delay_increment_length_minus1); AddTreeItem(ihrd);
+                my_printf_flag("sub_pic_cpb_params_in_pic_timing_sei_flag", hrd->sub_pic_cpb_params_in_pic_timing_sei_flag); AddTreeItem(ihrd);
+                my_printf("dpb_output_delay_du_length_minus1: %d  (5 bits)", hrd->dpb_output_delay_du_length_minus1); AddTreeItem(ihrd);
             }
-            my_printf("bit_rate_scale: %d", hrd->bit_rate_scale); AddTreeItem(ihrd);
-            my_printf("cpb_size_scale: %d", hrd->cpb_size_scale); AddTreeItem(ihrd);
+            my_printf("bit_rate_scale: %d  (4 bits)", hrd->bit_rate_scale); AddTreeItem(ihrd);
+            my_printf("cpb_size_scale: %d  (4 bits)", hrd->cpb_size_scale); AddTreeItem(ihrd);
             if (hrd->sub_pic_hrd_params_present_flag)
-                my_printf("cpb_size_du_scale: %d", hrd->cpb_size_du_scale); AddTreeItem(ihrd);
-            my_printf("initial_cpb_removal_delay_length_minus1: %d", hrd->initial_cpb_removal_delay_length_minus1); AddTreeItem(ihrd);
-            my_printf("au_cpb_removal_delay_length_minus1: %d", hrd->au_cpb_removal_delay_length_minus1); AddTreeItem(ihrd);
-            my_printf("dpb_output_delay_length_minus1: %d", hrd->dpb_output_delay_length_minus1); AddTreeItem(ihrd);
+                my_printf("cpb_size_du_scale: %d  (4 bits)", hrd->cpb_size_du_scale); AddTreeItem(ihrd);
+            my_printf("initial_cpb_removal_delay_length_minus1: %d  (5 bits)", hrd->initial_cpb_removal_delay_length_minus1); AddTreeItem(ihrd);
+            my_printf("au_cpb_removal_delay_length_minus1: %d  (5 bits)", hrd->au_cpb_removal_delay_length_minus1); AddTreeItem(ihrd);
+            my_printf("dpb_output_delay_length_minus1: %d  (5 bits)", hrd->dpb_output_delay_length_minus1); AddTreeItem(ihrd);
         }
     }
     for (int i = 0; i <= maxNumSubLayersMinus1; i++)
     {
-        my_printf("fixed_pic_rate_general_flag[%d]: %d", i, hrd->fixed_pic_rate_general_flag[i]); AddTreeItem(ihrd);
+        my_printf_flag2("fixed_pic_rate_general_flag", i, hrd->fixed_pic_rate_general_flag[i]); AddTreeItem(ihrd);
+        HTREEITEM fprwcf = ihrd;
         if (!hrd->fixed_pic_rate_general_flag[i])
-            my_printf("fixed_pic_rate_general_flag[%d]: %d", i, hrd->fixed_pic_rate_general_flag[i]); AddTreeItem(ihrd);
+        {
+            my_printf_flag2("fixed_pic_rate_within_cvs_flag", i, hrd->fixed_pic_rate_general_flag[i]);
+            fprwcf = AddTreeItem(ihrd);
+        }
         if (hrd->fixed_pic_rate_within_cvs_flag[i])
         {
-            my_printf("elemental_duration_in_tc_minus1[%d]: %d", i, hrd->elemental_duration_in_tc_minus1[i]); AddTreeItem(ihrd);
+            my_printf("elemental_duration_in_tc_minus1[%d]: %d  (v bits)", i, hrd->elemental_duration_in_tc_minus1[i]);
+            AddTreeItem(fprwcf);
         }
         else
         {
-            my_printf("low_delay_hrd_flag[%d]: %d", i, hrd->low_delay_hrd_flag[i]); AddTreeItem(ihrd);
+            my_printf_flag2("low_delay_hrd_flag", i, hrd->low_delay_hrd_flag[i]);
+            AddTreeItem(fprwcf);
         }
         if (!hrd->low_delay_hrd_flag[i])
-            my_printf("cpb_cnt_minus1[%d]: %d", i, hrd->cpb_cnt_minus1[i]); AddTreeItem(ihrd);
+        {
+            my_printf("cpb_cnt_minus1[%d]: %d  (v bits)", i, hrd->cpb_cnt_minus1[i]); AddTreeItem(ihrd);
+        }
             
         if(hrd->nal_hrd_parameters_present_flag)
         {
-            h265_debug_sub_layer_hrd_parameters(&(hrd->sub_layer_hrd_parameters), hrd->sub_pic_hrd_params_present_flag, hrd->cpb_cnt_minus1[i], "nal");
+            h265_debug_sub_layer_hrd_parameters(&(hrd->sub_layer_hrd_parameters), hrd->sub_pic_hrd_params_present_flag, hrd->cpb_cnt_minus1[i], i, "nal", ihrd);
         }
         if(hrd->vcl_hrd_parameters_present_flag)
         {
-            h265_debug_sub_layer_hrd_parameters(&(hrd->sub_layer_hrd_parameters), hrd->sub_pic_hrd_params_present_flag, hrd->cpb_cnt_minus1[i], "vcl");
+            h265_debug_sub_layer_hrd_parameters(&(hrd->sub_layer_hrd_parameters), hrd->sub_pic_hrd_params_present_flag, hrd->cpb_cnt_minus1[i], i, "vcl", ihrd);
         }
     }
 }
 
 // vps
-void CNalParser::h265_debug_vps_t(h265_vps_t* vps, HTREEITEM root)
+void CNalParser::h265_debug_vps(h265_vps_t* vps, HTREEITEM root)
 {
     int i, j;
     my_printf("video_parameter_set_rbsp()");
     HTREEITEM ivps = AddTreeItem(root);
-    my_printf("vps_video_parameter_set_id: %d", vps->vps_video_parameter_set_id); AddTreeItem(ivps);
-    my_printf("vps_base_layer_internal_flag: %d", vps->vps_base_layer_internal_flag); AddTreeItem(ivps);
-    my_printf("vps_base_layer_available_flag: %d", vps->vps_base_layer_available_flag); AddTreeItem(ivps);
-    my_printf("vps_max_layers_minus1: %d", vps->vps_max_layers_minus1); AddTreeItem(ivps);
-    my_printf("vps_max_sub_layers_minus1: %d", vps->vps_max_sub_layers_minus1); AddTreeItem(ivps);
-    my_printf("vps_temporal_id_nesting_flag: %d", vps->vps_temporal_id_nesting_flag); AddTreeItem(ivps);
-    my_printf("vps_reserved_0xffff_16bits: %d", vps->vps_reserved_0xffff_16bits); AddTreeItem(ivps);
+    my_printf("vps_video_parameter_set_id: %d  (4 bits)", vps->vps_video_parameter_set_id); AddTreeItem(ivps);
+    my_printf_flag("vps_base_layer_internal_flag", vps->vps_base_layer_internal_flag); AddTreeItem(ivps);
+    my_printf_flag("vps_base_layer_available_flag", vps->vps_base_layer_available_flag); AddTreeItem(ivps);
+    my_printf("vps_max_layers_minus1: %d  (6 bits)", vps->vps_max_layers_minus1); AddTreeItem(ivps);
+    my_printf("vps_max_sub_layers_minus1: %d  (3 bits)", vps->vps_max_sub_layers_minus1); AddTreeItem(ivps);
+    my_printf_flag("vps_temporal_id_nesting_flag", vps->vps_temporal_id_nesting_flag); AddTreeItem(ivps);
+    my_printf("vps_reserved_0xffff_16bits: %d  (16 bits)", vps->vps_reserved_0xffff_16bits); AddTreeItem(ivps);
     // ptl
     my_printf("profile_tier_level()");
     HTREEITEM iptl = AddTreeItem(ivps);
-    h265_debug_ptl_t(&vps->ptl, 1, vps->vps_max_layers_minus1, iptl);
+    h265_debug_ptl(&vps->ptl, 1, vps->vps_max_layers_minus1, iptl);
     
-    my_printf("vps_sub_layer_ordering_info_present_flag: %d", vps->vps_sub_layer_ordering_info_present_flag);
+    my_printf_flag("vps_sub_layer_ordering_info_present_flag", vps->vps_sub_layer_ordering_info_present_flag);
     AddTreeItem(ivps);
     
     if (vps->vps_sub_layer_ordering_info_present_flag)
@@ -836,53 +861,55 @@ void CNalParser::h265_debug_vps_t(h265_vps_t* vps, HTREEITEM root)
         for (i = (vps->vps_sub_layer_ordering_info_present_flag ? 0 : vps->vps_max_sub_layers_minus1);
             i <= vps->vps_max_sub_layers_minus1; i++ )
         {
-            my_printf("vps_max_dec_pic_buffering_minus1[%d]: %d", i, vps->vps_max_dec_pic_buffering_minus1[i]); AddTreeItem(isub);
-            my_printf("vps_max_num_reorder_pics[%d]: %d", i, vps->vps_max_num_reorder_pics[i]); AddTreeItem(isub);
-            my_printf("vps_max_latency_increase_plus1[%d]: %d", i, vps->vps_max_latency_increase_plus1[i]); AddTreeItem(isub);
+            my_printf("vps_max_dec_pic_buffering_minus1[%d]: %d  (v bits)", i, vps->vps_max_dec_pic_buffering_minus1[i]); AddTreeItem(isub);
+            my_printf("vps_max_num_reorder_pics[%d]: %d  (v bits)", i, vps->vps_max_num_reorder_pics[i]); AddTreeItem(isub);
+            my_printf("vps_max_latency_increase_plus1[%d]: %d  (v bits)", i, vps->vps_max_latency_increase_plus1[i]); AddTreeItem(isub);
         }
     }
 
-    my_printf("vps_max_layer_id: %d", vps->vps_max_layer_id); AddTreeItem(ivps);
-    my_printf("vps_num_layer_sets_minus1: %d", vps->vps_num_layer_sets_minus1); AddTreeItem(ivps);
+    my_printf("vps_max_layer_id: %d  (6 bits)", vps->vps_max_layer_id); AddTreeItem(ivps);
+    my_printf("vps_num_layer_sets_minus1: %d  (v bits)", vps->vps_num_layer_sets_minus1); AddTreeItem(ivps);
     for (i = 1; i <= vps->vps_num_layer_sets_minus1; i++)
     {
         for (j = 0; j <= vps->vps_max_layer_id; j++)
         {
-            my_printf("layer_id_included_flag[%d][%d]: %d", i, j, vps->layer_id_included_flag[i][j]);AddTreeItem(ivps);
+            my_printf_flag3("layer_id_included_flag", i, j, vps->layer_id_included_flag[i][j]);AddTreeItem(ivps);
         }
     }
-    my_printf("vps_timing_info_present_flag: %d", vps->vps_timing_info_present_flag); AddTreeItem(ivps);
+    my_printf_flag("vps_timing_info_present_flag", vps->vps_timing_info_present_flag);
+    HTREEITEM tipf = AddTreeItem(ivps);
     if (vps->vps_timing_info_present_flag)
     {
-        my_printf("timing_info");
-        HTREEITEM itime = AddTreeItem(ivps);
-        my_printf("vps_num_units_in_tick: %d", vps->vps_num_units_in_tick); AddTreeItem(itime);
-        my_printf("vps_time_scale: %d", vps->vps_time_scale); AddTreeItem(itime);
-        my_printf("vps_poc_proportional_to_timing_flag: %d", vps->vps_poc_proportional_to_timing_flag); AddTreeItem(itime);
+        my_printf("vps_num_units_in_tick: %d  (32 bits)", vps->vps_num_units_in_tick); AddTreeItem(tipf);
+        my_printf("vps_time_scale: %d  (32 bits)", vps->vps_time_scale); AddTreeItem(tipf);
+        my_printf_flag("vps_poc_proportional_to_timing_flag", vps->vps_poc_proportional_to_timing_flag);
+        HTREEITEM ppttf = AddTreeItem(tipf);
         if (vps->vps_poc_proportional_to_timing_flag)
         {
-            my_printf("vps_num_ticks_poc_diff_one_minus1: %d", vps->vps_num_ticks_poc_diff_one_minus1); AddTreeItem(itime);
+            my_printf("vps_num_ticks_poc_diff_one_minus1: %d  (v bits)", vps->vps_num_ticks_poc_diff_one_minus1); AddTreeItem(ppttf);
         }
+        my_printf("vps_num_hrd_parameters: %d  (v bits)", vps->vps_num_hrd_parameters); AddTreeItem(tipf);
         for (i = 0; i < vps->vps_num_hrd_parameters; i++)
         {
-            my_printf("hrd_layer_set_idx[%d]: %d", i, vps->hrd_layer_set_idx[i]); AddTreeItem(itime);
+            my_printf("hrd_layer_set_idx[%d]: %d  (v bits)", i, vps->hrd_layer_set_idx[i]); AddTreeItem(tipf);
             if (i > 0)
             {
-                my_printf("cprms_present_flag[%d]: %d", i, vps->cprms_present_flag[i]); AddTreeItem(itime);
+                my_printf_flag2("cprms_present_flag", i, vps->cprms_present_flag[i]); AddTreeItem(tipf);
             }
             //  hrd_parameters()
-            h265_debug_hrd_parameters_t(&(vps->hrd_parameters), vps->cprms_present_flag[i], vps->vps_max_sub_layers_minus1, itime);
+            h265_debug_hrd_parameters(&(vps->hrd_parameters), vps->cprms_present_flag[i], vps->vps_max_sub_layers_minus1, tipf);
         }
     }
-    my_printf("vps_extension_flag: %d", vps->vps_extension_flag); AddTreeItem(ivps);
+    my_printf_flag("vps_extension_flag", vps->vps_extension_flag); AddTreeItem(ivps);
     if (vps->vps_extension_flag)
     {
         // do nothing...
     }
+
+    my_printf("rbsp_slice_segment_trailing_bits()"); AddTreeItem(ivps);
 }
 
-#if 0
-void CNalParser::h265_debug_scaling_list(scaling_list_data_t* sld)
+void CNalParser::h265_debug_scaling_list(scaling_list_data_t* sld, HTREEITEM root)
 {
     for(int sizeId = 0; sizeId < 4; sizeId++)
     {
@@ -908,47 +935,51 @@ void CNalParser::h265_debug_scaling_list(scaling_list_data_t* sld)
         }
     }
 }
-void CNalParser::h265_debug_short_term_ref_pic_set(h265_sps_t* sps, st_ref_pic_set_t*st, referencePictureSets_t* rps, int stRpsIdx)
+void CNalParser::h265_debug_short_term_ref_pic_set(h265_sps_t* sps, st_ref_pic_set_t*st, referencePictureSets_t* rps, int stRpsIdx, HTREEITEM root)
 {
-    my_printf("st_ref_pic_set[%d]", stRpsIdx);
+    my_printf("short_term_ref_pic_set( %d )", stRpsIdx);
+    HTREEITEM srps = AddTreeItem(root);
 
     if (stRpsIdx != 0)
-        my_printf("inter_ref_pic_set_prediction_flag: %d", st->inter_ref_pic_set_prediction_flag);
+    {
+        my_printf("inter_ref_pic_set_prediction_flag", st->inter_ref_pic_set_prediction_flag);
+        AddTreeItem(srps);
+    }
     if (st->inter_ref_pic_set_prediction_flag)
     {
-        my_printf("delta_idx_minus1: %d", st->delta_idx_minus1);
-        my_printf("delta_rps_sign: %d", st->delta_rps_sign);
-        my_printf("abs_delta_rps_minus1: %d", st->abs_delta_rps_minus1);
+        my_printf("delta_idx_minus1: %d (v bits)", st->delta_idx_minus1); AddTreeItem(srps);
+        my_printf("delta_rps_sign: %d (1 bit)", st->delta_rps_sign); AddTreeItem(srps);
+        my_printf("abs_delta_rps_minus1: %d (v bits)", st->abs_delta_rps_minus1); AddTreeItem(srps);
         int rIdx = stRpsIdx - 1 - st->delta_idx_minus1;
         referencePictureSets_t* rpsRef = &sps->m_RPSList[rIdx];
         for (int j = 0; j <= rpsRef->m_numberOfPictures; j++)
         {
-            my_printf("used_by_curr_pic_flag[%d]: %d", j, st->used_by_curr_pic_flag[j]);
+            my_printf_flag2("used_by_curr_pic_flag", j, st->used_by_curr_pic_flag[j]); AddTreeItem(srps);
             if (!st->used_by_curr_pic_flag[j])
             {
-                my_printf("use_delta_flag[%d]: %d", j, st->use_delta_flag[j]);
+                my_printf_flag2("use_delta_flag", j, st->use_delta_flag[j]); AddTreeItem(srps);
             }
         }
     }
     else
     {
-        my_printf("num_negative_pics: %d", st->num_negative_pics);
-        my_printf("num_positive_pics: %d", st->num_positive_pics);
+        my_printf("num_negative_pics: %d (v bits)", st->num_negative_pics); AddTreeItem(srps);
+        my_printf("num_positive_pics: %d (v bits)", st->num_positive_pics); AddTreeItem(srps);
         for (int i = 0; i < st->num_negative_pics; i++)
         {
-            my_printf("delta_poc_s0_minus1[%d]: %d", i, st->delta_poc_s0_minus1[i]);
-            my_printf("used_by_curr_pic_s0_flag[%d]: %d", i, st->used_by_curr_pic_s0_flag[i]);
+            my_printf("delta_poc_s0_minus1[%d]: %d  (v bits)", i, st->delta_poc_s0_minus1[i]); AddTreeItem(srps);
+            my_printf_flag2("used_by_curr_pic_s0_flag", i, st->used_by_curr_pic_s0_flag[i]); AddTreeItem(srps);
         }
         for (int i = 0; i < st->num_positive_pics; i++)
         {
-            my_printf("delta_poc_s1_minus1[%d]: %d", i, st->delta_poc_s1_minus1[i]);
-            my_printf("used_by_curr_pic_s1_flag[%d]: %d", i, st->used_by_curr_pic_s1_flag[i]);
+            my_printf("delta_poc_s1_minus1[%d]: %d (v bits)", i, st->delta_poc_s1_minus1[i]); AddTreeItem(srps);
+            my_printf_flag2("used_by_curr_pic_s1_flag", i, st->used_by_curr_pic_s1_flag[i]); AddTreeItem(srps);
         }
     }
 }
-void CNalParser::h265_debug_vui_parameters(vui_parameters_t* vui, int maxNumSubLayersMinus1)
+void CNalParser::h265_debug_vui_parameters(vui_parameters_t* vui, int maxNumSubLayersMinus1, HTREEITEM root)
 {
-    my_printf("aspect_ratio_info_present_flag: %d", vui->aspect_ratio_info_present_flag);
+    my_printf("aspect_ratio_info_present_flag", vui->aspect_ratio_info_present_flag);
     if (vui->aspect_ratio_info_present_flag)
     {
         my_printf("aspect_ratio_idc: %d", vui->aspect_ratio_idc);
@@ -958,17 +989,17 @@ void CNalParser::h265_debug_vui_parameters(vui_parameters_t* vui, int maxNumSubL
             my_printf("sar_height: %d", vui->sar_height);
         }
     }
-    my_printf("overscan_info_present_flag: %d", vui->overscan_info_present_flag);
+    my_printf("overscan_info_present_flag", vui->overscan_info_present_flag);
     if (vui->overscan_info_present_flag)
     {
-        my_printf("overscan_appropriate_flag: %d", vui->overscan_appropriate_flag);
+        my_printf("overscan_appropriate_flag", vui->overscan_appropriate_flag);
     }
-    my_printf("video_signal_type_present_flag: %d", vui->video_signal_type_present_flag);
+    my_printf("video_signal_type_present_flag", vui->video_signal_type_present_flag);
     if (vui->video_signal_type_present_flag)
     {
         my_printf("video_format: %d", vui->video_format);
-        my_printf("video_full_range_flag: %d", vui->video_full_range_flag);
-        my_printf("colour_description_present_flag: %d", vui->colour_description_present_flag);
+        my_printf("video_full_range_flag", vui->video_full_range_flag);
+        my_printf("colour_description_present_flag", vui->colour_description_present_flag);
         if (vui->colour_description_present_flag)
         {
             my_printf("colour_primaries: %d", vui->colour_primaries);
@@ -976,17 +1007,17 @@ void CNalParser::h265_debug_vui_parameters(vui_parameters_t* vui, int maxNumSubL
             my_printf("matrix_coeffs: %d", vui->matrix_coeffs);
         }
     }
-    my_printf("chroma_loc_info_present_flag: %d", vui->chroma_loc_info_present_flag);
+    my_printf("chroma_loc_info_present_flag", vui->chroma_loc_info_present_flag);
 
     if (vui->chroma_loc_info_present_flag)
     {
         my_printf("chroma_sample_loc_type_top_field: %d", vui->chroma_sample_loc_type_top_field);
         my_printf("chroma_sample_loc_type_bottom_field: %d", vui->chroma_sample_loc_type_bottom_field);
     }
-    my_printf("neutral_chroma_indication_flag: %d", vui->neutral_chroma_indication_flag);
-    my_printf("field_seq_flag: %d", vui->field_seq_flag);
-    my_printf("frame_field_info_present_flag: %d", vui->frame_field_info_present_flag);
-    my_printf("default_display_window_flag: %d", vui->default_display_window_flag);
+    my_printf("neutral_chroma_indication_flag", vui->neutral_chroma_indication_flag);
+    my_printf("field_seq_flag", vui->field_seq_flag);
+    my_printf("frame_field_info_present_flag", vui->frame_field_info_present_flag);
+    my_printf("default_display_window_flag", vui->default_display_window_flag);
     if (vui->default_display_window_flag)
     {
         my_printf("def_disp_win_left_offset: %d", vui->def_disp_win_left_offset);
@@ -994,28 +1025,28 @@ void CNalParser::h265_debug_vui_parameters(vui_parameters_t* vui, int maxNumSubL
         my_printf("def_disp_win_right_offset: %d", vui->def_disp_win_right_offset);
         my_printf("def_disp_win_bottom_offset: %d", vui->def_disp_win_bottom_offset);
     }
-    my_printf("vui_timing_info_present_flag: %d", vui->vui_timing_info_present_flag);
+    my_printf("vui_timing_info_present_flag", vui->vui_timing_info_present_flag);
     if (vui->vui_timing_info_present_flag)
     {
         my_printf("vui_num_units_in_tick: %d", vui->vui_num_units_in_tick);
         my_printf("vui_time_scale: %d", vui->vui_time_scale);
-        my_printf("vui_poc_proportional_to_timing_flag: %d", vui->vui_poc_proportional_to_timing_flag);
+        my_printf("vui_poc_proportional_to_timing_flag", vui->vui_poc_proportional_to_timing_flag);
         if (vui->vui_poc_proportional_to_timing_flag)
         {
             my_printf("vui_num_ticks_poc_diff_one_minus1: %d", vui->vui_num_ticks_poc_diff_one_minus1);
         }
-        my_printf("vui_hrd_parameters_present_flag: %d", vui->vui_hrd_parameters_present_flag);
+        my_printf("vui_hrd_parameters_present_flag", vui->vui_hrd_parameters_present_flag);
         if (vui->vui_hrd_parameters_present_flag)
         {
             h265_debug_hrd_parameters(&vui->hrd_parameters, 1, maxNumSubLayersMinus1);
         }
     }
-    my_printf("bitstream_restriction_flag: %d", vui->bitstream_restriction_flag);
+    my_printf("bitstream_restriction_flag", vui->bitstream_restriction_flag);
     if (vui->bitstream_restriction_flag)
     {
-        my_printf("tiles_fixed_structure_flag: %d", vui->tiles_fixed_structure_flag);
-        my_printf("motion_vectors_over_pic_boundaries_flag: %d", vui->motion_vectors_over_pic_boundaries_flag);
-        my_printf("restricted_ref_pic_lists_flag: %d", vui->restricted_ref_pic_lists_flag);
+        my_printf("tiles_fixed_structure_flag", vui->tiles_fixed_structure_flag);
+        my_printf("motion_vectors_over_pic_boundaries_flag", vui->motion_vectors_over_pic_boundaries_flag);
+        my_printf("restricted_ref_pic_lists_flag", vui->restricted_ref_pic_lists_flag);
         my_printf("min_spatial_segmentation_idc: %d", vui->min_spatial_segmentation_idc);
         my_printf("max_bytes_per_pic_denom: %d", vui->max_bytes_per_pic_denom);
         my_printf("max_bits_per_min_cu_denom: %d", vui->max_bits_per_min_cu_denom);
@@ -1024,12 +1055,12 @@ void CNalParser::h265_debug_vui_parameters(vui_parameters_t* vui, int maxNumSubL
     }
 }
 // sps
-void CNalParser::h265_debug_sps(h265_sps_t* sps)
+void CNalParser::h265_debug_sps(h265_sps_t* sps, HTREEITEM root)
 {
     my_printf("======= HEVC SPS =======");
     my_printf("sps_video_parameter_set_id: %d", sps->sps_video_parameter_set_id);
     my_printf("sps_max_sub_layers_minus1: %d", sps->sps_max_sub_layers_minus1);
-    my_printf("sps_temporal_id_nesting_flag: %d", sps->sps_temporal_id_nesting_flag);
+    my_printf("sps_temporal_id_nesting_flag", sps->sps_temporal_id_nesting_flag);
     // ptl
     my_printf("profile_tier_level()");
     h265_debug_ptl(&sps->ptl, 1, sps->sps_max_sub_layers_minus1);
@@ -1038,11 +1069,11 @@ void CNalParser::h265_debug_sps(h265_sps_t* sps)
     my_printf("chroma_format_idc: %d", sps->chroma_format_idc);
     if (sps->chroma_format_idc == 3)
     {
-        my_printf("separate_colour_plane_flag: %d", sps->separate_colour_plane_flag);
+        my_printf("separate_colour_plane_flag", sps->separate_colour_plane_flag);
     }
     my_printf("pic_width_in_luma_samples: %d", sps->pic_width_in_luma_samples);
     my_printf("pic_height_in_luma_samples: %d", sps->pic_height_in_luma_samples);
-    my_printf("conformance_window_flag: %d", sps->conformance_window_flag);
+    my_printf("conformance_window_flag", sps->conformance_window_flag);
     if (sps->conformance_window_flag)
     {
         my_printf("conf_win_left_offset: %d", sps->conf_win_left_offset);
@@ -1053,7 +1084,7 @@ void CNalParser::h265_debug_sps(h265_sps_t* sps)
     my_printf("bit_depth_luma_minus8: %d", sps->bit_depth_luma_minus8);
     my_printf("bit_depth_chroma_minus8: %d", sps->bit_depth_chroma_minus8);
     my_printf("log2_max_pic_order_cnt_lsb_minus4: %d", sps->log2_max_pic_order_cnt_lsb_minus4);
-    my_printf("sps_sub_layer_ordering_info_present_flag: %d", sps->sps_sub_layer_ordering_info_present_flag);
+    my_printf("sps_sub_layer_ordering_info_present_flag", sps->sps_sub_layer_ordering_info_present_flag);
     for (int i = (sps->sps_sub_layer_ordering_info_present_flag ? 0 : sps->sps_max_sub_layers_minus1);
         i <= sps->sps_max_sub_layers_minus1; i++ )
     {
@@ -1067,10 +1098,10 @@ void CNalParser::h265_debug_sps(h265_sps_t* sps)
     my_printf("log2_diff_max_min_luma_transform_block_size: %d", sps->log2_diff_max_min_luma_transform_block_size);
     my_printf("max_transform_hierarchy_depth_inter: %d", sps->max_transform_hierarchy_depth_inter);
     my_printf("max_transform_hierarchy_depth_intra: %d", sps->max_transform_hierarchy_depth_intra);
-    my_printf("scaling_list_enabled_flag: %d", sps->scaling_list_enabled_flag);
+    my_printf("scaling_list_enabled_flag", sps->scaling_list_enabled_flag);
     if (sps->scaling_list_enabled_flag)
     {
-        my_printf("sps_scaling_list_data_present_flag: %d", sps->sps_scaling_list_data_present_flag);
+        my_printf("sps_scaling_list_data_present_flag", sps->sps_scaling_list_data_present_flag);
         {
             if (sps->sps_scaling_list_data_present_flag)
             {
@@ -1079,16 +1110,16 @@ void CNalParser::h265_debug_sps(h265_sps_t* sps)
         }
     }
 
-    my_printf("amp_enabled_flag: %d", sps->amp_enabled_flag);
-    my_printf("sample_adaptive_offset_enabled_flag: %d", sps->sample_adaptive_offset_enabled_flag);
-    my_printf("pcm_enabled_flag: %d", sps->pcm_enabled_flag);
+    my_printf("amp_enabled_flag", sps->amp_enabled_flag);
+    my_printf("sample_adaptive_offset_enabled_flag", sps->sample_adaptive_offset_enabled_flag);
+    my_printf("pcm_enabled_flag", sps->pcm_enabled_flag);
     if (sps->pcm_enabled_flag)
     {
         my_printf("pcm_sample_bit_depth_luma_minus1: %d", sps->pcm_sample_bit_depth_luma_minus1);
         my_printf("pcm_sample_bit_depth_chroma_minus1: %d", sps->pcm_sample_bit_depth_chroma_minus1);
         my_printf("log2_min_pcm_luma_coding_block_size_minus3: %d", sps->log2_min_pcm_luma_coding_block_size_minus3);
         my_printf("log2_diff_max_min_pcm_luma_coding_block_size: %d", sps->log2_diff_max_min_pcm_luma_coding_block_size);
-        my_printf("pcm_loop_filter_disabled_flag: %d", sps->pcm_loop_filter_disabled_flag);
+        my_printf("pcm_loop_filter_disabled_flag", sps->pcm_loop_filter_disabled_flag);
     }
     my_printf("num_short_term_ref_pic_sets: %d", sps->num_short_term_ref_pic_sets);
     referencePictureSets_t* rps = NULL;
@@ -1099,7 +1130,7 @@ void CNalParser::h265_debug_sps(h265_sps_t* sps)
         rps = &sps->m_RPSList[i];
         h265_debug_short_term_ref_pic_set(sps, st, rps, i);
     }
-    my_printf("long_term_ref_pics_present_flag: %d", sps->long_term_ref_pics_present_flag);
+    my_printf("long_term_ref_pics_present_flag", sps->long_term_ref_pics_present_flag);
     if (sps->long_term_ref_pics_present_flag)
     {
         my_printf("num_long_term_ref_pics_sps: %d", sps->num_long_term_ref_pics_sps);
@@ -1109,33 +1140,33 @@ void CNalParser::h265_debug_sps(h265_sps_t* sps)
             my_printf("used_by_curr_pic_lt_sps_flag[%d]: %d", i, sps->used_by_curr_pic_lt_sps_flag[i]);
         }
     }
-    my_printf("sps_temporal_mvp_enabled_flag: %d", sps->sps_temporal_mvp_enabled_flag);
-    my_printf("strong_intra_smoothing_enabled_flag: %d", sps->strong_intra_smoothing_enabled_flag);
-    my_printf("vui_parameters_present_flag: %d", sps->vui_parameters_present_flag);
+    my_printf("sps_temporal_mvp_enabled_flag", sps->sps_temporal_mvp_enabled_flag);
+    my_printf("strong_intra_smoothing_enabled_flag", sps->strong_intra_smoothing_enabled_flag);
+    my_printf("vui_parameters_present_flag", sps->vui_parameters_present_flag);
     if (sps->vui_parameters_present_flag)
     {
         // vui
         h265_debug_vui_parameters(&sps->vui, sps->sps_max_sub_layers_minus1);
     }
-    my_printf("sps_extension_present_flag: %d", sps->sps_extension_present_flag);
+    my_printf("sps_extension_present_flag", sps->sps_extension_present_flag);
     if (sps->sps_extension_present_flag)
     {
-        my_printf("sps_range_extension_flag: %d", sps->sps_range_extension_flag);
-        my_printf("sps_multilayer_extension_flag: %d", sps->sps_multilayer_extension_flag);
-        my_printf("sps_3d_extension_flag: %d", sps->sps_3d_extension_flag);
+        my_printf("sps_range_extension_flag", sps->sps_range_extension_flag);
+        my_printf("sps_multilayer_extension_flag", sps->sps_multilayer_extension_flag);
+        my_printf("sps_3d_extension_flag", sps->sps_3d_extension_flag);
         my_printf("sps_extension_5bits: %d", sps->sps_extension_5bits);
     }
     if (sps->sps_range_extension_flag)
     {
-        my_printf("transform_skip_rotation_enabled_flag: %d", sps->sps_range_extension.transform_skip_rotation_enabled_flag);
-        my_printf("transform_skip_context_enabled_flag: %d", sps->sps_range_extension.transform_skip_context_enabled_flag);
-        my_printf("implicit_rdpcm_enabled_flag: %d", sps->sps_range_extension.implicit_rdpcm_enabled_flag);
-        my_printf("explicit_rdpcm_enabled_flag: %d", sps->sps_range_extension.explicit_rdpcm_enabled_flag);
-        my_printf("extended_precision_processing_flag: %d", sps->sps_range_extension.extended_precision_processing_flag);
-        my_printf("intra_smoothing_disabled_flag: %d", sps->sps_range_extension.intra_smoothing_disabled_flag);
-        my_printf("high_precision_offsets_enabled_flag: %d", sps->sps_range_extension.high_precision_offsets_enabled_flag);
-        my_printf("persistent_rice_adaptation_enabled_flag: %d", sps->sps_range_extension.persistent_rice_adaptation_enabled_flag);
-        my_printf("cabac_bypass_alignment_enabled_flag: %d", sps->sps_range_extension.cabac_bypass_alignment_enabled_flag);
+        my_printf("transform_skip_rotation_enabled_flag", sps->sps_range_extension.transform_skip_rotation_enabled_flag);
+        my_printf("transform_skip_context_enabled_flag", sps->sps_range_extension.transform_skip_context_enabled_flag);
+        my_printf("implicit_rdpcm_enabled_flag", sps->sps_range_extension.implicit_rdpcm_enabled_flag);
+        my_printf("explicit_rdpcm_enabled_flag", sps->sps_range_extension.explicit_rdpcm_enabled_flag);
+        my_printf("extended_precision_processing_flag", sps->sps_range_extension.extended_precision_processing_flag);
+        my_printf("intra_smoothing_disabled_flag", sps->sps_range_extension.intra_smoothing_disabled_flag);
+        my_printf("high_precision_offsets_enabled_flag", sps->sps_range_extension.high_precision_offsets_enabled_flag);
+        my_printf("persistent_rice_adaptation_enabled_flag", sps->sps_range_extension.persistent_rice_adaptation_enabled_flag);
+        my_printf("cabac_bypass_alignment_enabled_flag", sps->sps_range_extension.cabac_bypass_alignment_enabled_flag);
     }
     if (sps->sps_multilayer_extension_flag)
     {
@@ -1146,7 +1177,7 @@ void CNalParser::h265_debug_sps(h265_sps_t* sps)
 }
 
 // pps
-void CNalParser::h265_debug_pps(h265_pps_t* pps)
+void CNalParser::h265_debug_pps(h265_pps_t* pps, HTREEITEM root)
 {
     my_printf("======= HEVC PPS =======");
     my_printf("pps_pic_parameter_set_id: %d", pps->pps_pic_parameter_set_id);
@@ -1245,7 +1276,7 @@ void CNalParser::h265_debug_pps(h265_pps_t* pps)
 }
 
 // aud
-void CNalParser::h265_debug_aud(h265_aud_t* aud)
+void CNalParser::h265_debug_aud(h265_aud_t* aud, HTREEITEM root)
 {
     my_printf("======= HEVC AUD =======");
     const char* pic_type;
@@ -1260,7 +1291,7 @@ void CNalParser::h265_debug_aud(h265_aud_t* aud)
 }
 
 // sei
-void CNalParser::h265_debug_seis(h265_stream_t* h)
+void CNalParser::h265_debug_seis(h265_stream_t* h, HTREEITEM root)
 {
     h265_sei_t** seis = h->seis;
     int num_seis = h->num_seis;
@@ -1358,7 +1389,7 @@ void CNalParser::h265_debug_seis(h265_stream_t* h)
     }
 }
 
-void CNalParser::h265_debug_ref_pic_lists_modification(h265_slice_header_t* hrd)
+void CNalParser::h265_debug_ref_pic_lists_modification(h265_slice_header_t* hrd, HTREEITEM root)
 {
     my_printf("ref_pic_list_modification_flag_l0: %d", hrd->ref_pic_lists_modification.ref_pic_list_modification_flag_l0);
     if (hrd->ref_pic_lists_modification.ref_pic_list_modification_flag_l0)
@@ -1373,39 +1404,57 @@ void CNalParser::h265_debug_ref_pic_lists_modification(h265_slice_header_t* hrd)
             my_printf("list_entry_l1[%d]: %d", i, hrd->ref_pic_lists_modification.list_entry_l1[i]);
     }
 }
-void CNalParser::h265_debug_pred_weight_table(h265_stream_t* h)
+void CNalParser::h265_debug_pred_weight_table(h265_stream_t* h, HTREEITEM root)
 {
     pred_weight_table_t* pwt = &h->sh->pred_weight_table;
     h265_sps_t* sps = h->sps;
-    int l0_size = h->sh->num_ref_idx_l0_active_minus1+1;
-    int l1_size = h->sh->num_ref_idx_l1_active_minus1+1;
 
     my_printf("pred_weight_table()");
+    HTREEITEM ipwt = AddTreeItem(root);
 
-    my_printf("luma_log2_weight_denom: %d", pwt->luma_log2_weight_denom);
+    my_printf("luma_log2_weight_denom: %d  (v bits)", pwt->luma_log2_weight_denom); AddTreeItem(ipwt);
     if (h->sps->chroma_format_idc != 0)
-        my_printf("delta_chroma_log2_weight_denom: %d", pwt->delta_chroma_log2_weight_denom);
+    {
+        my_printf("delta_chroma_log2_weight_denom: %d  (v bits)", pwt->delta_chroma_log2_weight_denom);
+        AddTreeItem(ipwt);
+    }
+    // to check
+    /*
+    HTREEITEM nria;
+    if (h->sh->num_ref_idx_l0_active_minus1 >= 0)
+    {
+        my_printf("NumRefIdxL0Active");
+        nria = AddTreeItem(ipwt);
+    }
+    */
     for (int i = 0; i <= h->sh->num_ref_idx_l0_active_minus1; i++)
-        my_printf("luma_weight_l0_flag[%d]: %d", i, pwt->luma_weight_l0_flag[i]);
+    {
+        my_printf_flag2("luma_weight_l0_flag", i, pwt->luma_weight_l0_flag[i]);
+        AddTreeItem(ipwt);
+    }
     if (h->sps->chroma_format_idc != 0)
     {
         for (int i = 0; i <= h->sh->num_ref_idx_l0_active_minus1; i++)
-            my_printf("chroma_weight_l0_flag[%d]: %d", i, pwt->chroma_weight_l0_flag[i]);
+        {
+            my_printf_flag2("chroma_weight_l0_flag", i, pwt->chroma_weight_l0_flag[i]);
+            AddTreeItem(ipwt);
+        }
     }
+
 
     for (int i = 0; i <= h->sh->num_ref_idx_l0_active_minus1; i++)
     {
         if (pwt->luma_weight_l0_flag[i])
         {
-            my_printf("delta_luma_weight_l0[%d]: %d", i, pwt->delta_luma_weight_l0[i]);
-            my_printf("luma_offset_l0[%d]: %d", i, pwt->luma_offset_l0[i]);
+            my_printf("delta_luma_weight_l0[%d]: %d  (v bits)", i, pwt->delta_luma_weight_l0[i]);AddTreeItem(ipwt);
+            my_printf("luma_offset_l0[%d]: %d  (v bits)", i, pwt->luma_offset_l0[i]);AddTreeItem(ipwt);
         }
         if (pwt->chroma_weight_l0_flag[i])
         {
             for (int j = 0; j < 2; j++)
             {
-                my_printf("delta_chroma_weight_l0[%d][%d]: %d", i, j, pwt->delta_chroma_weight_l0[i][j]);
-                my_printf("delta_chroma_offset_l0[%d][%d]: %d", i, j, pwt->delta_chroma_offset_l0[i][j]);
+                my_printf("delta_chroma_weight_l0[%d][%d]: %d  (v bits)", i, j, pwt->delta_chroma_weight_l0[i][j]);AddTreeItem(ipwt);
+                my_printf("delta_chroma_offset_l0[%d][%d]: %d  (v bits)", i, j, pwt->delta_chroma_offset_l0[i][j]);AddTreeItem(ipwt);
             }
         }
     }
@@ -1413,31 +1462,41 @@ void CNalParser::h265_debug_pred_weight_table(h265_stream_t* h)
     if (h->sh->slice_type == H265_SH_SLICE_TYPE_B)
     {
         for (int i = 0; i <= h->sh->num_ref_idx_l1_active_minus1; i++)
-            my_printf("luma_weight_l1_flag[%d]: %d", i, pwt->luma_weight_l1_flag[i]);
+        {
+            my_printf_flag2("luma_weight_l1_flag", i, pwt->luma_weight_l1_flag[i]);
+            AddTreeItem(ipwt);
+        }
         if (h->sps->chroma_format_idc != 0)
+        {
             for (int i = 0; i <= h->sh->num_ref_idx_l1_active_minus1; i++)
-                my_printf("chroma_weight_l1_flag[%d]: %d", i, pwt->chroma_weight_l1_flag[i]);
+            {
+                my_printf_flag2("chroma_weight_l1_flag", i, pwt->chroma_weight_l1_flag[i]);
+                AddTreeItem(ipwt);
+            }
+        }
         for (int i = 0; i <= h->sh->num_ref_idx_l1_active_minus1; i++)
         {
             if (pwt->luma_weight_l1_flag[i])
             {
-                my_printf("delta_luma_weight_l1[%d]: %d", i, pwt->delta_luma_weight_l1[i]);
-                my_printf("luma_offset_l1[%d]: %d", i, pwt->luma_offset_l1[i]);
+                my_printf("delta_luma_weight_l1[%d]: %d  (v bits)", i, pwt->delta_luma_weight_l1[i]);AddTreeItem(ipwt);
+                my_printf("luma_offset_l1[%d]: %d  (v bits)", i, pwt->luma_offset_l1[i]);AddTreeItem(ipwt);
                 
             }
             if (pwt->chroma_weight_l1_flag[i])
             {
                 for (int j = 0; j < 2; j++)
                 {
-                    my_printf("delta_chroma_weight_l1[%d][%d]: %d", i, j, pwt->delta_chroma_weight_l1[i][j]);
-                    my_printf("delta_chroma_offset_l1[%d][%d]: %d", i, j, pwt->delta_chroma_offset_l1[i][j]);
+                    my_printf("delta_chroma_weight_l1[%d][%d]: %d  (v bits)", i, j, pwt->delta_chroma_weight_l1[i][j]);
+                    AddTreeItem(ipwt);
+                    my_printf("delta_chroma_offset_l1[%d][%d]: %d  (v bits)", i, j, pwt->delta_chroma_offset_l1[i][j]);
+                    AddTreeItem(ipwt);
                 }
             }
         }
     }
 }
 
-void CNalParser::h265_debug_slice_header(h265_stream_t* h)
+void CNalParser::h265_debug_slice_header(h265_stream_t* h, HTREEITEM root)
 {
     h265_slice_header_t* hrd = h->sh;
     h265_sps_t* sps = NULL;
@@ -1446,159 +1505,214 @@ void CNalParser::h265_debug_slice_header(h265_stream_t* h)
     pps = h->pps = h->pps_table[hrd->slice_pic_parameter_set_id];
     sps = h->sps = h->sps_table[pps->pps_seq_parameter_set_id];
 
-    my_printf("======= HEVC Slice Header =======");
-    my_printf("first_slice_segment_in_pic_flag: %d", hrd->first_slice_segment_in_pic_flag);
+    my_printf("slice_segment_layer_rbsp()");
+    HTREEITEM islce = AddTreeItem(root);
+
+    my_printf("slice_segment_header()");
+    HTREEITEM ihrd = AddTreeItem(islce);
+
+    my_printf_flag("first_slice_segment_in_pic_flag", hrd->first_slice_segment_in_pic_flag); AddTreeItem(ihrd);
     if (nal_unit_type >= NAL_UNIT_CODED_SLICE_BLA_W_LP && nal_unit_type <= NAL_UNIT_RESERVED_IRAP_VCL23)
-        my_printf("no_output_of_prior_pics_flag: %d", hrd->no_output_of_prior_pics_flag);
-    my_printf("slice_pic_parameter_set_id: %d", hrd->slice_pic_parameter_set_id);
+    {
+        my_printf_flag("no_output_of_prior_pics_flag", hrd->no_output_of_prior_pics_flag); AddTreeItem(ihrd);
+    }
+    my_printf("slice_pic_parameter_set_id: %d (v bits)", hrd->slice_pic_parameter_set_id); AddTreeItem(ihrd);
     if (!hrd->first_slice_segment_in_pic_flag)
     {
         if (pps->dependent_slice_segments_enabled_flag)
-            my_printf("dependent_slice_segment_flag: %d", hrd->dependent_slice_segment_flag);
-        my_printf("slice_segment_address: %d", hrd->slice_segment_address);
+        {
+            my_printf_flag("dependent_slice_segment_flag", hrd->dependent_slice_segment_flag); AddTreeItem(ihrd);
+        }
+        my_printf("slice_segment_address: %d (v %d bits)", hrd->slice_segment_address, hrd->slice_segment_address_bytes);
+        AddTreeItem(ihrd);
     }
 
     if (!hrd->dependent_slice_segment_flag)
     {
         my_printf("dependent_slice_segment_flag");
+        HTREEITEM dssf = AddTreeItem(ihrd);
         for (int i = 0; i < pps->num_extra_slice_header_bits; i++)
-            my_printf("slice_reserved_flag[%d]: %d", i, hrd->slice_reserved_flag[i]);
+        {
+            my_printf("slice_reserved_flag[%d]: %d", i, hrd->slice_reserved_flag[i]); // todo
+            AddTreeItem(dssf);
+        }
         const char* slice_type_name;
         switch(hrd->slice_type)
         {
             case H265_SH_SLICE_TYPE_P:  slice_type_name = "P slice"; break;
             case H265_SH_SLICE_TYPE_B:  slice_type_name = "B slice"; break;
             case H265_SH_SLICE_TYPE_I:  slice_type_name = "I slice"; break;
-            default:                   slice_type_name = "Unknown"; break;
+            default:                    slice_type_name = "Unknown"; break;
         }
-        my_printf("slice_type: %d (%s)", hrd->slice_type, slice_type_name);
+        my_printf("slice_type: %d (%s) (v bits)", hrd->slice_type, slice_type_name); AddTreeItem(dssf);
         if (pps->output_flag_present_flag)
-            my_printf("pic_output_flag: %d", hrd->pic_output_flag);
+        {
+            my_printf("pic_output_flag", hrd->pic_output_flag); AddTreeItem(dssf);
+        }
         if (sps->separate_colour_plane_flag == 1)
-            my_printf("colour_plane_id: %d", hrd->colour_plane_id);
+        {
+            my_printf("colour_plane_id: %d  (2 bits)", hrd->colour_plane_id); AddTreeItem(dssf);
+        }
         if (nal_unit_type == NAL_UNIT_CODED_SLICE_IDR_W_RADL || nal_unit_type == NAL_UNIT_CODED_SLICE_IDR_N_LP)
         {
             // do nothing...
         }
         else
         {
-            my_printf("slice_pic_order_cnt_lsb: %d", hrd->slice_pic_order_cnt_lsb);
-            my_printf("short_term_ref_pic_set_sps_flag: %d", hrd->short_term_ref_pic_set_sps_flag);
+            my_printf("slice_pic_order_cnt_lsb: %d  (v bits)", hrd->slice_pic_order_cnt_lsb);AddTreeItem(dssf);
+            my_printf_flag("short_term_ref_pic_set_sps_flag", hrd->short_term_ref_pic_set_sps_flag); AddTreeItem(dssf);
             if (!hrd->short_term_ref_pic_set_sps_flag)
             {
                 referencePictureSets_t* rps = &hrd->m_localRPS;
-                h265_debug_short_term_ref_pic_set(sps, &hrd->st_ref_pic_set, rps, sps->num_short_term_ref_pic_sets);
+                h265_debug_short_term_ref_pic_set(sps, &hrd->st_ref_pic_set, rps, sps->num_short_term_ref_pic_sets, dssf);
             }
             else if (sps->num_short_term_ref_pic_sets > 1)
             {
-                my_printf("short_term_ref_pic_set_idx: %d", hrd->short_term_ref_pic_set_idx);
+                my_printf("short_term_ref_pic_set_idx: %d  (v %d bits)", hrd->short_term_ref_pic_set_idx, hrd->short_term_ref_pic_set_idx_bytes);
+                AddTreeItem(dssf);
             }
             if (sps->long_term_ref_pics_present_flag)
             {
-                my_printf("num_long_term_sps: %d", hrd->num_long_term_sps);
-                my_printf("num_long_term_pics: %d", hrd->num_long_term_pics);
+                if (sps->num_long_term_ref_pics_sps > 0)
+                {
+                    my_printf("num_long_term_sps: %d  (v bits)", hrd->num_long_term_sps); AddTreeItem(dssf);
+                }
+                my_printf("num_long_term_pics: %d  (v bits)", hrd->num_long_term_pics); AddTreeItem(dssf);
                 for (int i = 0; i < (int)hrd->lt_idx_sps.size(); i++)
                 {
                     if (i < hrd->num_long_term_sps)
-                        my_printf("hrd->lt_idx_sps[%d]: %d", i, hrd->lt_idx_sps[i]);
+                    {
+                        if (sps->num_long_term_ref_pics_sps > 1)
+                        {
+                            my_printf("lt_idx_sps[%d]: %d  (v bits)", i, hrd->lt_idx_sps[i]); AddTreeItem(dssf);
+                        }
+                    }
                     else
                     {
-                        my_printf("hrd->poc_lsb_lt[%d]: %d", i, hrd->poc_lsb_lt[i]);
-                        my_printf("hrd->used_by_curr_pic_lt_flag[%d]: %d", i, hrd->used_by_curr_pic_lt_flag[i]);
+                        my_printf("poc_lsb_lt[%d]: %d  (v bits)", i, hrd->poc_lsb_lt[i]); AddTreeItem(dssf);
+                        my_printf_flag2("used_by_curr_pic_lt_flag", i, hrd->used_by_curr_pic_lt_flag[i]); AddTreeItem(dssf);
                     }
-                    my_printf("hrd->delta_poc_msb_present_flag[%d]: %d", i, hrd->delta_poc_msb_present_flag[i]);
+                    my_printf_flag2("delta_poc_msb_present_flag", i, hrd->delta_poc_msb_present_flag[i]); AddTreeItem(dssf);
                     if (hrd->delta_poc_msb_present_flag[i])
-                        my_printf("hrd->delta_poc_msb_cycle_lt[%d]: %d", i, hrd->delta_poc_msb_cycle_lt[i]);
+                    {
+                        my_printf("delta_poc_msb_cycle_lt[%d]: %d  (v bits)", i, hrd->delta_poc_msb_cycle_lt[i]);
+                        AddTreeItem(dssf);
+                    }
                 }
             }
             if(sps->sps_temporal_mvp_enabled_flag)
             {
-                my_printf("slice_temporal_mvp_enabled_flag: %d", hrd->slice_temporal_mvp_enabled_flag);
+                my_printf_flag("slice_temporal_mvp_enabled_flag", hrd->slice_temporal_mvp_enabled_flag); AddTreeItem(dssf);
             }
         }
 
         if(sps->sample_adaptive_offset_enabled_flag)
         {
-            my_printf("slice_sao_luma_flag: %d", hrd->slice_sao_luma_flag);
-            my_printf("slice_sao_chroma_flag: %d", hrd->slice_sao_chroma_flag);
+            my_printf_flag("slice_sao_luma_flag", hrd->slice_sao_luma_flag); AddTreeItem(dssf);
+            my_printf_flag("slice_sao_chroma_flag", hrd->slice_sao_chroma_flag); AddTreeItem(dssf);
         }
         if (hrd->slice_type == H265_SH_SLICE_TYPE_P || hrd->slice_type == H265_SH_SLICE_TYPE_B)
         {
-            my_printf("num_ref_idx_active_override_flag: %d", hrd->num_ref_idx_active_override_flag);
+            my_printf_flag("num_ref_idx_active_override_flag", hrd->num_ref_idx_active_override_flag);
+            HTREEITEM nriaof = AddTreeItem(dssf);
             if (hrd->num_ref_idx_active_override_flag)
             {
-                my_printf("num_ref_idx_l0_active_minus1: %d", hrd->num_ref_idx_l0_active_minus1);
+                my_printf("num_ref_idx_l0_active_minus1: %d  (v bits)", hrd->num_ref_idx_l0_active_minus1); AddTreeItem(nriaof);
                 if (hrd->slice_type == H265_SH_SLICE_TYPE_B)
-                    my_printf("num_ref_idx_l1_active_minus1: %d", hrd->num_ref_idx_l1_active_minus1);
+                {
+                    my_printf("num_ref_idx_l1_active_minus1: %d  (v bits)", hrd->num_ref_idx_l1_active_minus1); AddTreeItem(nriaof);
+                }
             }
             if(pps->lists_modification_present_flag)
             {
                 h265_debug_ref_pic_lists_modification(hrd);
             }
-            my_printf("mvd_l1_zero_flag: %d", hrd->mvd_l1_zero_flag);
+            my_printf_flag("mvd_l1_zero_flag", hrd->mvd_l1_zero_flag); AddTreeItem(dssf);
             if (pps->cabac_init_present_flag)
-                my_printf("cabac_init_flag: %d", hrd->cabac_init_flag);
+            {
+                my_printf_flag("cabac_init_flag", hrd->cabac_init_flag); AddTreeItem(dssf);
+            }
             if (hrd->slice_temporal_mvp_enabled_flag)
             {
                 if (hrd->slice_type == H265_SH_SLICE_TYPE_B)
-                    my_printf("collocated_from_l0_flag: %d", hrd->collocated_from_l0_flag);
+                {
+                    my_printf_flag("collocated_from_l0_flag", hrd->collocated_from_l0_flag); AddTreeItem(dssf);
+                }
                 if ((hrd->collocated_from_l0_flag && hrd->num_ref_idx_l0_active_minus1 > 0) ||
                     (!hrd->collocated_from_l0_flag && hrd->num_ref_idx_l1_active_minus1 > 0))
-                    my_printf("collocated_ref_idx: %d", hrd->collocated_ref_idx);
+                {
+                    my_printf("collocated_ref_idx: %d  (v bits)", hrd->collocated_ref_idx); AddTreeItem(dssf);
+                }
             }
             if ((pps->weighted_pred_flag && hrd->slice_type == H265_SH_SLICE_TYPE_P) ||
                 (pps->weighted_bipred_flag && hrd->slice_type == H265_SH_SLICE_TYPE_B))
-                h265_debug_pred_weight_table(h);
-            my_printf("five_minus_max_num_merge_cand: %d", hrd->five_minus_max_num_merge_cand);
+                h265_debug_pred_weight_table(h, dssf);
+            my_printf("five_minus_max_num_merge_cand: %d  (v bits)", hrd->five_minus_max_num_merge_cand); AddTreeItem(dssf);
         }
-        my_printf("slice_qp_delta: %d", hrd->slice_qp_delta);
+        my_printf("slice_qp_delta: %d  (v bits)", hrd->slice_qp_delta); AddTreeItem(dssf);
         if (pps->pps_slice_chroma_qp_offsets_present_flag)
         {
-            my_printf("slice_cb_qp_offset: %d", hrd->slice_cb_qp_offset);
-            my_printf("slice_cr_qp_offset: %d", hrd->slice_cr_qp_offset);
+            my_printf("slice_cb_qp_offset: %d  (v bits)", hrd->slice_cb_qp_offset); AddTreeItem(dssf);
+            my_printf("slice_cr_qp_offset: %d  (v bits)", hrd->slice_cr_qp_offset); AddTreeItem(dssf);
         }
         if (pps->pps_range_extension.chroma_qp_offset_list_enabled_flag)
         {
-            my_printf("cu_chroma_qp_offset_enabled_flag: %d", hrd->cu_chroma_qp_offset_enabled_flag);
+            my_printf("cu_chroma_qp_offset_enabled_flag", hrd->cu_chroma_qp_offset_enabled_flag); AddTreeItem(dssf);
         }
         if (pps->deblocking_filter_override_enabled_flag)
         {
-            my_printf("deblocking_filter_override_flag: %d", hrd->deblocking_filter_override_flag);
+            my_printf("deblocking_filter_override_flag", hrd->deblocking_filter_override_flag); AddTreeItem(dssf);
         }
         if (hrd->deblocking_filter_override_flag)
         {
-            my_printf("slice_deblocking_filter_disabled_flag: %d", hrd->slice_deblocking_filter_disabled_flag);
+            my_printf("slice_deblocking_filter_disabled_flag", hrd->slice_deblocking_filter_disabled_flag);
+            HTREEITEM dfof = AddTreeItem(dssf);
             if (!hrd->slice_deblocking_filter_disabled_flag)
             {
-                my_printf("slice_beta_offset_div2: %d", hrd->slice_beta_offset_div2);
-                my_printf("slice_tc_offset_div2: %d", hrd->slice_tc_offset_div2);
+                my_printf("slice_beta_offset_div2: %d  (v bits)", hrd->slice_beta_offset_div2); AddTreeItem(dfof);
+                my_printf("slice_tc_offset_div2: %d  (v bits)", hrd->slice_tc_offset_div2); AddTreeItem(dfof);
             }
         }
-        my_printf("slice_loop_filter_across_slices_enabled_flag: %d", hrd->slice_loop_filter_across_slices_enabled_flag);
-        
+        if (pps-> pps_loop_filter_across_slices_enabled_flag &&
+            (hrd->slice_sao_luma_flag || hrd->slice_sao_chroma_flag ||
+            !hrd->slice_deblocking_filter_disabled_flag))
+        {
+            my_printf_flag("slice_loop_filter_across_slices_enabled_flag", hrd->slice_loop_filter_across_slices_enabled_flag);
+            AddTreeItem(dssf);
+        }
     }
     if (pps->tiles_enabled_flag || pps->entropy_coding_sync_enabled_flag)
     {
-        my_printf("num_entry_point_offsets: %d", hrd->num_entry_point_offsets);
+        my_printf("num_entry_point_offsets: %d (v bits)", hrd->num_entry_point_offsets);
+        HTREEITEM inepo = AddTreeItem(ihrd);
         if (hrd->num_entry_point_offsets > 0)
         {
-            my_printf("offset_len_minus1: %d", hrd->offset_len_minus1);
-            my_printf("NumEntryPointOffsets");
+            my_printf("offset_len_minus1: %d (v bits)", hrd->offset_len_minus1); AddTreeItem(inepo);
+            //my_printf("NumEntryPointOffsets"); AddTreeItem(inepo); // to check
             for (int i = 0; i < hrd->num_entry_point_offsets; i++)
-                my_printf("entry_point_offset_minus1[%d]: %d", i, hrd->entry_point_offset_minus1[i]);
+            {
+                my_printf("entry_point_offset_minus1[%d]: %d (v bits)", i, hrd->entry_point_offset_minus1[i]);
+                AddTreeItem(inepo);
+            }
         }
     }
     if (pps->slice_segment_header_extension_present_flag)
     {
-        my_printf("slice_segment_header_extension_length: %d", hrd->slice_segment_header_extension_length);
+        my_printf("slice_segment_header_extension_length: %d (v bits)", hrd->slice_segment_header_extension_length);
+        AddTreeItem(ihrd);
         for (int i = 0; i < hrd->slice_segment_header_extension_length; i++)
-            my_printf("slice_segment_header_extension_data_byte[%d]: %d", hrd->slice_segment_header_extension_data_byte[i]);
+        {
+            my_printf("slice_segment_header_extension_data_byte[%d]: %d  (8 bits)", hrd->slice_segment_header_extension_data_byte[i]);
+            AddTreeItem(ihrd);
+        }
     }
     // no need to debug...
     my_printf("slice_segment_data()");
+    AddTreeItem(islce);
     my_printf("rbsp_slice_segment_trailing_bits()");
+    AddTreeItem(islce);
 }
-#endif
+
 void CNalParser::h265_debug_nal_t(h265_stream_t* h, h265_nal_t* nal)
 {
     int my_nal_type = -1;
@@ -1735,29 +1849,30 @@ void CNalParser::h265_debug_nal_t(h265_stream_t* h, h265_nal_t* nal)
         nal_unit_type_name = "Unknown";
         break;
     }
-    // nal header
+    // 根节点
     my_printf("NAL");
     HTREEITEM root = AddTreeItem(TVI_ROOT);
 
-    //my_printf("nal_unit_header");
-    //HTREEITEM subroot = AddTreeItem(root);
+    // 根据手册，nal头是一个节点
+    my_printf("nal_unit_header");
+    HTREEITEM subroot = AddTreeItem(root);
 
-    my_printf("forbidden_zero_bit: %d (1 bit)", nal->forbidden_zero_bit); AddTreeItem(root);
-    my_printf("nal_unit_type: %d (%s) (6 bits)", nal->nal_unit_type, nal_unit_type_name); AddTreeItem(root);
-    my_printf("nal_ref_idc: %d (6 bits)", nal->nuh_layer_id); AddTreeItem(root);
-    my_printf("nuh_temporal_id_plus1: %d (3 bits)", nal->nuh_temporal_id_plus1); AddTreeItem(root);
+    my_printf("forbidden_zero_bit: %d (1 bit)", nal->forbidden_zero_bit); AddTreeItem(subroot);
+    my_printf("nal_unit_type: %d (%s) (6 bits)", nal->nal_unit_type, nal_unit_type_name); AddTreeItem(subroot);
+    my_printf("nuh_layer_id: %d (6 bits)", nal->nuh_layer_id); AddTreeItem(subroot);
+    my_printf("nuh_temporal_id_plus1: %d (3 bits)", nal->nuh_temporal_id_plus1); AddTreeItem(subroot);
     
-    // nal unit
+    // nal具体的内容也是一个节点
     if(my_nal_type == 0)
-        h265_debug_vps_t(h->vps, root);
+        h265_debug_vps(h->vps, root);
     else if(my_nal_type == 1)
-        h265_debug_sps(h->sps);
+        h265_debug_sps(h->sps, root);
     else if(my_nal_type == 2)
-        h265_debug_pps(h->pps);
+        h265_debug_pps(h->pps, root);
     else if(my_nal_type == 3)
-        h265_debug_aud(h->aud);
+        h265_debug_aud(h->aud, root);
     else if(my_nal_type == 4)
-        h265_debug_seis(h);
+        h265_debug_seis(h, root);
     else if(my_nal_type == 5)
-        h265_debug_slice_header(h);
+        h265_debug_slice_header(h, root);
 }

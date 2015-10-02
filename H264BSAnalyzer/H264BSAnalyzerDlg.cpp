@@ -157,15 +157,13 @@ BOOL CH264BSAnalyzerDlg::OnInitDialog()
     }
     */
 
-    return TRUE;
-
+#if 0
 #define AddTreeItem(item, buffer) m_cTree.InsertItem(buffer,item)
 
-    
 
-    HTREEITEM hItem = m_cTree.InsertItem("NAL",TVI_ROOT);///root
+    HTREEITEM hItem = m_cTree.InsertItem("根节点NAL",TVI_ROOT);///root
     CString strTemp;
-    strTemp.Format("nal_unit_header");
+    strTemp.Format("NAL头节点nal_unit_header");
     HTREEITEM hSubItem = AddTreeItem(hItem, strTemp.GetBuffer());
 
     strTemp.Format("forbidden_zero_bit \t\t:0 (1 bit)");
@@ -177,7 +175,7 @@ BOOL CH264BSAnalyzerDlg::OnInitDialog()
     strTemp.Format("nuh_temporal_id_plus1 \t\t:0 (3 bit)");
     AddTreeItem(hSubItem, strTemp.GetBuffer());
 
-    strTemp.Format("video_parameter_set_rbsp()");
+    strTemp.Format("VPS节点video_parameter_set_rbsp()");
     HTREEITEM hItem1 = AddTreeItem(hItem, strTemp.GetBuffer());
 
     strTemp.Format("header()");
@@ -189,6 +187,7 @@ BOOL CH264BSAnalyzerDlg::OnInitDialog()
 
     strTemp.Format("data()");
     AddTreeItem(hItem1, strTemp.GetBuffer());
+#endif
 
     return TRUE;  // return TRUE  unless you set the focus to a control
 }
@@ -823,6 +822,7 @@ void CH264BSAnalyzerDlg::OnLvnKeydownH264Nallist(NMHDR *pNMHDR, LRESULT *pResult
     {
         AfxMessageBox("解析NAL时出错，可能是文件读取出错。");
     }
+
      // 把NAL详细信息显示到界面上
     //m_h264NalInfo.SetWindowText((LPCTSTR)nalInfo);
     // 显示十六进制

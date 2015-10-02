@@ -48,7 +48,11 @@ int CNalParser::init(const char* filename, CTreeCtrl* tree)
         m_hH264 = h264_new();
     }
     
-    m_pTree = tree;
+    if (tree != NULL)
+    {
+        m_pTree = tree;
+        m_pTree->DeleteAllItems();
+    }
 
     return 0;
 }

@@ -489,6 +489,7 @@ typedef struct
     int slice_pic_parameter_set_id;
       uint8_t dependent_slice_segment_flag;
       int slice_segment_address;
+      int slice_segment_address_bytes;
         vector<uint8_t> slice_reserved_flag;
         int slice_type;
         uint8_t pic_output_flag;
@@ -499,6 +500,7 @@ typedef struct
         referencePictureSets_t* m_pRPS;
         referencePictureSets_t m_localRPS;
         int short_term_ref_pic_set_idx;
+        int short_term_ref_pic_set_idx_bytes;
         int num_long_term_sps;
         int num_long_term_pics;
         vector<int> lt_idx_sps;

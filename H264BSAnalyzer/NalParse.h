@@ -93,10 +93,11 @@ private:
     void h264_debug_slice_header(h264_stream_t* h);
     void h264_debug_aud(aud_t* aud);
     void h264_debug_seis( h264_stream_t* h);
+
     void h264_debug_nal(h264_stream_t* h, nal_t* nal);
 
     void h265_debug_ptl(profile_tier_level_t* ptl, int profilePresentFlag, int max_sub_layers_minus1);
-    void h265_debug_sub_layer_hrd_parameters(sub_layer_hrd_parameters_t* subhrd, int sub_pic_hrd_params_present_flag, int CpbCnt, const char* p);
+    void h265_debug_sub_layer_hrd_parameters(sub_layer_hrd_parameters_t* subhrd, int sub_pic_hrd_params_present_flag, int CpbCnt, int subLayerId, const char* p);
     void h265_debug_hrd_parameters(hrd_parameters_t* hrd, int commonInfPresentFlag, int maxNumSubLayersMinus1);
     void h265_debug_vps(h265_vps_t* vps);
     void h265_debug_scaling_list(scaling_list_data_t* sld);
@@ -109,29 +110,32 @@ private:
     void h265_debug_ref_pic_lists_modification(h265_slice_header_t* hrd);
     void h265_debug_pred_weight_table(h265_stream_t* h);
     void h265_debug_slice_header(h265_stream_t* h);
+
     void h265_debug_nal(h265_stream_t* h, h265_nal_t* nal);
 
-    void h264_debug_sps_t(sps_t* sps, HTREEITEM root);
-    void h264_debug_pps_t(pps_t* pps, HTREEITEM root);
-    void h264_debug_slice_header_t(h264_stream_t* h, HTREEITEM root);
-    void h264_debug_aud_t(aud_t* aud, HTREEITEM root);
-    void h264_debug_seis_t( h264_stream_t* h, HTREEITEM root);
+    void h264_debug_sps(sps_t* sps, HTREEITEM root);
+    void h264_debug_pps(pps_t* pps, HTREEITEM root);
+    void h264_debug_slice_header(h264_stream_t* h, HTREEITEM root);
+    void h264_debug_aud(aud_t* aud, HTREEITEM root);
+    void h264_debug_seis( h264_stream_t* h, HTREEITEM root);
+
     void h264_debug_nal_t(h264_stream_t* h, nal_t* nal);
 
-    void h265_debug_ptl_t(profile_tier_level_t* ptl, int profilePresentFlag, int max_sub_layers_minus1, HTREEITEM root);
-    void h265_debug_sub_layer_hrd_parameters_t(sub_layer_hrd_parameters_t* subhrd, int sub_pic_hrd_params_present_flag, int CpbCnt, const char* p, HTREEITEM root);
-    void h265_debug_hrd_parameters_t(hrd_parameters_t* hrd, int commonInfPresentFlag, int maxNumSubLayersMinus1, HTREEITEM root);
-    void h265_debug_vps_t(h265_vps_t* vps, HTREEITEM root);
-    void h265_debug_scaling_list_t(scaling_list_data_t* sld, HTREEITEM root);
-    void h265_debug_short_term_ref_pic_set_t(h265_sps_t* sps, st_ref_pic_set_t*st, referencePictureSets_t* rps, int stRpsIdx, HTREEITEM root);
-    void h265_debug_vui_parameters_t(vui_parameters_t* vui, int maxNumSubLayersMinus1, HTREEITEM root);
-    void h265_debug_sps_t(h265_sps_t* sps, HTREEITEM root);
-    void h265_debug_pps_t(h265_pps_t* pps, HTREEITEM root);
-    void h265_debug_aud_t(h265_aud_t* aud, HTREEITEM root);
-    void h265_debug_seis_t(h265_stream_t* h, HTREEITEM root);
-    void h265_debug_ref_pic_lists_modification_t(h265_slice_header_t* hrd, HTREEITEM root);
-    void h265_debug_pred_weight_table_t(h265_stream_t* h, HTREEITEM root);
-    void h265_debug_slice_header_t(h265_stream_t* h, HTREEITEM root);
+    void h265_debug_ptl(profile_tier_level_t* ptl, int profilePresentFlag, int max_sub_layers_minus1, HTREEITEM root);
+    void h265_debug_sub_layer_hrd_parameters(sub_layer_hrd_parameters_t* subhrd, int sub_pic_hrd_params_present_flag, int CpbCnt, int subLayerId, const char* p, HTREEITEM root);
+    void h265_debug_hrd_parameters(hrd_parameters_t* hrd, int commonInfPresentFlag, int maxNumSubLayersMinus1, HTREEITEM root);
+    void h265_debug_vps(h265_vps_t* vps, HTREEITEM root);
+    void h265_debug_scaling_list(scaling_list_data_t* sld, HTREEITEM root);
+    void h265_debug_short_term_ref_pic_set(h265_sps_t* sps, st_ref_pic_set_t*st, referencePictureSets_t* rps, int stRpsIdx, HTREEITEM root);
+    void h265_debug_vui_parameters(vui_parameters_t* vui, int maxNumSubLayersMinus1, HTREEITEM root);
+    void h265_debug_sps(h265_sps_t* sps, HTREEITEM root);
+    void h265_debug_pps(h265_pps_t* pps, HTREEITEM root);
+    void h265_debug_aud(h265_aud_t* aud, HTREEITEM root);
+    void h265_debug_seis(h265_stream_t* h, HTREEITEM root);
+    void h265_debug_ref_pic_lists_modification(h265_slice_header_t* hrd, HTREEITEM root);
+    void h265_debug_pred_weight_table(h265_stream_t* h, HTREEITEM root);
+    void h265_debug_slice_header(h265_stream_t* h, HTREEITEM root);
+
     void h265_debug_nal_t(h265_stream_t* h, h265_nal_t* nal);
 
 
