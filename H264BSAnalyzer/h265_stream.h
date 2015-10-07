@@ -401,6 +401,7 @@ typedef struct
     vector<referencePictureSets_t> m_RPSList; // store
     uint8_t long_term_ref_pics_present_flag;
       int num_long_term_ref_pics_sps;
+      int lt_ref_pic_poc_lsb_sps_bytes;
       vector<int> lt_ref_pic_poc_lsb_sps;
       vector<uint8_t> used_by_curr_pic_lt_sps_flag;
     uint8_t sps_temporal_mvp_enabled_flag;

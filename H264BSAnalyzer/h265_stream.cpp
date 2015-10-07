@@ -1055,6 +1055,7 @@ void  h265_read_sps_rbsp(h265_stream_t* h, bs_t* b)
         sps->used_by_curr_pic_lt_sps_flag.resize(sps->num_long_term_ref_pics_sps);
         for (int i = 0; i < sps->num_long_term_ref_pics_sps; i++)
         {
+            sps->lt_ref_pic_poc_lsb_sps_bytes = sps->log2_max_pic_order_cnt_lsb_minus4 + 4;
             sps->lt_ref_pic_poc_lsb_sps[i] = bs_read_u(b, sps->log2_max_pic_order_cnt_lsb_minus4 + 4); // u(v)
             sps->used_by_curr_pic_lt_sps_flag[i] = bs_read_u1(b);
         }
