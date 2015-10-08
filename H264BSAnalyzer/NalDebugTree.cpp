@@ -44,12 +44,12 @@ void CNalParser::h264_debug_sps(sps_t* sps, HTREEITEM root)
     my_printf("chroma_format_idc: %d", sps->chroma_format_idc ); AddTreeItem(isps);
     if (sps->chroma_format_idc == 3)
     {
-        my_printf("separate_colour_plane_flag: %d", sps->separate_colour_plane_flag ); AddTreeItem(isps);
+        my_printf("separate_colour_plane_flag", sps->separate_colour_plane_flag ); AddTreeItem(isps);
     }
     my_printf("bit_depth_luma_minus8: %d", sps->bit_depth_luma_minus8 ); AddTreeItem(isps);
     my_printf("bit_depth_chroma_minus8: %d", sps->bit_depth_chroma_minus8 ); AddTreeItem(isps);
-    my_printf("qpprime_y_zero_transform_bypass_flag: %d", sps->qpprime_y_zero_transform_bypass_flag ); AddTreeItem(isps);
-    my_printf("seq_scaling_matrix_present_flag: %d", sps->seq_scaling_matrix_present_flag ); AddTreeItem(isps);
+    my_printf("qpprime_y_zero_transform_bypass_flag", sps->qpprime_y_zero_transform_bypass_flag ); AddTreeItem(isps);
+    my_printf("seq_scaling_matrix_present_flag", sps->seq_scaling_matrix_present_flag ); AddTreeItem(isps);
     if (sps->seq_scaling_matrix_present_flag)
     {
         for (int i = 0; i < ((sps->chroma_format_idc!=3) ? 8 : 12); i++)
@@ -71,7 +71,7 @@ void CNalParser::h264_debug_sps(sps_t* sps, HTREEITEM root)
         my_printf("log2_max_pic_order_cnt_lsb_minus4: %d", sps->log2_max_pic_order_cnt_lsb_minus4 );
     else if( sps->pic_order_cnt_type == 1 )
     {
-        my_printf("delta_pic_order_always_zero_flag: %d", sps->delta_pic_order_always_zero_flag );
+        my_printf("delta_pic_order_always_zero_flag", sps->delta_pic_order_always_zero_flag );
         my_printf("offset_for_non_ref_pic: %d", sps->offset_for_non_ref_pic );
         my_printf("offset_for_top_to_bottom_field: %d", sps->offset_for_top_to_bottom_field );
         my_printf("num_ref_frames_in_pic_order_cnt_cycle: %d", sps->num_ref_frames_in_pic_order_cnt_cycle );
@@ -780,7 +780,6 @@ void CNalParser::h265_debug_hrd_parameters(hrd_parameters_t* hrd, int commonInfP
         if (hrd->nal_hrd_parameters_present_flag ||
             hrd->vcl_hrd_parameters_present_flag)
         {
-            
             my_printf_flag("sub_pic_hrd_params_present_flag", hrd->sub_pic_hrd_params_present_flag); AddTreeItem(ihrd);
             if (hrd->sub_pic_hrd_params_present_flag)
             {
@@ -888,7 +887,7 @@ void CNalParser::h265_debug_vps(h265_vps_t* vps, HTREEITEM root)
         {
             my_printf("vps_num_ticks_poc_diff_one_minus1: %d  (v bits)", vps->vps_num_ticks_poc_diff_one_minus1); AddTreeItem(ppttf);
         }
-        my_printf("vps_num_hrd_parameters: %d  (v bits)", vps->vps_num_hrd_parameters); AddTreeItem(tipf);
+        my_printf("vps_num_hrd_parameters: %d  (v bits)", vps->vps_num_hrd_parameters);AddTreeItem(tipf);
         for (i = 0; i < vps->vps_num_hrd_parameters; i++)
         {
             my_printf("hrd_layer_set_idx[%d]: %d  (v bits)", i, vps->hrd_layer_set_idx[i]); AddTreeItem(tipf);
@@ -947,7 +946,7 @@ void CNalParser::h265_debug_short_term_ref_pic_set(h265_sps_t* sps, st_ref_pic_s
 
     if (stRpsIdx != 0)
     {
-        my_printf("inter_ref_pic_set_prediction_flag", st->inter_ref_pic_set_prediction_flag);
+        my_printf_flag("inter_ref_pic_set_prediction_flag", st->inter_ref_pic_set_prediction_flag);
         AddTreeItem(srps);
     }
     if (st->inter_ref_pic_set_prediction_flag)
@@ -984,7 +983,7 @@ void CNalParser::h265_debug_short_term_ref_pic_set(h265_sps_t* sps, st_ref_pic_s
 }
 void CNalParser::h265_debug_vui_parameters(vui_parameters_t* vui, int maxNumSubLayersMinus1, HTREEITEM root)
 {
-    my_printf_flag("vui_parameters()");
+    my_printf("vui_parameters()");
     HTREEITEM ivp = AddTreeItem(root);
     my_printf_flag("aspect_ratio_info_present_flag", vui->aspect_ratio_info_present_flag);
     HTREEITEM aripf = AddTreeItem(ivp);
@@ -993,7 +992,7 @@ void CNalParser::h265_debug_vui_parameters(vui_parameters_t* vui, int maxNumSubL
         my_printf("aspect_ratio_idc: %d  (8 bits)", vui->aspect_ratio_idc);AddTreeItem(aripf);
         if (vui->aspect_ratio_idc == H265_SAR_Extended)
         {
-            my_printf("sar_width: %d  (16 bits)", vui->sar_width);AddTreeItem(aripf);
+            my_printf("sar_width: %d   (16 bits)", vui->sar_width);AddTreeItem(aripf);
             my_printf("sar_height: %d  (16 bits)", vui->sar_height);AddTreeItem(aripf);
         }
     }
@@ -1018,51 +1017,59 @@ void CNalParser::h265_debug_vui_parameters(vui_parameters_t* vui, int maxNumSubL
             my_printf("matrix_coeffs: %d  (8 bits)", vui->matrix_coeffs); AddTreeItem(cdpf);
         }
     }
-    my_printf("chroma_loc_info_present_flag", vui->chroma_loc_info_present_flag);
-
+    my_printf_flag("chroma_loc_info_present_flag", vui->chroma_loc_info_present_flag);
+    HTREEITEM clipf = AddTreeItem(ivp);
     if (vui->chroma_loc_info_present_flag)
     {
-        my_printf("chroma_sample_loc_type_top_field: %d", vui->chroma_sample_loc_type_top_field);
-        my_printf("chroma_sample_loc_type_bottom_field: %d", vui->chroma_sample_loc_type_bottom_field);
+        my_printf("chroma_sample_loc_type_top_field: %d  (v bits)", vui->chroma_sample_loc_type_top_field);
+        AddTreeItem(clipf);
+        my_printf("chroma_sample_loc_type_bottom_field: %d  (v bits)", vui->chroma_sample_loc_type_bottom_field);
+        AddTreeItem(clipf);
     }
-    my_printf("neutral_chroma_indication_flag", vui->neutral_chroma_indication_flag);
-    my_printf("field_seq_flag", vui->field_seq_flag);
-    my_printf("frame_field_info_present_flag", vui->frame_field_info_present_flag);
-    my_printf("default_display_window_flag", vui->default_display_window_flag);
+    my_printf_flag("neutral_chroma_indication_flag", vui->neutral_chroma_indication_flag);AddTreeItem(ivp);
+    my_printf_flag("field_seq_flag", vui->field_seq_flag);AddTreeItem(ivp);
+    my_printf_flag("frame_field_info_present_flag", vui->frame_field_info_present_flag);AddTreeItem(ivp);
+    my_printf_flag("default_display_window_flag", vui->default_display_window_flag);
+    HTREEITEM ddwf = AddTreeItem(ivp);
     if (vui->default_display_window_flag)
     {
-        my_printf("def_disp_win_left_offset: %d", vui->def_disp_win_left_offset);
-        my_printf("def_disp_win_left_offset: %d", vui->def_disp_win_left_offset);
-        my_printf("def_disp_win_right_offset: %d", vui->def_disp_win_right_offset);
-        my_printf("def_disp_win_bottom_offset: %d", vui->def_disp_win_bottom_offset);
+        my_printf("def_disp_win_left_offset: %d  (v bits)", vui->def_disp_win_left_offset); AddTreeItem(ddwf);
+        my_printf("def_disp_win_right_offset: %d  (v bits)", vui->def_disp_win_right_offset); AddTreeItem(ddwf);
+        my_printf("def_disp_win_top_offset: %d  (v bits)", vui->def_disp_win_top_offset); AddTreeItem(ddwf);
+        my_printf("def_disp_win_bottom_offset: %d  (v bits)", vui->def_disp_win_bottom_offset); AddTreeItem(ddwf);
     }
     my_printf("vui_timing_info_present_flag", vui->vui_timing_info_present_flag);
+    HTREEITEM vtipf = AddTreeItem(ivp);
     if (vui->vui_timing_info_present_flag)
     {
-        my_printf("vui_num_units_in_tick: %d", vui->vui_num_units_in_tick);
-        my_printf("vui_time_scale: %d", vui->vui_time_scale);
-        my_printf("vui_poc_proportional_to_timing_flag", vui->vui_poc_proportional_to_timing_flag);
+        my_printf("vui_num_units_in_tick: %d  (32 bits)", vui->vui_num_units_in_tick); AddTreeItem(vtipf);
+        my_printf("vui_time_scale: %d  (32 bits)", vui->vui_time_scale); AddTreeItem(vtipf);
+        my_printf_flag("vui_poc_proportional_to_timing_flag", vui->vui_poc_proportional_to_timing_flag);
+        HTREEITEM vppttf = AddTreeItem(vtipf);
         if (vui->vui_poc_proportional_to_timing_flag)
         {
-            my_printf("vui_num_ticks_poc_diff_one_minus1: %d", vui->vui_num_ticks_poc_diff_one_minus1);
+            my_printf("vui_num_ticks_poc_diff_one_minus1: %d  (v bits)", vui->vui_num_ticks_poc_diff_one_minus1);
+            AddTreeItem(vppttf);
         }
-        my_printf("vui_hrd_parameters_present_flag", vui->vui_hrd_parameters_present_flag);
+        my_printf_flag("vui_hrd_parameters_present_flag", vui->vui_hrd_parameters_present_flag);
+        HTREEITEM vhppf = AddTreeItem(vtipf);
         if (vui->vui_hrd_parameters_present_flag)
         {
-            h265_debug_hrd_parameters(&vui->hrd_parameters, 1, maxNumSubLayersMinus1);
+            h265_debug_hrd_parameters(&vui->hrd_parameters, 1, maxNumSubLayersMinus1, vhppf);
         }
     }
-    my_printf("bitstream_restriction_flag", vui->bitstream_restriction_flag);
+    my_printf_flag("bitstream_restriction_flag", vui->bitstream_restriction_flag);
+    HTREEITEM brf = AddTreeItem(vtipf);
     if (vui->bitstream_restriction_flag)
     {
-        my_printf("tiles_fixed_structure_flag", vui->tiles_fixed_structure_flag);
-        my_printf("motion_vectors_over_pic_boundaries_flag", vui->motion_vectors_over_pic_boundaries_flag);
-        my_printf("restricted_ref_pic_lists_flag", vui->restricted_ref_pic_lists_flag);
-        my_printf("min_spatial_segmentation_idc: %d", vui->min_spatial_segmentation_idc);
-        my_printf("max_bytes_per_pic_denom: %d", vui->max_bytes_per_pic_denom);
-        my_printf("max_bits_per_min_cu_denom: %d", vui->max_bits_per_min_cu_denom);
-        my_printf("log2_max_mv_length_horizontal: %d", vui->log2_max_mv_length_horizontal);
-        my_printf("log2_max_mv_length_vertical: %d", vui->bitstream_restriction_flag);
+        my_printf_flag("tiles_fixed_structure_flag", vui->tiles_fixed_structure_flag); AddTreeItem(brf);
+        my_printf_flag("motion_vectors_over_pic_boundaries_flag", vui->motion_vectors_over_pic_boundaries_flag);AddTreeItem(brf);
+        my_printf_flag("restricted_ref_pic_lists_flag", vui->restricted_ref_pic_lists_flag);AddTreeItem(brf);
+        my_printf("min_spatial_segmentation_idc: %d  (v bits)", vui->min_spatial_segmentation_idc);AddTreeItem(brf);
+        my_printf("max_bytes_per_pic_denom: %d  (v bits)", vui->max_bytes_per_pic_denom);AddTreeItem(brf);
+        my_printf("max_bits_per_min_cu_denom: %d  (v bits)", vui->max_bits_per_min_cu_denom);AddTreeItem(brf);
+        my_printf("log2_max_mv_length_horizontal: %d  (v bits)", vui->log2_max_mv_length_horizontal);AddTreeItem(brf);
+        my_printf("log2_max_mv_length_vertical: %d  (v bits)", vui->bitstream_restriction_flag);AddTreeItem(brf);
     }
 }
 // sps
@@ -1102,23 +1109,25 @@ void CNalParser::h265_debug_sps(h265_sps_t* sps, HTREEITEM root)
     for (int i = (sps->sps_sub_layer_ordering_info_present_flag ? 0 : sps->sps_max_sub_layers_minus1);
         i <= sps->sps_max_sub_layers_minus1; i++ )
     {
-        my_printf("sps_max_dec_pic_buffering_minus1[%d]: %d", i, sps->sps_max_dec_pic_buffering_minus1[i]); AddTreeItem(isloripf);
-        my_printf("sps_max_num_reorder_pics[%d]: %d", i, sps->sps_max_num_reorder_pics[i]); AddTreeItem(isloripf);
-        my_printf("sps_max_latency_increase_plus1[%d]: %d", i, sps->sps_max_latency_increase_plus1[i]); AddTreeItem(isloripf);
+        my_printf("sps_max_dec_pic_buffering_minus1[%d]: %d  (v bits)", i, sps->sps_max_dec_pic_buffering_minus1[i]); AddTreeItem(isloripf);
+        my_printf("sps_max_num_reorder_pics[%d]: %d  (v bits)", i, sps->sps_max_num_reorder_pics[i]); AddTreeItem(isloripf);
+        my_printf("sps_max_latency_increase_plus1[%d]: %d  (v bits)", i, sps->sps_max_latency_increase_plus1[i]); AddTreeItem(isloripf);
     }
-    my_printf("log2_min_luma_coding_block_size_minus3: %d", sps->log2_min_luma_coding_block_size_minus3); AddTreeItem(isps);
-    my_printf("log2_diff_max_min_luma_coding_block_size: %d", sps->log2_diff_max_min_luma_coding_block_size); AddTreeItem(isps);
-    my_printf("log2_min_luma_transform_block_size_minus2: %d", sps->log2_min_luma_transform_block_size_minus2); AddTreeItem(isps);
-    my_printf("log2_diff_max_min_luma_transform_block_size: %d", sps->log2_diff_max_min_luma_transform_block_size); AddTreeItem(isps);
-    my_printf("max_transform_hierarchy_depth_inter: %d", sps->max_transform_hierarchy_depth_inter); AddTreeItem(isps);
-    my_printf("max_transform_hierarchy_depth_intra: %d", sps->max_transform_hierarchy_depth_intra); AddTreeItem(isps);
-    my_printf_flag("scaling_list_enabled_flag", sps->scaling_list_enabled_flag); AddTreeItem(isps);
+    my_printf("log2_min_luma_coding_block_size_minus3: %d  (v bits)", sps->log2_min_luma_coding_block_size_minus3); AddTreeItem(isps);
+    my_printf("log2_diff_max_min_luma_coding_block_size: %d  (v bits)", sps->log2_diff_max_min_luma_coding_block_size); AddTreeItem(isps);
+    my_printf("log2_min_luma_transform_block_size_minus2: %d  (v bits)", sps->log2_min_luma_transform_block_size_minus2); AddTreeItem(isps);
+    my_printf("log2_diff_max_min_luma_transform_block_size: %d  (v bits)", sps->log2_diff_max_min_luma_transform_block_size); AddTreeItem(isps);
+    my_printf("max_transform_hierarchy_depth_inter: %d  (v bits)", sps->max_transform_hierarchy_depth_inter); AddTreeItem(isps);
+    my_printf("max_transform_hierarchy_depth_intra: %d  (v bits)", sps->max_transform_hierarchy_depth_intra); AddTreeItem(isps);
+    my_printf_flag("scaling_list_enabled_flag", sps->scaling_list_enabled_flag);
+    HTREEITEM slef = AddTreeItem(isps);
     if (sps->scaling_list_enabled_flag)
     {
-        my_printf_flag("sps_scaling_list_data_present_flag", sps->sps_scaling_list_data_present_flag); AddTreeItem(isps);
+        my_printf_flag("sps_scaling_list_data_present_flag", sps->sps_scaling_list_data_present_flag);
+        HTREEITEM ssldpf = AddTreeItem(slef);
         if (sps->sps_scaling_list_data_present_flag)
         {
-            h265_debug_scaling_list(&sps->scaling_list_data, isps);
+            h265_debug_scaling_list(&sps->scaling_list_data, ssldpf);
         }
     }
 
@@ -1203,92 +1212,116 @@ void CNalParser::h265_debug_sps(h265_sps_t* sps, HTREEITEM root)
 // pps
 void CNalParser::h265_debug_pps(h265_pps_t* pps, HTREEITEM root)
 {
-    my_printf("======= HEVC PPS =======");
-    my_printf("pps_pic_parameter_set_id: %d", pps->pps_pic_parameter_set_id);
-    my_printf("pps_seq_parameter_set_id: %d", pps->pps_seq_parameter_set_id);
-    my_printf("dependent_slice_segments_enabled_flag: %d", pps->dependent_slice_segments_enabled_flag);
-    my_printf("output_flag_present_flag: %d", pps->output_flag_present_flag);
-    my_printf("num_extra_slice_header_bits: %d", pps->num_extra_slice_header_bits);
-    my_printf("sign_data_hiding_enabled_flag: %d", pps->sign_data_hiding_enabled_flag);
-    my_printf("cabac_init_present_flag: %d", pps->cabac_init_present_flag);
-    my_printf("num_ref_idx_l0_default_active_minus1: %d", pps->num_ref_idx_l0_default_active_minus1);
-    my_printf("num_ref_idx_l1_default_active_minus1: %d", pps->num_ref_idx_l1_default_active_minus1);
-    my_printf("init_qp_minus26: %d", pps->init_qp_minus26);
-    my_printf("constrained_intra_pred_flag: %d", pps->constrained_intra_pred_flag);
-    my_printf("transform_skip_enabled_flag: %d", pps->transform_skip_enabled_flag);
-    my_printf("cu_qp_delta_enabled_flag: %d", pps->cu_qp_delta_enabled_flag);
+    my_printf("pic_parameter_set_rbsp()");
+    HTREEITEM ipps = AddTreeItem(root);
+    my_printf("pps_pic_parameter_set_id: %d  (v bits)", pps->pps_pic_parameter_set_id);AddTreeItem(ipps);
+    my_printf("pps_seq_parameter_set_id: %d  (v bits)", pps->pps_seq_parameter_set_id);AddTreeItem(ipps);
+    my_printf_flag("dependent_slice_segments_enabled_flag", pps->dependent_slice_segments_enabled_flag);AddTreeItem(ipps);
+    my_printf_flag("output_flag_present_flag", pps->output_flag_present_flag);AddTreeItem(ipps);
+    my_printf("num_extra_slice_header_bits: %d  (3 bits)", pps->num_extra_slice_header_bits);AddTreeItem(ipps);
+    my_printf_flag("sign_data_hiding_enabled_flag", pps->sign_data_hiding_enabled_flag);AddTreeItem(ipps);
+    my_printf_flag("cabac_init_present_flag", pps->cabac_init_present_flag);AddTreeItem(ipps);
+    my_printf("num_ref_idx_l0_default_active_minus1: %d  (v bits)", pps->num_ref_idx_l0_default_active_minus1);AddTreeItem(ipps);
+    my_printf("num_ref_idx_l1_default_active_minus1: %d  (v bits)", pps->num_ref_idx_l1_default_active_minus1);AddTreeItem(ipps);
+    my_printf("init_qp_minus26: %d  (v bits)", pps->init_qp_minus26);AddTreeItem(ipps);
+    my_printf_flag("constrained_intra_pred_flag", pps->constrained_intra_pred_flag);AddTreeItem(ipps);
+    my_printf_flag("transform_skip_enabled_flag", pps->transform_skip_enabled_flag);AddTreeItem(ipps);
+    my_printf_flag("cu_qp_delta_enabled_flag", pps->cu_qp_delta_enabled_flag);
+    HTREEITEM cqdef = AddTreeItem(ipps);
     if (pps->cu_qp_delta_enabled_flag)
-        my_printf("diff_cu_qp_delta_depth: %d", pps->diff_cu_qp_delta_depth);
-    my_printf("pps_cb_qp_offset: %d", pps->pps_cb_qp_offset);
-    my_printf("pps_cr_qp_offset: %d", pps->pps_cr_qp_offset);
-    my_printf("pps_slice_chroma_qp_offsets_present_flag: %d", pps->pps_slice_chroma_qp_offsets_present_flag);
-    my_printf("weighted_pred_flag: %d", pps->weighted_pred_flag);
-    my_printf("weighted_bipred_flag: %d", pps->weighted_bipred_flag);
-    my_printf("transquant_bypass_enabled_flag: %d", pps->transquant_bypass_enabled_flag);
-    my_printf("tiles_enabled_flag: %d", pps->tiles_enabled_flag);
-    my_printf("entropy_coding_sync_enabled_flag: %d", pps->entropy_coding_sync_enabled_flag);
+    {
+        my_printf("diff_cu_qp_delta_depth: %d  (v bits)", pps->diff_cu_qp_delta_depth);
+        AddTreeItem(cqdef);
+    }
+    my_printf("pps_cb_qp_offset: %d  (v bits)", pps->pps_cb_qp_offset);AddTreeItem(ipps);
+    my_printf("pps_cr_qp_offset: %d  (v bits)", pps->pps_cr_qp_offset);AddTreeItem(ipps);
+    my_printf_flag("pps_slice_chroma_qp_offsets_present_flag", pps->pps_slice_chroma_qp_offsets_present_flag);AddTreeItem(ipps);
+    my_printf_flag("weighted_pred_flag", pps->weighted_pred_flag);AddTreeItem(ipps);
+    my_printf_flag("weighted_bipred_flag", pps->weighted_bipred_flag);AddTreeItem(ipps);
+    my_printf_flag("transquant_bypass_enabled_flag", pps->transquant_bypass_enabled_flag);AddTreeItem(ipps);
+    my_printf_flag("tiles_enabled_flag", pps->tiles_enabled_flag);
+    HTREEITEM tef = AddTreeItem(ipps);
     if (pps->tiles_enabled_flag)
     {
-        my_printf("num_tile_columns_minus1: %d", pps->num_tile_columns_minus1);
-        my_printf("num_tile_rows_minus1: %d", pps->num_tile_rows_minus1);
-        my_printf("uniform_spacing_flag: %d", pps->uniform_spacing_flag);
+        my_printf("num_tile_columns_minus1: %d  (v bits)", pps->num_tile_columns_minus1);AddTreeItem(tef);
+        my_printf("num_tile_rows_minus1: %d  (v bits)", pps->num_tile_rows_minus1);AddTreeItem(tef);
+        my_printf_flag("uniform_spacing_flag", pps->uniform_spacing_flag);
+        HTREEITEM usf = AddTreeItem(tef);
         if (!pps->uniform_spacing_flag)
         {
             for (int i = 0; i < pps->num_tile_columns_minus1; i++)
-                my_printf("column_width_minus1[%d]: %d", i, pps->column_width_minus1[i]);
+            {
+                my_printf("column_width_minus1[%d]: %d  (v bits)", i, pps->column_width_minus1[i]);AddTreeItem(usf);
+            }
             for (int i = 0; i < pps->num_tile_rows_minus1; i++)
-                my_printf("row_height_minus1[%d]: %d", i, pps->row_height_minus1[i]);
+            {
+                my_printf("row_height_minus1[%d]: %d  (v bits)", i, pps->row_height_minus1[i]);AddTreeItem(usf);
+            }
         }
-        my_printf("loop_filter_across_tiles_enabled_flag: %d", pps->loop_filter_across_tiles_enabled_flag); // to check
+        my_printf_flag("loop_filter_across_tiles_enabled_flag", pps->loop_filter_across_tiles_enabled_flag); // to check
+        AddTreeItem(tef);
     }
-    my_printf("pps_loop_filter_across_slices_enabled_flag: %d", pps->pps_loop_filter_across_slices_enabled_flag); // to check
-    my_printf("deblocking_filter_control_present_flag: %d", pps->deblocking_filter_control_present_flag);
+    my_printf_flag("entropy_coding_sync_enabled_flag", pps->entropy_coding_sync_enabled_flag);AddTreeItem(ipps);
+
+    my_printf_flag("pps_loop_filter_across_slices_enabled_flag", pps->pps_loop_filter_across_slices_enabled_flag); // to check
+    AddTreeItem(ipps);
+    my_printf_flag("deblocking_filter_control_present_flag", pps->deblocking_filter_control_present_flag);
+    HTREEITEM dfcpf = AddTreeItem(ipps);
     if (pps->deblocking_filter_control_present_flag)
     {
-        my_printf("deblocking_filter_override_enabled_flag: %d", pps->deblocking_filter_override_enabled_flag);
-        my_printf("pps_deblocking_filter_disabled_flag: %d", pps->pps_deblocking_filter_disabled_flag);
+        my_printf_flag("deblocking_filter_override_enabled_flag", pps->deblocking_filter_override_enabled_flag);
+        AddTreeItem(dfcpf);
+        my_printf_flag("pps_deblocking_filter_disabled_flag", pps->pps_deblocking_filter_disabled_flag);
+        HTREEITEM dfdf = AddTreeItem(dfcpf);
         if (pps->pps_deblocking_filter_disabled_flag)
         {
-            my_printf("pps_beta_offset_div2: %d", pps->pps_beta_offset_div2);
-            my_printf("pps_tc_offset_div2: %d", pps->pps_tc_offset_div2);
+            my_printf("pps_beta_offset_div2: %d  (v bits)", pps->pps_beta_offset_div2);AddTreeItem(dfdf);
+            my_printf("pps_tc_offset_div2: %d  (v bits)", pps->pps_tc_offset_div2);AddTreeItem(dfdf);
         }
     }
-    my_printf("pps_scaling_list_data_present_flag: %d", pps->pps_scaling_list_data_present_flag);
+    my_printf_flag("pps_scaling_list_data_present_flag", pps->pps_scaling_list_data_present_flag);
+    HTREEITEM sldf = AddTreeItem(ipps);
     if (pps->pps_scaling_list_data_present_flag)
     {
         // scaling_list_data()
-        h265_debug_scaling_list(&pps->scaling_list_data);
+        h265_debug_scaling_list(&pps->scaling_list_data, sldf);
     }
-    my_printf("lists_modification_present_flag: %d", pps->lists_modification_present_flag);
-    my_printf("log2_parallel_merge_level_minus2: %d", pps->log2_parallel_merge_level_minus2);
-    my_printf("slice_segment_header_extension_present_flag: %d", pps->slice_segment_header_extension_present_flag);
-    my_printf("pps_extension_present_flag: %d", pps->pps_extension_present_flag);
+    my_printf_flag("lists_modification_present_flag", pps->lists_modification_present_flag);AddTreeItem(ipps);
+    my_printf("log2_parallel_merge_level_minus2: %d  (v bits)", pps->log2_parallel_merge_level_minus2);AddTreeItem(ipps);
+    my_printf_flag("slice_segment_header_extension_present_flag", pps->slice_segment_header_extension_present_flag);AddTreeItem(ipps);
+    my_printf_flag("pps_extension_present_flag", pps->pps_extension_present_flag);
+    HTREEITEM epf = AddTreeItem(ipps);
     if (pps->pps_extension_present_flag)
     {
-        my_printf("pps_range_extension_flag: %d", pps->pps_range_extension_flag);
-        my_printf("pps_multilayer_extension_flag: %d", pps->pps_multilayer_extension_flag);
-        my_printf("pps_3d_extension_flag: %d", pps->pps_3d_extension_flag);
-        my_printf("pps_extension_5bits: %d", pps->pps_extension_5bits);
-    }
-    if (pps->pps_range_extension_flag)
-    {
-        if (pps->transform_skip_enabled_flag)
-            my_printf("pps_extension_5bits: %d", pps->pps_range_extension.log2_max_transform_skip_block_size_minus2);
-        my_printf("cross_component_prediction_enabled_flag: %d", pps->pps_range_extension.cross_component_prediction_enabled_flag);
-        my_printf("chroma_qp_offset_list_enabled_flag: %d", pps->pps_range_extension.chroma_qp_offset_list_enabled_flag);
-        if (pps->pps_range_extension.chroma_qp_offset_list_enabled_flag)
+        my_printf_flag("pps_range_extension_flag", pps->pps_range_extension_flag);AddTreeItem(epf);
+        HTREEITEM iref = AddTreeItem(epf);
+        if (pps->pps_range_extension_flag)
         {
-            my_printf("diff_cu_chroma_qp_offset_depth: %d", pps->pps_range_extension.diff_cu_chroma_qp_offset_depth);
-            my_printf("chroma_qp_offset_list_len_minus1: %d", pps->pps_range_extension.chroma_qp_offset_list_len_minus1);
-            for (int i = 0; i < pps->pps_range_extension.chroma_qp_offset_list_len_minus1; i++)
+            if (pps->transform_skip_enabled_flag)
             {
-                my_printf("cb_qp_offset_list[%d]: %d", i, pps->pps_range_extension.cb_qp_offset_list[i]);
-                my_printf("cr_qp_offset_list[%d]: %d", i, pps->pps_range_extension.cb_qp_offset_list[i]);
+                my_printf("log2_max_transform_skip_block_size_minus2: %d  (v bits)", pps->pps_range_extension.log2_max_transform_skip_block_size_minus2);
+                AddTreeItem(iref);
             }
+            my_printf_flag("cross_component_prediction_enabled_flag", pps->pps_range_extension.cross_component_prediction_enabled_flag);AddTreeItem(iref);
+            my_printf_flag("chroma_qp_offset_list_enabled_flag", pps->pps_range_extension.chroma_qp_offset_list_enabled_flag);AddTreeItem(iref);
+            if (pps->pps_range_extension.chroma_qp_offset_list_enabled_flag)
+            {
+                my_printf("diff_cu_chroma_qp_offset_depth: %d  (v bits)", pps->pps_range_extension.diff_cu_chroma_qp_offset_depth);AddTreeItem(iref);
+                my_printf("chroma_qp_offset_list_len_minus1: %d  (v bits)", pps->pps_range_extension.chroma_qp_offset_list_len_minus1);AddTreeItem(iref);
+                for (int i = 0; i < pps->pps_range_extension.chroma_qp_offset_list_len_minus1; i++)
+                {
+                    my_printf("cb_qp_offset_list[%d]: %d  (v bits)", i, pps->pps_range_extension.cb_qp_offset_list[i]);AddTreeItem(iref);
+                    my_printf("cr_qp_offset_list[%d]: %d  (v bits)", i, pps->pps_range_extension.cb_qp_offset_list[i]);AddTreeItem(iref);
+                }
+            }
+            my_printf("log2_sao_offset_scale_luma: %d  (v bits)", pps->pps_range_extension.log2_sao_offset_scale_luma);AddTreeItem(iref);
+            my_printf("log2_sao_offset_scale_chroma: %d  (v bits)", pps->pps_range_extension.log2_sao_offset_scale_chroma);AddTreeItem(iref);
         }
-        my_printf("log2_sao_offset_scale_luma: %d", pps->pps_range_extension.log2_sao_offset_scale_luma);
-        my_printf("log2_sao_offset_scale_chroma: %d", pps->pps_range_extension.log2_sao_offset_scale_chroma);
+        my_printf_flag("pps_multilayer_extension_flag", pps->pps_multilayer_extension_flag);AddTreeItem(epf);
+        my_printf_flag("pps_3d_extension_flag", pps->pps_3d_extension_flag);AddTreeItem(epf);
+        my_printf("pps_extension_5bits: %d  (5 bits)", pps->pps_extension_5bits);AddTreeItem(epf);
     }
+
     if (pps->pps_multilayer_extension_flag)
     {
         // todo...
@@ -1302,16 +1335,20 @@ void CNalParser::h265_debug_pps(h265_pps_t* pps, HTREEITEM root)
 // aud
 void CNalParser::h265_debug_aud(h265_aud_t* aud, HTREEITEM root)
 {
-    my_printf("======= HEVC AUD =======");
-    const char* pic_type;
+    const char* pic_type = NULL;
+
+    my_printf("access_unit_delimiter_rbsp()");
+    HTREEITEM iaud = AddTreeItem(root);
+
     switch (aud->pic_type)
     {
-    case H265_AUD_PRIMARY_PIC_TYPE_I:    pic_type = "I"; break;
-    case H265_AUD_PRIMARY_PIC_TYPE_IP:   pic_type = "P, I"; break;
-    case H265_AUD_PRIMARY_PIC_TYPE_IPB:  pic_type = "B, P, I"; break;
-    default: pic_type = "Unknown"; break;
+        case H265_AUD_PRIMARY_PIC_TYPE_I:    pic_type = "I"; break;
+        case H265_AUD_PRIMARY_PIC_TYPE_IP:   pic_type = "P, I"; break;
+        case H265_AUD_PRIMARY_PIC_TYPE_IPB:  pic_type = "B, P, I"; break;
+        default: pic_type = "Unknown"; break;
     }
-    my_printf("pic_type: %d ( %s ) ", aud->pic_type, pic_type );
+    my_printf("pic_type: %d ( %s )", aud->pic_type, pic_type);AddTreeItem(iaud);
+    my_printf("rbsp_trailing_bits()");AddTreeItem(root);
 }
 
 // sei
@@ -1319,64 +1356,75 @@ void CNalParser::h265_debug_seis(h265_stream_t* h, HTREEITEM root)
 {
     h265_sei_t** seis = h->seis;
     int num_seis = h->num_seis;
-
-    my_printf("======= HEVC SEI =======");
-    const char* sei_type_name;
+    const char* sei_type_name = NULL;
     int i;
+
+    my_printf("sei_rbsp()");
+    HTREEITEM isei = AddTreeItem(root);
+    my_printf("sei_message()");
+    HTREEITEM iisei = AddTreeItem(isei);
     for (i = 0; i < num_seis; i++)
     {
         h265_sei_t* s = seis[i];
-        my_printf("payloadType: %d", s->payloadType);
-        my_printf("payloadSize: %d", s->payloadSize);
+        my_printf("payloadType: %d", s->payloadType); AddTreeItem(iisei);
+        my_printf("payloadSize: %d", s->payloadSize); AddTreeItem(iisei);
         my_printf("sei_payload()");
+        HTREEITEM sp = AddTreeItem(iisei);
         if (h->nal->nal_unit_type == NAL_UNIT_PREFIX_SEI)
         {
             switch(s->payloadType)
             {
             case 0:
-                my_printf("buffering_period()");
+                my_printf("buffering_period()"); AddTreeItem(sp);
                 break;
             case 1:
-                my_printf("pic_timing()");
+                my_printf("pic_timing()"); AddTreeItem(sp);
                 break;
             case 2:
-                my_printf("pan_scan_rect()");
+                my_printf("pan_scan_rect()"); AddTreeItem(sp);
                 break;
             case 3:
-                my_printf("pan_scan_rect()");
+                my_printf("pan_scan_rect()"); AddTreeItem(sp);
                 break;
             case 4:
-                my_printf("pan_scan_rect()");
+                my_printf("pan_scan_rect()"); AddTreeItem(sp);
                 break;
             case 5:
-                my_printf("user_data_unregistered()");
-                my_printf("uuid_iso_iec_11578: ");
-                for (int j = 0; j < 16; j++)
-                    my_printf("%X", s->payload[j]);
-                my_printf ("\r\n   ");
-                for (int j = 16; j < s->payloadSize; j++)
                 {
-                    my_printf("%c", s->payload[j]);
-                    if ((j+1) % 128 == 0) my_printf ("");
+                    my_printf("user_data_unregistered()");AddTreeItem(sp);
+                    char uuid[64] = {0};
+                    char tmp[8] = {0};
+                    for (int j = 0; j < 16; j++)
+                    {
+                        sprintf(tmp, "%X", s->payload[j]);
+                        strcat(uuid, tmp);
+                    }
+                    my_printf("uuid_iso_iec_11578: %s", uuid);
+                    HTREEITEM udpb = AddTreeItem(sp);
+                    for (int j = 16; j < s->payloadSize; j++)
+                    {
+                        my_printf("user_data_payload_byte: %d('%c')", s->payload[j], s->payload[j]);
+                        AddTreeItem(sp);
+                    }
                 }
                 break;
             case 6:
-                my_printf("recovery_point()");
+                my_printf("recovery_point()"); AddTreeItem(sp);
                 break;
             case 9:
-                my_printf("scene_info()");
+                my_printf("scene_info()"); AddTreeItem(sp);
                 break;
             case 15:
-                my_printf("picture_snapshot()");
+                my_printf("picture_snapshot()"); AddTreeItem(sp);
                 break;
             case 16:
-                my_printf("progressive_refinement_segment_start()");
+                my_printf("progressive_refinement_segment_start()"); AddTreeItem(sp);
                 break;
             case 17:
-                my_printf("progressive_refinement_segment_end()");
+                my_printf("progressive_refinement_segment_end()"); AddTreeItem(sp);
                 break;
             default:
-                my_printf("reserved_sei_message()");
+                my_printf("reserved_sei_message()"); AddTreeItem(sp);
                 break;
             }
         }
@@ -1385,28 +1433,28 @@ void CNalParser::h265_debug_seis(h265_stream_t* h, HTREEITEM root)
             switch(s->payloadType)
             {
             case 3:
-                my_printf("filler_payload()");
+                my_printf("filler_payload()"); AddTreeItem(sp);
                 break;
             case 4:
-                my_printf("user_data_registered_itu_t_t35()");
+                my_printf("user_data_registered_itu_t_t35()"); AddTreeItem(sp);
                 break;
             case 5:
-                my_printf("user_data_unregistered()");
+                my_printf("user_data_unregistered()"); AddTreeItem(sp);
                 break;
             case 17:
-                my_printf("progressive_refinement_segment_end()");
+                my_printf("progressive_refinement_segment_end()"); AddTreeItem(sp);
                 break;
             case 22:
-                my_printf("post_filter_hint()");
+                my_printf("post_filter_hint()"); AddTreeItem(sp);
                 break;
             case 132:
-                my_printf("decoded_picture_hash()");
+                my_printf("decoded_picture_hash()"); AddTreeItem(sp);
                 break;
             case 16:
-                my_printf("progressive_refinement_segment_start()");
+                my_printf("progressive_refinement_segment_start()"); AddTreeItem(sp);
                 break;
             default:
-                my_printf("reserved_sei_message()");
+                my_printf("reserved_sei_message()"); AddTreeItem(sp);
                 break;
             }
         }
