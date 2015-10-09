@@ -22,28 +22,31 @@ void CNalParser::h264_debug_sps(sps_t* sps)
     my_printf(" reserved_zero_2bits : %d\r\n", sps->reserved_zero_2bits );
     my_printf(" level_idc : %d\r\n", sps->level_idc );
     my_printf(" seq_parameter_set_id : %d\r\n", sps->seq_parameter_set_id );
-    my_printf(" chroma_format_idc : %d\r\n", sps->chroma_format_idc );
-    if (sps->chroma_format_idc == 3)
-        my_printf(" separate_colour_plane_flag : %d\r\n", sps->separate_colour_plane_flag );
-    my_printf(" bit_depth_luma_minus8 : %d\r\n", sps->bit_depth_luma_minus8 );
-    my_printf(" bit_depth_chroma_minus8 : %d\r\n", sps->bit_depth_chroma_minus8 );
-    my_printf(" qpprime_y_zero_transform_bypass_flag : %d\r\n", sps->qpprime_y_zero_transform_bypass_flag );
-    my_printf(" seq_scaling_matrix_present_flag : %d\r\n", sps->seq_scaling_matrix_present_flag );
-    if (sps->seq_scaling_matrix_present_flag)
+    if( sps->profile_idc == 100 || sps->profile_idc == 110 ||
+        sps->profile_idc == 122 || sps->profile_idc == 144 )
     {
-        for (int i = 0; i < ((sps->chroma_format_idc!=3) ? 8 : 12); i++)
+        my_printf(" chroma_format_idc : %d\r\n", sps->chroma_format_idc );
+        if (sps->chroma_format_idc == 3)
+            my_printf(" separate_colour_plane_flag : %d\r\n", sps->separate_colour_plane_flag );
+        my_printf(" bit_depth_luma_minus8 : %d\r\n", sps->bit_depth_luma_minus8 );
+        my_printf(" bit_depth_chroma_minus8 : %d\r\n", sps->bit_depth_chroma_minus8 );
+        my_printf(" qpprime_y_zero_transform_bypass_flag : %d\r\n", sps->qpprime_y_zero_transform_bypass_flag );
+        my_printf(" seq_scaling_matrix_present_flag : %d\r\n", sps->seq_scaling_matrix_present_flag );
+        if (sps->seq_scaling_matrix_present_flag)
         {
-            my_printf("   seq_scaling_list_present_flag[%d] : %d\r\n", i, sps->seq_scaling_list_present_flag[i]);
-            if( sps->seq_scaling_list_present_flag[ i ] )
+            for (int i = 0; i < ((sps->chroma_format_idc!=3) ? 8 : 12); i++)
             {
-                if( i < 6 )
-                    my_printf("   ScalingList4x4[%d] : %d\r\n", i, sps->ScalingList4x4[i] );
-                else
-                    my_printf("   ScalingList4xScalingList8x84[%d] : %d\r\n", i, sps->ScalingList8x8[i] );
+                my_printf("   seq_scaling_list_present_flag[%d] : %d\r\n", i, sps->seq_scaling_list_present_flag[i]);
+                if( sps->seq_scaling_list_present_flag[ i ] )
+                {
+                    if( i < 6 )
+                        my_printf("   ScalingList4x4[%d] : %d\r\n", i, sps->ScalingList4x4[i] );
+                    else
+                        my_printf("   ScalingList4xScalingList8x84[%d] : %d\r\n", i, sps->ScalingList8x8[i] );
+                }
             }
         }
     }
-
     my_printf(" log2_max_frame_num_minus4 : %d\r\n", sps->log2_max_frame_num_minus4 );
     my_printf(" pic_order_cnt_type : %d\r\n", sps->pic_order_cnt_type );
     if( sps->pic_order_cnt_type == 0 )
@@ -59,7 +62,7 @@ void CNalParser::h264_debug_sps(sps_t* sps)
             my_printf("   offset_for_ref_frame[%d] : %d\r\n", i, sps->offset_for_ref_frame[i] );
         }
     }
-    my_printf(" num_ref_frames : %d\r\n", sps->num_ref_frames );
+    my_printf(" max_num_ref_frames : %d\r\n", sps->max_num_ref_frames );
     my_printf(" gaps_in_frame_num_value_allowed_flag : %d\r\n", sps->gaps_in_frame_num_value_allowed_flag );
     my_printf(" pic_width_in_mbs_minus1 : %d\r\n", sps->pic_width_in_mbs_minus1 );
     my_printf(" pic_height_in_map_units_minus1 : %d\r\n", sps->pic_height_in_map_units_minus1 );
@@ -112,9 +115,9 @@ void CNalParser::h264_debug_sps(sps_t* sps)
             my_printf("   chroma_sample_loc_type_top_field : %d\r\n", sps->vui.chroma_sample_loc_type_top_field );
             my_printf("   chroma_sample_loc_type_bottom_field : %d\r\n", sps->vui.chroma_sample_loc_type_bottom_field );
         }
+        my_printf("  timing_info_present_flag : %d\r\n", sps->vui.timing_info_present_flag );
         if( sps->vui.timing_info_present_flag )
         {
-            my_printf("  timing_info_present_flag : %d\r\n", sps->vui.timing_info_present_flag );
             my_printf("   num_units_in_tick : %d\r\n", sps->vui.num_units_in_tick );
             my_printf("   time_scale : %d\r\n", sps->vui.time_scale );
             my_printf("   fixed_frame_rate_flag : %d\r\n", sps->vui.fixed_frame_rate_flag );

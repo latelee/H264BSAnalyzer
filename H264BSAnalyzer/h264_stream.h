@@ -72,7 +72,7 @@ typedef struct
       int offset_for_top_to_bottom_field;
       int num_ref_frames_in_pic_order_cnt_cycle;
       int offset_for_ref_frame[256];
-    int num_ref_frames;
+    int max_num_ref_frames;
     int gaps_in_frame_num_value_allowed_flag;
     int pic_width_in_mbs_minus1;
     int pic_height_in_map_units_minus1;

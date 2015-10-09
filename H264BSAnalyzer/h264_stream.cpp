@@ -538,7 +538,7 @@ void read_seq_parameter_set_rbsp(h264_stream_t* h, bs_t* b)
             sps->offset_for_ref_frame[ i ] = bs_read_se(b);
         }
     }
-    sps->num_ref_frames = bs_read_ue(b);
+    sps->max_num_ref_frames = bs_read_ue(b);
     sps->gaps_in_frame_num_value_allowed_flag = bs_read_u1(b);
     sps->pic_width_in_mbs_minus1 = bs_read_ue(b);
     sps->pic_height_in_map_units_minus1 = bs_read_ue(b);
@@ -1507,7 +1507,7 @@ void write_seq_parameter_set_rbsp(h264_stream_t* h, bs_t* b)
             bs_write_se(b, sps->offset_for_ref_frame[ i ]);
         }
     }
-    bs_write_ue(b, sps->num_ref_frames);
+    bs_write_ue(b, sps->max_num_ref_frames);
     bs_write_u1(b, sps->gaps_in_frame_num_value_allowed_flag);
     bs_write_ue(b, sps->pic_width_in_mbs_minus1);
     bs_write_ue(b, sps->pic_height_in_map_units_minus1);
@@ -2264,7 +2264,7 @@ void debug_sps(sps_t* sps)
       printf("   offset_for_top_to_bottom_field : %d \n", sps->offset_for_top_to_bottom_field );
       printf("   num_ref_frames_in_pic_order_cnt_cycle : %d \n", sps->num_ref_frames_in_pic_order_cnt_cycle );
     //  int offset_for_ref_frame[256];
-    printf(" num_ref_frames : %d \n", sps->num_ref_frames );
+    printf(" max_num_ref_frames : %d \n", sps->max_num_ref_frames );
     printf(" gaps_in_frame_num_value_allowed_flag : %d \n", sps->gaps_in_frame_num_value_allowed_flag );
     printf(" pic_width_in_mbs_minus1 : %d \n", sps->pic_width_in_mbs_minus1 );
     printf(" pic_height_in_map_units_minus1 : %d \n", sps->pic_height_in_map_units_minus1 );
