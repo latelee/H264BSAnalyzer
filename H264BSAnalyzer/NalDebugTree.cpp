@@ -238,73 +238,85 @@ void CNalParser::h264_debug_sps(sps_t* sps, HTREEITEM root)
 void CNalParser::h264_debug_pps(pps_t* pps, HTREEITEM root)
 {
     my_printf("pic_parameter_set_rbsp()");
-    my_printf("pic_parameter_set_id: %d", pps->pic_parameter_set_id );
-    my_printf("seq_parameter_set_id: %d", pps->seq_parameter_set_id );
-    my_printf("entropy_coding_mode_flag", pps->entropy_coding_mode_flag );
-    my_printf("pic_order_present_flag", pps->pic_order_present_flag );
-    my_printf("num_slice_groups_minus1: %d", pps->num_slice_groups_minus1 );
+    HTREEITEM ipps = AddTreeItem(root);
+
+    my_printf("pic_parameter_set_id: %d  (v bits)", pps->pic_parameter_set_id ); AddTreeItem(ipps);
+    my_printf("seq_parameter_set_id: %d  (v bits)", pps->seq_parameter_set_id ); AddTreeItem(ipps);
+    my_printf_flag("entropy_coding_mode_flag", pps->entropy_coding_mode_flag ); AddTreeItem(ipps);
+    my_printf_flag("pic_order_present_flag", pps->pic_order_present_flag ); AddTreeItem(ipps);
+    my_printf("num_slice_groups_minus1: %d  (v bits)", pps->num_slice_groups_minus1 ); AddTreeItem(ipps);
     if( pps->num_slice_groups_minus1 > 0 )
     {
-        my_printf("slice_group_map_type: %d", pps->slice_group_map_type );
+        my_printf("slice_group_map_type: %d  (v bits)", pps->slice_group_map_type ); AddTreeItem(ipps);
         if( pps->slice_group_map_type == 0 )
         {
             for( int i_group = 0; i_group <= pps->num_slice_groups_minus1; i_group++ )
-                my_printf("run_length_minus1[%d]: %d", i_group, pps->run_length_minus1[i_group] );
+                my_printf("run_length_minus1[%d]: %d  (v bits)", i_group, pps->run_length_minus1[i_group] );
         }
         else if( pps->slice_group_map_type == 2 )
         {
             for( int i_group = 0; i_group <= pps->num_slice_groups_minus1; i_group++ )
             {
-                my_printf("top_left[%d]: %d", i_group, pps->top_left[i_group] );
-                my_printf("bottom_right[%d]: %d", i_group, pps->bottom_right[i_group] );
+                my_printf("top_left[%d]: %d  (v bits)", i_group, pps->top_left[i_group] );
+                my_printf("bottom_right[%d]: %d  (v bits)", i_group, pps->bottom_right[i_group] );
             }
         }
         else if( pps->slice_group_map_type == 3 ||
             pps->slice_group_map_type == 4 ||
             pps->slice_group_map_type == 5 )
         {
-            my_printf("slice_group_change_direction_flag", pps->slice_group_change_direction_flag );
-            my_printf("slice_group_change_rate_minus1: %d", pps->slice_group_change_rate_minus1 );
+            my_printf_flag("slice_group_change_direction_flag", pps->slice_group_change_direction_flag );
+            my_printf("slice_group_change_rate_minus1: %d  (v bits)", pps->slice_group_change_rate_minus1 );
         }
         else if( pps->slice_group_map_type == 6 )
         {            
-            my_printf("pic_size_in_map_units_minus1: %d", pps->pic_size_in_map_units_minus1 );
+            my_printf("pic_size_in_map_units_minus1: %d  (v bits)", pps->pic_size_in_map_units_minus1 );
             for( int i = 0; i <= pps->pic_size_in_map_units_minus1; i++ )
-                my_printf("slice_group_id[%d]: %d", i, pps->slice_group_id[i] );
+                my_printf("slice_group_id[%d]: %d  (%d bits)", i, pps->slice_group_id[i], pps->slice_group_id_bytes);
         }
     }
-    my_printf("num_ref_idx_l0_active_minus1: %d", pps->num_ref_idx_l0_active_minus1 );
-    my_printf("num_ref_idx_l1_active_minus1: %d", pps->num_ref_idx_l1_active_minus1 );
-    my_printf("weighted_pred_flag", pps->weighted_pred_flag );
-    my_printf("weighted_bipred_idc: %d", pps->weighted_bipred_idc );
-    my_printf("pic_init_qp_minus26: %d", pps->pic_init_qp_minus26 );
-    my_printf("pic_init_qs_minus26: %d", pps->pic_init_qs_minus26 );
-    my_printf("chroma_qp_index_offset: %d", pps->chroma_qp_index_offset );
-    my_printf("deblocking_filter_control_present_flag", pps->deblocking_filter_control_present_flag );
-    my_printf("constrained_intra_pred_flag", pps->constrained_intra_pred_flag );
-    my_printf("redundant_pic_cnt_present_flag", pps->redundant_pic_cnt_present_flag );
+    my_printf("num_ref_idx_l0_active_minus1: %d  (v bits)", pps->num_ref_idx_l0_active_minus1 ); AddTreeItem(ipps);
+    my_printf("num_ref_idx_l1_active_minus1: %d  (v bits)", pps->num_ref_idx_l1_active_minus1 ); AddTreeItem(ipps);
+    my_printf_flag("weighted_pred_flag", pps->weighted_pred_flag ); AddTreeItem(ipps);
+    my_printf("weighted_bipred_idc: %d  (2 bits)", pps->weighted_bipred_idc ); AddTreeItem(ipps);
+    my_printf("pic_init_qp_minus26: %d  (v bits)", pps->pic_init_qp_minus26 ); AddTreeItem(ipps);
+    my_printf("pic_init_qs_minus26: %d  (v bits)", pps->pic_init_qs_minus26 ); AddTreeItem(ipps);
+    my_printf("chroma_qp_index_offset: %d  (v bits)", pps->chroma_qp_index_offset ); AddTreeItem(ipps);
+    my_printf_flag("deblocking_filter_control_present_flag", pps->deblocking_filter_control_present_flag ); AddTreeItem(ipps);
+    my_printf_flag("constrained_intra_pred_flag", pps->constrained_intra_pred_flag ); AddTreeItem(ipps);
+    my_printf_flag("redundant_pic_cnt_present_flag", pps->redundant_pic_cnt_present_flag );
+    AddTreeItem(ipps);
     if( pps->_more_rbsp_data_present )
     {
         my_printf("more_rbsp_data()" );
-        my_printf("transform_8x8_mode_flag", pps->transform_8x8_mode_flag );
-        my_printf("pic_scaling_matrix_present_flag", pps->pic_scaling_matrix_present_flag );
+        HTREEITEM imrdp = AddTreeItem(ipps);
+        my_printf_flag("transform_8x8_mode_flag", pps->transform_8x8_mode_flag ); AddTreeItem(imrdp);
+        my_printf_flag("pic_scaling_matrix_present_flag", pps->pic_scaling_matrix_present_flag );
+        HTREEITEM psmpf = AddTreeItem(imrdp);
         if( pps->pic_scaling_matrix_present_flag )
         {
             for( int i = 0; i < 6 + 2* pps->transform_8x8_mode_flag; i++ )
             {
-                my_printf("pic_scaling_list_present_flag[%d]: %d", i, pps->pic_scaling_list_present_flag[i] );
+                my_printf_flag2("pic_scaling_list_present_flag", i, pps->pic_scaling_list_present_flag[i] );
+                 AddTreeItem(psmpf);
                 if( pps->pic_scaling_list_present_flag[ i ] )
                 {
                     if( i < 6 )
-                        my_printf("ScalingList4x4[%d]: %d", i, pps->ScalingList4x4[i] );
+                    {
+                        my_printf("ScalingList4x4[%d]: %d  (v bits)", i, pps->ScalingList4x4[i] );
+                        AddTreeItem(psmpf);
+                    }
                     else
-                        my_printf("ScalingList4xScalingList8x84[%d]: %d", i, pps->ScalingList8x8[i] );
+                    {
+                        my_printf("ScalingList4xScalingList8x84[%d]: %d  (v bits)", i, pps->ScalingList8x8[i] );
+                        AddTreeItem(psmpf);
+                    }
                 }
             }
         }
-        my_printf("second_chroma_qp_index_offset: %d", pps->second_chroma_qp_index_offset );
+        my_printf("second_chroma_qp_index_offset: %d  (v bits)", pps->second_chroma_qp_index_offset ); AddTreeItem(imrdp);
     }
-    my_printf("rbsp_trailing_bits()");
+    my_printf("rbsp_trailing_bits()"); AddTreeItem(ipps);
 }
 
 void CNalParser::h264_debug_slice_header(h264_stream_t* h, HTREEITEM root)
@@ -549,8 +561,9 @@ void CNalParser::h264_debug_slice_header(h264_stream_t* h, HTREEITEM root)
 
 void CNalParser::h264_debug_aud(aud_t* aud, HTREEITEM root)
 {
-    my_printf("======= Access Unit Delimiter =======");
-    const char* primary_pic_type_name;
+    my_printf("access_unit_delimiter_rbsp()");
+    HTREEITEM iaud = AddTreeItem(root);
+    const char* primary_pic_type_name = NULL;
     switch (aud->primary_pic_type)
     {
     case AUD_PRIMARY_PIC_TYPE_I:       primary_pic_type_name = "I"; break;

@@ -814,9 +814,11 @@ void read_pic_parameter_set_rbsp(h264_stream_t* h, bs_t* b)
         else if( pps->slice_group_map_type == 6 )
         {
             pps->pic_size_in_map_units_minus1 = bs_read_ue(b);
+            pps->slice_group_id_bytes = intlog2( pps->num_slice_groups_minus1 + 1 );
+            pps->slice_group_id.resize(pps->pic_size_in_map_units_minus1 + 1);
             for( i = 0; i <= pps->pic_size_in_map_units_minus1; i++ )
             {
-                pps->slice_group_id[ i ] = bs_read_u(b, intlog2( pps->num_slice_groups_minus1 + 1 ) ); // was u(v)
+                pps->slice_group_id[ i ] = bs_read_u(b,  pps->slice_group_id_bytes); // was u(v)
             }
         }
     }
@@ -1719,6 +1721,7 @@ void write_pic_parameter_set_rbsp(h264_stream_t* h, bs_t* b)
         else if( pps->slice_group_map_type == 6 )
         {
             bs_write_ue(b, pps->pic_size_in_map_units_minus1);
+            pps->slice_group_id.resize(pps->pic_size_in_map_units_minus1+1);
             for( i = 0; i <= pps->pic_size_in_map_units_minus1; i++ )
             {
                 bs_write_u(b, intlog2( pps->num_slice_groups_minus1 + 1 ), pps->slice_group_id[ i ] ); // was u(v)

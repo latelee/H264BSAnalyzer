@@ -160,7 +160,8 @@ typedef struct
       int slice_group_change_direction_flag;
       int slice_group_change_rate_minus1;
       int pic_size_in_map_units_minus1;
-      int slice_group_id[256]; // FIXME what size?
+      int slice_group_id_bytes;
+      vector<int> slice_group_id; // FIXME what size?
     int num_ref_idx_l0_active_minus1;
     int num_ref_idx_l1_active_minus1;
     int weighted_pred_flag;
