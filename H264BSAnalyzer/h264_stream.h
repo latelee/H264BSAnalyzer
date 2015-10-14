@@ -254,10 +254,12 @@ typedef struct
     int slice_type;
     int pic_parameter_set_id;
     int colour_plane_id;
+    int frame_num_bytes;
     int frame_num;
     int field_pic_flag;
       int bottom_field_flag;
     int idr_pic_id;
+    int pic_order_cnt_lsb_bytes;
     int pic_order_cnt_lsb;
     int delta_pic_order_cnt_bottom;
     int delta_pic_order_cnt[ 2 ];

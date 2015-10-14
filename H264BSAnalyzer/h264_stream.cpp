@@ -1036,7 +1036,8 @@ void read_slice_header(h264_stream_t* h, bs_t* b)
     {
         sh->colour_plane_id = bs_read_u(b, 2);
     }
-    sh->frame_num = bs_read_u(b, sps->log2_max_frame_num_minus4 + 4 ); // was u(v)
+    sh->frame_num_bytes = sps->log2_max_frame_num_minus4 + 4;
+    sh->frame_num = bs_read_u(b,  sh->frame_num_bytes); // was u(v)
     if( !sps->frame_mbs_only_flag )
     {
         sh->field_pic_flag = bs_read_u1(b);
@@ -1051,7 +1052,8 @@ void read_slice_header(h264_stream_t* h, bs_t* b)
     }
     if( sps->pic_order_cnt_type == 0 )
     {
-        sh->pic_order_cnt_lsb = bs_read_u(b, sps->log2_max_pic_order_cnt_lsb_minus4 + 4 ); // was u(v)
+        sh->pic_order_cnt_lsb_bytes = sps->log2_max_pic_order_cnt_lsb_minus4 + 4;
+        sh->pic_order_cnt_lsb = bs_read_u(b,  sh->pic_order_cnt_lsb_bytes); // was u(v)
         if( pps->pic_order_present_flag && !sh->field_pic_flag )
         {
             sh->delta_pic_order_cnt_bottom = bs_read_se(b);

@@ -327,9 +327,11 @@ void CNalParser::h264_debug_slice_header(h264_stream_t* h, HTREEITEM root)
     nal_t* nal = h->nal;
 
     my_printf("slice_layer_without_partitioning_rbsp()");
+    HTREEITEM slice = AddTreeItem(root);
     my_printf("slice_header()");
-    my_printf("first_mb_in_slice: %d", sh->first_mb_in_slice );
-    const char* slice_type_name;
+    HTREEITEM iheader = AddTreeItem(slice);
+    my_printf("first_mb_in_slice: %d  (v bits)", sh->first_mb_in_slice );
+    const char* slice_type_name = NULL; AddTreeItem(iheader);
     switch(sh->slice_type)
     {
     case SH_SLICE_TYPE_P:       slice_type_name = "P slice"; break;
@@ -344,37 +346,51 @@ void CNalParser::h264_debug_slice_header(h264_stream_t* h, HTREEITEM root)
     case SH_SLICE_TYPE_SI_ONLY: slice_type_name = "SI slice only"; break;
     default:                    slice_type_name = "Unknown"; break;
     }
-    my_printf("slice_type: %d (%s)", sh->slice_type, slice_type_name );
+    my_printf("slice_type: %d (%s)  (v bits)", sh->slice_type, slice_type_name ); AddTreeItem(iheader);
 
-    my_printf("pic_parameter_set_id: %d", sh->pic_parameter_set_id );
+    my_printf("pic_parameter_set_id: %d  (v bits)", sh->pic_parameter_set_id );
+    HTREEITEM ppsid = AddTreeItem(iheader);
     if (sps->separate_colour_plane_flag == 1)
     {
-        my_printf("colour_plane_id: %d", sh->colour_plane_id );
+        my_printf("colour_plane_id: %d  (2 bits)", sh->colour_plane_id ); AddTreeItem(ppsid);
     }
-    my_printf("frame_num: %d", sh->frame_num );
+    my_printf("frame_num: %d  (%d bits)", sh->frame_num, sh->frame_num_bytes ); AddTreeItem(iheader);
     if( !sps->frame_mbs_only_flag )
     {
-        my_printf("field_pic_flag", sh->field_pic_flag );
+        my_printf_flag("field_pic_flag", sh->field_pic_flag );
+        HTREEITEM fpf = AddTreeItem(iheader);
         if( sh->field_pic_flag )
-            my_printf("bottom_field_flag", sh->bottom_field_flag );
+        {
+            my_printf_flag("bottom_field_flag", sh->bottom_field_flag );
+            AddTreeItem(fpf);
+        }
     }
     if( nal->nal_unit_type == 5 )
-        my_printf("idr_pic_id: %d", sh->idr_pic_id );
+    {
+        my_printf("idr_pic_id: %d  (v bits)", sh->idr_pic_id ); AddTreeItem(iheader);
+    }
     if( sps->pic_order_cnt_type == 0 )
     {
-        my_printf("pic_order_cnt_lsb: %d", sh->pic_order_cnt_lsb );
+        my_printf("pic_order_cnt_lsb: %d  (%d bits)", sh->pic_order_cnt_lsb, sh->pic_order_cnt_lsb_bytes ); AddTreeItem(iheader);
         if( pps->pic_order_present_flag && !sh->field_pic_flag )
-            my_printf("delta_pic_order_cnt_bottom: %d", sh->delta_pic_order_cnt_bottom );
+        {
+            my_printf("delta_pic_order_cnt_bottom: %d  (v bits)", sh->delta_pic_order_cnt_bottom ); AddTreeItem(iheader);
+        }
     }
 
     if( sps->pic_order_cnt_type == 1 && !sps->delta_pic_order_always_zero_flag )
     {
-        my_printf("delta_pic_order_cnt[0]: %d", sh->delta_pic_order_cnt[0] );
+        my_printf("delta_pic_order_cnt[0]: %d  (v bits)", sh->delta_pic_order_cnt[0] ); AddTreeItem(iheader);
         if( pps->pic_order_present_flag && !sh->field_pic_flag )
-            my_printf("delta_pic_order_cnt[1]: %d", sh->delta_pic_order_cnt[1] );
+        {
+            my_printf("delta_pic_order_cnt[1]: %d  (v bits)", sh->delta_pic_order_cnt[1] );
+            AddTreeItem(iheader);
+        }
     }
     if( pps->redundant_pic_cnt_present_flag )
-        my_printf("redundant_pic_cnt: %d", sh->redundant_pic_cnt );
+    {
+        my_printf("redundant_pic_cnt: %d  (v bits)", sh->redundant_pic_cnt ); AddTreeItem(iheader);
+    }
     if( is_slice_type( sh->slice_type, SH_SLICE_TYPE_B ) )
         my_printf("direct_spatial_mv_pred_flag", sh->direct_spatial_mv_pred_flag );
     if( is_slice_type( sh->slice_type, SH_SLICE_TYPE_P ) || is_slice_type( sh->slice_type, SH_SLICE_TYPE_SP ) || is_slice_type( sh->slice_type, SH_SLICE_TYPE_B ) )
@@ -555,8 +571,8 @@ void CNalParser::h264_debug_slice_header(h264_stream_t* h, HTREEITEM root)
         pps->slice_group_map_type >= 3 && pps->slice_group_map_type <= 5)
         my_printf("slice_group_change_cycle: %d", sh->slice_group_change_cycle );
 
-    my_printf("slice_data()");
-    my_printf("rbsp_slice_trailing_bits()");
+    my_printf("slice_data()"); AddTreeItem(slice);
+    my_printf("rbsp_slice_trailing_bits()"); AddTreeItem(slice);
 }
 
 void CNalParser::h264_debug_aud(aud_t* aud, HTREEITEM root)
