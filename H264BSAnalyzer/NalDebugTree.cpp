@@ -392,15 +392,23 @@ void CNalParser::h264_debug_slice_header(h264_stream_t* h, HTREEITEM root)
         my_printf("redundant_pic_cnt: %d  (v bits)", sh->redundant_pic_cnt ); AddTreeItem(iheader);
     }
     if( is_slice_type( sh->slice_type, SH_SLICE_TYPE_B ) )
-        my_printf("direct_spatial_mv_pred_flag", sh->direct_spatial_mv_pred_flag );
+    {
+        my_printf_flag("direct_spatial_mv_pred_flag", sh->direct_spatial_mv_pred_flag );
+        AddTreeItem(iheader);
+    }
     if( is_slice_type( sh->slice_type, SH_SLICE_TYPE_P ) || is_slice_type( sh->slice_type, SH_SLICE_TYPE_SP ) || is_slice_type( sh->slice_type, SH_SLICE_TYPE_B ) )
     {
-        my_printf("num_ref_idx_active_override_flag", sh->num_ref_idx_active_override_flag );
+        my_printf_flag("num_ref_idx_active_override_flag", sh->num_ref_idx_active_override_flag );
+        HTREEITEM nriao = AddTreeItem(iheader);
         if( sh->num_ref_idx_active_override_flag )
         {
-            my_printf("num_ref_idx_l0_active_minus1: %d", sh->num_ref_idx_l0_active_minus1 );
+            my_printf("num_ref_idx_l0_active_minus1: %d  (v bits)", sh->num_ref_idx_l0_active_minus1 );
+            AddTreeItem(nriao);
             if( is_slice_type( sh->slice_type, SH_SLICE_TYPE_B ) )
-                my_printf("num_ref_idx_l1_active_minus1: %d", sh->num_ref_idx_l1_active_minus1 );
+            {
+                my_printf("num_ref_idx_l1_active_minus1: %d  (v bits)", sh->num_ref_idx_l1_active_minus1 );
+                AddTreeItem(nriao);
+            }
         }
     }
     // ref_pic_list_modification
@@ -408,44 +416,60 @@ void CNalParser::h264_debug_slice_header(h264_stream_t* h, HTREEITEM root)
     {
         // todo.....
         my_printf("ref_pic_list_mvc_modification()");
+        HTREEITEM rplmm = AddTreeItem(iheader);
     }
     else
     {
         my_printf("ref_pic_list_modification()");
+        HTREEITEM rplm = AddTreeItem(iheader);
         if( ! is_slice_type( sh->slice_type, SH_SLICE_TYPE_I ) && ! is_slice_type( sh->slice_type, SH_SLICE_TYPE_SI ) )
         {
-            my_printf("ref_pic_list_modification_flag_l0: %d", sh->rplm.ref_pic_list_modification_flag_l0 );
+            my_printf_flag("ref_pic_list_modification_flag_l0", sh->rplm.ref_pic_list_modification_flag_l0 );
+            HTREEITEM rplmf = AddTreeItem(rplm);
             if( sh->rplm.ref_pic_list_modification_flag_l0 )
             {
                 for (unsigned int i = 0; i < sh->rplm.rplm.size(); i++)
                 {
-                    my_printf("modification_of_pic_nums_idc: %d", sh->rplm.rplm[i].modification_of_pic_nums_idc);
+                    my_printf("modification_of_pic_nums_idc: %d  (v bits)", sh->rplm.rplm[i].modification_of_pic_nums_idc);
+                    AddTreeItem(rplmf);
                     if( sh->rplm.rplm[i].modification_of_pic_nums_idc == 0 ||
                         sh->rplm.rplm[i].modification_of_pic_nums_idc == 1 )
-                        my_printf("abs_diff_pic_num_minus1: %d", sh->rplm.rplm[i].abs_diff_pic_num_minus1 );
+                    {
+                        my_printf("abs_diff_pic_num_minus1: %d  (v bits)", sh->rplm.rplm[i].abs_diff_pic_num_minus1 );
+                        AddTreeItem(rplmf);
+                    }
                     else if( sh->rplm.rplm[i].modification_of_pic_nums_idc == 2 )
-                        my_printf("long_term_pic_num: %d", sh->rplm.rplm[i].long_term_pic_num );
+                    {
+                        my_printf("long_term_pic_num: %d  (v bits)", sh->rplm.rplm[i].long_term_pic_num );
+                        AddTreeItem(rplmf);
+                    }
                 }
-
             }
         }
         if( is_slice_type( sh->slice_type, SH_SLICE_TYPE_B ) )
         {
-            my_printf("ref_pic_list_modification_flag_l1: %d", sh->rplm.ref_pic_list_modification_flag_l1 );
+            my_printf_flag("ref_pic_list_modification_flag_l1", sh->rplm.ref_pic_list_modification_flag_l1 );
+            HTREEITEM rplmf1 = AddTreeItem(rplm);
             if( sh->rplm.ref_pic_list_modification_flag_l1 )
             {
                 for (unsigned int i = 0; i < sh->rplm.rplm.size(); i++)
                 {
-                    my_printf("modification_of_pic_nums_idc: %d", sh->rplm.rplm[i].modification_of_pic_nums_idc );
+                    my_printf("modification_of_pic_nums_idc: %d  (v bits)", sh->rplm.rplm[i].modification_of_pic_nums_idc );
+                    AddTreeItem(rplmf1);
                     if( sh->rplm.rplm[i].modification_of_pic_nums_idc == 0 ||
                         sh->rplm.rplm[i].modification_of_pic_nums_idc == 1 )
-                        my_printf("abs_diff_pic_num_minus1: %d", sh->rplm.rplm[i].abs_diff_pic_num_minus1 );
+                    {
+                        my_printf("abs_diff_pic_num_minus1: %d  (v bits)", sh->rplm.rplm[i].abs_diff_pic_num_minus1 );
+                        AddTreeItem(rplmf1);
+                    }
                     else if( sh->rplm.rplm[i].modification_of_pic_nums_idc == 2 )
-                        my_printf("long_term_pic_num: %d", sh->rplm.rplm[i].long_term_pic_num );
+                    {
+                        my_printf("long_term_pic_num: %d  (v bits)", sh->rplm.rplm[i].long_term_pic_num );
+                        AddTreeItem(rplmf1);
+                    }
                 }
             }
         }
-        
     }
 
     // pred_weight_table()
@@ -453,64 +477,96 @@ void CNalParser::h264_debug_slice_header(h264_stream_t* h, HTREEITEM root)
         ( pps->weighted_bipred_idc == 1 && is_slice_type( sh->slice_type, SH_SLICE_TYPE_B ) ) )
     {
         my_printf("pred_weight_table()");
-        my_printf("luma_log2_weight_denom: %d", sh->pwt.luma_log2_weight_denom );
+        HTREEITEM ipwt = AddTreeItem(iheader);
+        my_printf("luma_log2_weight_denom: %d  (v bits)", sh->pwt.luma_log2_weight_denom ); AddTreeItem(ipwt);
         if( sps->ChromaArrayType != 0 )
-            my_printf("chroma_log2_weight_denom: %d", sh->pwt.chroma_log2_weight_denom );
+        {
+            my_printf("chroma_log2_weight_denom: %d  (v bits)", sh->pwt.chroma_log2_weight_denom );
+            AddTreeItem(ipwt);
+        }
+        HTREEITEM ilwl0 = NULL;
         // 将luma和chroma分开显示
-        if (sh->num_ref_idx_l0_active_minus1 > 0)
+        if (sh->num_ref_idx_l0_active_minus1 >= 0)
+        {
             my_printf("luma_weight_l0()");
+            ilwl0 = AddTreeItem(ipwt);
+        }
         for( int i = 0; i <= sh->num_ref_idx_l0_active_minus1; i++ )
         {
-            my_printf("luma_weight_l0_flag[%d]: %d", i, sh->pwt.luma_weight_l0_flag[i] );
+            my_printf_flag2("luma_weight_l0_flag", i, sh->pwt.luma_weight_l0_flag[i] );
+            HTREEITEM ilwl0f = AddTreeItem(ilwl0);
             if( sh->pwt.luma_weight_l0_flag[i] )
             {
-                my_printf("luma_weight_l0[%d]: %d", i, sh->pwt.luma_weight_l0[i] );
-                my_printf("luma_offset_l0[%d]: %d", i, sh->pwt.luma_offset_l0[i] );
+                my_printf("luma_weight_l0[%d]: %d  (v bits)", i, sh->pwt.luma_weight_l0[i] );
+                AddTreeItem(ilwl0f);
+                my_printf("luma_offset_l0[%d]: %d  (v bits)", i, sh->pwt.luma_offset_l0[i] );
+                AddTreeItem(ilwl0f);
             }
         }
-        if (sh->num_ref_idx_l0_active_minus1 > 0)
+        HTREEITEM icwl0 = NULL;
+        if (sh->num_ref_idx_l0_active_minus1 >= 0)
+        {
             my_printf("chroma_weight_l0()");
+            icwl0 = AddTreeItem(ipwt);
+        }
         for( int i = 0; i <= sh->num_ref_idx_l0_active_minus1; i++ )
         {
             if ( sps->ChromaArrayType != 0 )
             {
-                my_printf("chroma_weight_l0_flag[%d]: %d", i, sh->pwt.chroma_weight_l0_flag[i] );
+                my_printf_flag2("chroma_weight_l0_flag", i, sh->pwt.chroma_weight_l0_flag[i] );
+                HTREEITEM icwl0f = AddTreeItem(icwl0);
                 if( sh->pwt.chroma_weight_l0_flag[i] )
                 {
                     for( int j =0; j < 2; j++ )
                     {
-                        my_printf("chroma_weight_l0[%d][%d]: %d", i, j, sh->pwt.chroma_weight_l0[i][j] );
-                        my_printf("chroma_weight_l0[%d][%d]: %d", i, j, sh->pwt.chroma_offset_l0[i][j] );
+                        my_printf("chroma_weight_l0[%d][%d]: %d  (v bits)", i, j, sh->pwt.chroma_weight_l0[i][j] );
+                        AddTreeItem(icwl0f);
+                        my_printf("chroma_weight_l0[%d][%d]: %d  (v bits)", i, j, sh->pwt.chroma_offset_l0[i][j] );
+                        AddTreeItem(icwl0f);
                     }
                 }
             }
         }
         if( is_slice_type( sh->slice_type, SH_SLICE_TYPE_B ) )
         {
-            if (sh->num_ref_idx_l1_active_minus1 > 0)
+            HTREEITEM ilwl1 = NULL;
+            if (sh->num_ref_idx_l1_active_minus1 >= 0)
+            {
                 my_printf("luma_weight_l1()");
+                ilwl1 = AddTreeItem(ipwt);
+            }
             for( int i = 0; i <= sh->num_ref_idx_l1_active_minus1; i++ )
             {
-                my_printf("luma_weight_l1_flag[%d]: %d", i, sh->pwt.luma_weight_l1_flag[i] );
+                my_printf_flag2("luma_weight_l1_flag", i, sh->pwt.luma_weight_l1_flag[i] );
+                HTREEITEM ilwl1f = AddTreeItem(ilwl1);
                 if( sh->pwt.luma_weight_l1_flag[i] )
                 {
-                    my_printf("luma_weight_l1[%d]: %d", i, sh->pwt.luma_weight_l1[i] );
-                    my_printf("luma_offset_l1[%d]: %d", i, sh->pwt.luma_offset_l1[i] );
+                    my_printf("luma_weight_l1[%d]: %d  (v bits)", i, sh->pwt.luma_weight_l1[i] );
+                    AddTreeItem(ilwl1f);
+                    my_printf("luma_offset_l1[%d]: %d  (v bits)", i, sh->pwt.luma_offset_l1[i] );
+                    AddTreeItem(ilwl1f);
                 }
             }
-            if (sh->num_ref_idx_l1_active_minus1 > 0)
+            HTREEITEM icwl1 = NULL;
+            if (sh->num_ref_idx_l1_active_minus1 >= 0)
+            {
                 my_printf("chroma_weight_l1()");
+                icwl1 = AddTreeItem(ipwt);
+            }
             for( int i = 0; i <= sh->num_ref_idx_l1_active_minus1; i++ )
             {
                 if ( sps->ChromaArrayType != 0 )
                 {
-                    my_printf("chroma_weight_l1_flag[%d]: %d", i, sh->pwt.chroma_weight_l1_flag[i] );
+                    my_printf_flag2("chroma_weight_l1_flag", i, sh->pwt.chroma_weight_l1_flag[i] );
+                    HTREEITEM icwl1f = AddTreeItem(icwl1);
                     if( sh->pwt.chroma_weight_l1_flag[i] )
                     {
                         for( int j =0; j < 2; j++ )
                         {
-                            my_printf("chroma_weight_l1[%d][%d]: %d", i, j, sh->pwt.chroma_weight_l1[i][j] );
-                            my_printf("chroma_offset_l1[%d][%d]: %d", i, j, sh->pwt.chroma_offset_l1[i][j] );
+                            my_printf("chroma_weight_l1[%d][%d]: %d  (v bits)", i, j, sh->pwt.chroma_weight_l1[i][j] );
+                            AddTreeItem(icwl1f);
+                            my_printf("chroma_offset_l1[%d][%d]: %d  (v bits)", i, j, sh->pwt.chroma_offset_l1[i][j] );
+                            AddTreeItem(icwl1f);
                         }
                     }
                 }
@@ -521,55 +577,86 @@ void CNalParser::h264_debug_slice_header(h264_stream_t* h, HTREEITEM root)
     if( nal->nal_ref_idc != 0 )
     {
         my_printf("dec_ref_pic_marking()");
+        HTREEITEM idrpm = AddTreeItem(iheader);
         if( h->nal->nal_unit_type == 5 )
         {
-            my_printf("no_output_of_prior_pics_flag", sh->drpm.no_output_of_prior_pics_flag );
-            my_printf("long_term_reference_flag", sh->drpm.long_term_reference_flag );
+            my_printf_flag("no_output_of_prior_pics_flag", sh->drpm.no_output_of_prior_pics_flag );
+            AddTreeItem(idrpm);
+            my_printf_flag("long_term_reference_flag", sh->drpm.long_term_reference_flag );
+            AddTreeItem(idrpm);
         }
         else
         {
-            my_printf("adaptive_ref_pic_marking_mode_flag", sh->drpm.adaptive_ref_pic_marking_mode_flag );
+            my_printf_flag("adaptive_ref_pic_marking_mode_flag", sh->drpm.adaptive_ref_pic_marking_mode_flag );
+            HTREEITEM arpmmf = AddTreeItem(idrpm);
             if( sh->drpm.adaptive_ref_pic_marking_mode_flag )
             {
                 for (unsigned int i = 0; i < sh->drpm.drpm.size(); i++)
                 {
-                    my_printf("memory_management_control_operation: %d", sh->drpm.drpm[i].memory_management_control_operation );
+                    my_printf("memory_management_control_operation: %d  (v bits)", sh->drpm.drpm[i].memory_management_control_operation );
+                    AddTreeItem(arpmmf);
                     if( sh->drpm.drpm[i].memory_management_control_operation == 1 ||
                         sh->drpm.drpm[i].memory_management_control_operation == 3 )
-                        my_printf("difference_of_pic_nums_minus1: %d", sh->drpm.drpm[i].difference_of_pic_nums_minus1 );
+                    {
+                        my_printf("difference_of_pic_nums_minus1: %d  (v bits)", sh->drpm.drpm[i].difference_of_pic_nums_minus1 );
+                        AddTreeItem(arpmmf);
+                    }
                     if(sh->drpm.drpm[i].memory_management_control_operation == 2 )
-                        my_printf("long_term_pic_num: %d", sh->drpm.drpm[i].long_term_pic_num );
+                    {
+                        my_printf("long_term_pic_num: %d  (v bits)", sh->drpm.drpm[i].long_term_pic_num );
+                        AddTreeItem(arpmmf);
+                    }
                     if( sh->drpm.drpm[i].memory_management_control_operation == 3 ||
                         sh->drpm.drpm[i].memory_management_control_operation == 6 )
-                        my_printf("long_term_frame_idx: %d", sh->drpm.drpm[i].long_term_frame_idx );
+                    {
+                        my_printf("long_term_frame_idx: %d  (v bits)", sh->drpm.drpm[i].long_term_frame_idx );
+                        AddTreeItem(arpmmf);
+                    }
                     if( sh->drpm.drpm[i].memory_management_control_operation == 4 )
-                        my_printf("max_long_term_frame_idx_plus1: %d", sh->drpm.drpm[i].max_long_term_frame_idx_plus1 );
+                    {
+                        my_printf("max_long_term_frame_idx_plus1: %d  (v bits)", sh->drpm.drpm[i].max_long_term_frame_idx_plus1 );
+                        AddTreeItem(arpmmf);
+                    }
                 }
             }
         }
     }
     if( pps->entropy_coding_mode_flag && ! is_slice_type( sh->slice_type, SH_SLICE_TYPE_I ) && ! is_slice_type( sh->slice_type, SH_SLICE_TYPE_SI ) )
+    {
         my_printf("cabac_init_idc: %d", sh->cabac_init_idc );
+        AddTreeItem(iheader);
+    }
     my_printf("slice_qp_delta: %d", sh->slice_qp_delta );
+    AddTreeItem(iheader);
     if( is_slice_type( sh->slice_type, SH_SLICE_TYPE_SP ) || is_slice_type( sh->slice_type, SH_SLICE_TYPE_SI ) )
     {
         if( is_slice_type( sh->slice_type, SH_SLICE_TYPE_SP ) )
-            my_printf("sp_for_switch_flag", sh->sp_for_switch_flag );
-        my_printf("slice_qs_delta: %d", sh->slice_qs_delta );
+        {
+            my_printf_flag("sp_for_switch_flag", sh->sp_for_switch_flag );
+            AddTreeItem(iheader);
+        }
+        my_printf("slice_qs_delta: %d  (v bits)", sh->slice_qs_delta );
+        AddTreeItem(iheader);
     }
     if( pps->deblocking_filter_control_present_flag )
     {
-        my_printf("disable_deblocking_filter_idc: %d", sh->disable_deblocking_filter_idc );
+        my_printf("disable_deblocking_filter_idc: %d  (v bits)", sh->disable_deblocking_filter_idc );
+        HTREEITEM ddfi = AddTreeItem(iheader);
         if( sh->disable_deblocking_filter_idc != 1 )
         {
-            my_printf("slice_alpha_c0_offset_div2: %d", sh->slice_alpha_c0_offset_div2 );
-            my_printf("slice_beta_offset_div2: %d", sh->slice_beta_offset_div2 );
+            my_printf("slice_alpha_c0_offset_div2: %d  (v bits)", sh->slice_alpha_c0_offset_div2 );
+            AddTreeItem(ddfi);
+            my_printf("slice_beta_offset_div2: %d  (v bits)", sh->slice_beta_offset_div2 );
+            AddTreeItem(ddfi);
         }
     }
 
     if( pps->num_slice_groups_minus1 > 0 &&
         pps->slice_group_map_type >= 3 && pps->slice_group_map_type <= 5)
-        my_printf("slice_group_change_cycle: %d", sh->slice_group_change_cycle );
+    {
+        my_printf("slice_group_change_cycle: %d  (%d bits)", sh->slice_group_change_cycle );
+        AddTreeItem(iheader);
+    }
 
     my_printf("slice_data()"); AddTreeItem(slice);
     my_printf("rbsp_slice_trailing_bits()"); AddTreeItem(slice);
