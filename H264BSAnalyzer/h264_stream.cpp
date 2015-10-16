@@ -1131,9 +1131,9 @@ void read_slice_header(h264_stream_t* h, bs_t* b)
     if( pps->num_slice_groups_minus1 > 0 &&
         pps->slice_group_map_type >= 3 && pps->slice_group_map_type <= 5)
     {
-        sh->slice_group_change_cycle = 
-            bs_read_u(b, intlog2( pps->pic_size_in_map_units_minus1 +  
-                                  pps->slice_group_change_rate_minus1 + 1 ) ); // was u(v) // FIXME add 2?
+        sh->slice_group_change_cycle_bytes = intlog2( pps->pic_size_in_map_units_minus1 +  
+            pps->slice_group_change_rate_minus1 + 1 );
+        sh->slice_group_change_cycle = bs_read_u(b,  sh->slice_group_change_cycle_bytes); // was u(v) // FIXME add 2?
     }
     // bs_print_state(b);
 }

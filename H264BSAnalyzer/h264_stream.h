@@ -275,6 +275,7 @@ typedef struct
     int disable_deblocking_filter_idc;
     int slice_alpha_c0_offset_div2;
     int slice_beta_offset_div2;
+    int slice_group_change_cycle_bytes;
     int slice_group_change_cycle;
 
     pwt_t pwt;

@@ -654,7 +654,7 @@ void CNalParser::h264_debug_slice_header(h264_stream_t* h, HTREEITEM root)
     if( pps->num_slice_groups_minus1 > 0 &&
         pps->slice_group_map_type >= 3 && pps->slice_group_map_type <= 5)
     {
-        my_printf("slice_group_change_cycle: %d  (%d bits)", sh->slice_group_change_cycle );
+        my_printf("slice_group_change_cycle: %d  (%d bits)", sh->slice_group_change_cycle, sh->slice_group_change_cycle_bytes );
         AddTreeItem(iheader);
     }
 
@@ -679,63 +679,115 @@ void CNalParser::h264_debug_aud(aud_t* aud, HTREEITEM root)
     case AUD_PRIMARY_PIC_TYPE_ISIPSPB: primary_pic_type_name = "I, SI, P, SP, B"; break;
     default: primary_pic_type_name = "Unknown"; break;
     }
-    my_printf("primary_pic_type: %d (%s)", aud->primary_pic_type, primary_pic_type_name );
+    my_printf("primary_pic_type: %d (%s)  (3 bits)", aud->primary_pic_type, primary_pic_type_name );
+    AddTreeItem(iaud);
 }
 
 void CNalParser::h264_debug_seis( h264_stream_t* h, HTREEITEM root)
 {
     sei_t** seis = h->seis;
     int num_seis = h->num_seis;
-
-    my_printf("======= SEI =======");
     const char* sei_type_name;
     int i;
+
+    my_printf("sei_rbsp()");
+    HTREEITEM isei = AddTreeItem(root);
+    my_printf("sei_message()");
+    HTREEITEM iisei = AddTreeItem(isei);
+
     for (i = 0; i < num_seis; i++)
     {
         sei_t* s = seis[i];
-        my_printf("payloadType: %d", s->payloadType );
-        my_printf("payloadSize: %d", s->payloadSize );
+        my_printf("payloadType: %d", s->payloadType); AddTreeItem(iisei);
+        my_printf("payloadSize: %d", s->payloadSize); AddTreeItem(iisei);
+        my_printf("sei_payload()");
+        HTREEITEM sp = AddTreeItem(iisei);
         switch(s->payloadType)
         {
-        case SEI_TYPE_BUFFERING_PERIOD:          sei_type_name = "Buffering period"; break;
-        case SEI_TYPE_PIC_TIMING:                sei_type_name = "Pic timing"; break;
-        case SEI_TYPE_PAN_SCAN_RECT:             sei_type_name = "Pan scan rect"; break;
-        case SEI_TYPE_FILLER_PAYLOAD:            sei_type_name = "Filler payload"; break;
-        case SEI_TYPE_USER_DATA_REGISTERED_ITU_T_T35: sei_type_name = "User data registered ITU-T T35"; break;
+        case SEI_TYPE_BUFFERING_PERIOD:
+            my_printf("buffering_period()"); AddTreeItem(sp);
+            break;
+        case SEI_TYPE_PIC_TIMING:
+            my_printf("pic_timing()"); AddTreeItem(sp);
+            break;
+        case SEI_TYPE_PAN_SCAN_RECT:
+            my_printf("pan_scan_rect()"); AddTreeItem(sp);
+            break;
+        case SEI_TYPE_FILLER_PAYLOAD:
+            my_printf("filler_payload()"); AddTreeItem(sp);
+            break;
+        case SEI_TYPE_USER_DATA_REGISTERED_ITU_T_T35:
+            my_printf("user_data_registered_itu_t_t35()"); AddTreeItem(sp);
+            break;
         case SEI_TYPE_USER_DATA_UNREGISTERED :
             {
-                
-                my_printf("sei_payload()");
-                my_printf("user_data_unregistered()");
-                my_printf("uuid_iso_iec_11578: ");
+                char uuid[64] = {0};
+                char tmp[8] = {0};
                 for (int j = 0; j < 16; j++)
-                    my_printf("%X", s->payload[j]);
-                my_printf ("\r\n   ");
+                {
+                    sprintf(tmp, "%X", s->payload[j]);
+                    strcat(uuid, tmp);
+                }
+                my_printf("uuid_iso_iec_11578: %s", uuid);
+                HTREEITEM udpb = AddTreeItem(sp);
                 for (int j = 16; j < s->payloadSize; j++)
                 {
-                    my_printf("%c", s->payload[j]);
-                    if ((j+1) % 128 == 0) my_printf ("");
+                    my_printf("user_data_payload_byte: %d('%c')", s->payload[j], s->payload[j]);
+                    AddTreeItem(sp);
                 }
-                break;
             }
-            
-        case SEI_TYPE_RECOVERY_POINT:            sei_type_name = "Recovery point"; break;
-        case SEI_TYPE_DEC_REF_PIC_MARKING_REPETITION: sei_type_name = "Dec ref pic marking repetition"; break;
-        case SEI_TYPE_SPARE_PIC:                 sei_type_name = "Spare pic"; break;
-        case SEI_TYPE_SCENE_INFO:                sei_type_name = "Scene info"; break;
-        case SEI_TYPE_SUB_SEQ_INFO:              sei_type_name = "Sub seq info"; break;
-        case SEI_TYPE_SUB_SEQ_LAYER_CHARACTERISTICS: sei_type_name = "Sub seq layer characteristics"; break;
-        case SEI_TYPE_SUB_SEQ_CHARACTERISTICS:   sei_type_name = "Sub seq characteristics"; break;
-        case SEI_TYPE_FULL_FRAME_FREEZE:         sei_type_name = "Full frame freeze"; break;
-        case SEI_TYPE_FULL_FRAME_FREEZE_RELEASE: sei_type_name = "Full frame freeze release"; break;
-        case SEI_TYPE_FULL_FRAME_SNAPSHOT:       sei_type_name = "Full frame snapshot"; break;
-        case SEI_TYPE_PROGRESSIVE_REFINEMENT_SEGMENT_START: sei_type_name = "Progressive refinement segment start"; break;
-        case SEI_TYPE_PROGRESSIVE_REFINEMENT_SEGMENT_END: sei_type_name = "Progressive refinement segment end"; break;
-        case SEI_TYPE_MOTION_CONSTRAINED_SLICE_GROUP_SET: sei_type_name = "Motion constrained slice group set"; break;
-        case SEI_TYPE_FILM_GRAIN_CHARACTERISTICS: sei_type_name = "Film grain characteristics"; break;
-        case SEI_TYPE_DEBLOCKING_FILTER_DISPLAY_PREFERENCE: sei_type_name = "Deblocking filter display preference"; break;
-        case SEI_TYPE_STEREO_VIDEO_INFO:         sei_type_name = "Stereo video info"; break;
-        default: sei_type_name = "Unknown"; break;
+            break;
+        case SEI_TYPE_RECOVERY_POINT:
+            my_printf("recovery_point()"); AddTreeItem(sp);
+            break;
+        case SEI_TYPE_DEC_REF_PIC_MARKING_REPETITION:
+            my_printf("Dec ref pic marking repetition()"); AddTreeItem(sp);
+            break;
+        case SEI_TYPE_SPARE_PIC:
+            my_printf("Spare pic()"); AddTreeItem(sp);
+            break;
+        case SEI_TYPE_SCENE_INFO:
+            my_printf("scene_info()"); AddTreeItem(sp);
+            break;
+        case SEI_TYPE_SUB_SEQ_INFO:
+            my_printf("Sub seq info()"); AddTreeItem(sp);
+            break;
+        case SEI_TYPE_SUB_SEQ_LAYER_CHARACTERISTICS:
+            my_printf("Sub seq layer characteristics()"); AddTreeItem(sp);
+            break;
+        case SEI_TYPE_SUB_SEQ_CHARACTERISTICS:
+            my_printf("Sub seq characteristics()"); AddTreeItem(sp);
+            break;
+        case SEI_TYPE_FULL_FRAME_FREEZE:
+            my_printf("Full frame freeze()"); AddTreeItem(sp);
+            break;
+        case SEI_TYPE_FULL_FRAME_FREEZE_RELEASE:
+            my_printf("Full frame freeze release()"); AddTreeItem(sp);
+            break;
+        case SEI_TYPE_FULL_FRAME_SNAPSHOT:
+            my_printf("picture_snapshot()"); AddTreeItem(sp);
+            break;
+        case SEI_TYPE_PROGRESSIVE_REFINEMENT_SEGMENT_START:
+            my_printf("progressive_refinement_segment_start()"); AddTreeItem(sp);
+            break;
+        case SEI_TYPE_PROGRESSIVE_REFINEMENT_SEGMENT_END:
+            my_printf("progressive_refinement_segment_end()"); AddTreeItem(sp);
+            break;
+        case SEI_TYPE_MOTION_CONSTRAINED_SLICE_GROUP_SET:
+            my_printf("Motion constrained slice group set()"); AddTreeItem(sp);
+            break;
+        case SEI_TYPE_FILM_GRAIN_CHARACTERISTICS:
+            my_printf("film_grain_characteristics()"); AddTreeItem(sp);
+            break;
+        case SEI_TYPE_DEBLOCKING_FILTER_DISPLAY_PREFERENCE:
+            my_printf("Deblocking filter display preference()"); AddTreeItem(sp);
+            break;
+        case SEI_TYPE_STEREO_VIDEO_INFO:
+            my_printf("Stereo video info()"); AddTreeItem(sp);
+            break;
+        default:
+            my_printf("Unknown()"); AddTreeItem(sp);
+            break;
         }
     }
 }
@@ -1540,10 +1592,10 @@ void CNalParser::h265_debug_seis(h265_stream_t* h, HTREEITEM root)
                 my_printf("pan_scan_rect()"); AddTreeItem(sp);
                 break;
             case 3:
-                my_printf("pan_scan_rect()"); AddTreeItem(sp);
+                my_printf("filler_payload()"); AddTreeItem(sp);
                 break;
             case 4:
-                my_printf("pan_scan_rect()"); AddTreeItem(sp);
+                my_printf("user_data_registered_itu_t_t35()"); AddTreeItem(sp);
                 break;
             case 5:
                 {
