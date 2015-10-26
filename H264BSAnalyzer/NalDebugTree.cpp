@@ -1151,41 +1151,41 @@ void CNalParser::h265_debug_short_term_ref_pic_set(h265_sps_t* sps, st_ref_pic_s
 {
     my_printf("short_term_ref_pic_set( %d )", stRpsIdx);
     HTREEITEM srps = AddTreeItem(root);
-
+    HTREEITEM srpsii = srps;
     if (stRpsIdx != 0)
     {
         my_printf_flag("inter_ref_pic_set_prediction_flag", st->inter_ref_pic_set_prediction_flag);
-        AddTreeItem(srps);
+        srpsii = AddTreeItem(srps);
     }
     if (st->inter_ref_pic_set_prediction_flag)
     {
-        my_printf("delta_idx_minus1: %d (v bits)", st->delta_idx_minus1); AddTreeItem(srps);
-        my_printf("delta_rps_sign: %d (1 bit)", st->delta_rps_sign); AddTreeItem(srps);
-        my_printf("abs_delta_rps_minus1: %d (v bits)", st->abs_delta_rps_minus1); AddTreeItem(srps);
+        my_printf("delta_idx_minus1: %d (v bits)", st->delta_idx_minus1); AddTreeItem(srpsii);
+        my_printf("delta_rps_sign: %d (1 bit)", st->delta_rps_sign); AddTreeItem(srpsii);
+        my_printf("abs_delta_rps_minus1: %d (v bits)", st->abs_delta_rps_minus1); AddTreeItem(srpsii);
         int rIdx = stRpsIdx - 1 - st->delta_idx_minus1;
         referencePictureSets_t* rpsRef = &sps->m_RPSList[rIdx];
         for (int j = 0; j <= rpsRef->m_numberOfPictures; j++)
         {
-            my_printf_flag2("used_by_curr_pic_flag", j, st->used_by_curr_pic_flag[j]); AddTreeItem(srps);
+            my_printf_flag2("used_by_curr_pic_flag", j, st->used_by_curr_pic_flag[j]); AddTreeItem(srpsii);
             if (!st->used_by_curr_pic_flag[j])
             {
-                my_printf_flag2("use_delta_flag", j, st->use_delta_flag[j]); AddTreeItem(srps);
+                my_printf_flag2("use_delta_flag", j, st->use_delta_flag[j]); AddTreeItem(srpsii);
             }
         }
     }
     else
     {
-        my_printf("num_negative_pics: %d (v bits)", st->num_negative_pics); AddTreeItem(srps);
-        my_printf("num_positive_pics: %d (v bits)", st->num_positive_pics); AddTreeItem(srps);
+        my_printf("num_negative_pics: %d (v bits)", st->num_negative_pics); AddTreeItem(srpsii);
+        my_printf("num_positive_pics: %d (v bits)", st->num_positive_pics); AddTreeItem(srpsii);
         for (int i = 0; i < st->num_negative_pics; i++)
         {
-            my_printf("delta_poc_s0_minus1[%d]: %d  (v bits)", i, st->delta_poc_s0_minus1[i]); AddTreeItem(srps);
-            my_printf_flag2("used_by_curr_pic_s0_flag", i, st->used_by_curr_pic_s0_flag[i]); AddTreeItem(srps);
+            my_printf("delta_poc_s0_minus1[%d]: %d  (v bits)", i, st->delta_poc_s0_minus1[i]); AddTreeItem(srpsii);
+            my_printf_flag2("used_by_curr_pic_s0_flag", i, st->used_by_curr_pic_s0_flag[i]); AddTreeItem(srpsii);
         }
         for (int i = 0; i < st->num_positive_pics; i++)
         {
-            my_printf("delta_poc_s1_minus1[%d]: %d (v bits)", i, st->delta_poc_s1_minus1[i]); AddTreeItem(srps);
-            my_printf_flag2("used_by_curr_pic_s1_flag", i, st->used_by_curr_pic_s1_flag[i]); AddTreeItem(srps);
+            my_printf("delta_poc_s1_minus1[%d]: %d (v bits)", i, st->delta_poc_s1_minus1[i]); AddTreeItem(srpsii);
+            my_printf_flag2("used_by_curr_pic_s1_flag", i, st->used_by_curr_pic_s1_flag[i]); AddTreeItem(srpsii);
         }
     }
 }
@@ -1286,7 +1286,7 @@ void CNalParser::h265_debug_sps(h265_sps_t* sps, HTREEITEM root)
     my_printf("seq_parameter_set_rbsp()");
     HTREEITEM isps = AddTreeItem(root);
     my_printf("sps_video_parameter_set_id: %d  (4 bits)", sps->sps_video_parameter_set_id); AddTreeItem(isps);
-    my_printf("sps_max_sub_layers_minus1: %d  (3 bits)", sps->sps_max_sub_layers_minus1); AddTreeItem(isps);
+    my_printf("sps_max_sub_layers_minus1: %d  (4 bits)", sps->sps_max_sub_layers_minus1); AddTreeItem(isps);
     my_printf_flag("sps_temporal_id_nesting_flag", sps->sps_temporal_id_nesting_flag); AddTreeItem(isps);
     // ptl
     my_printf("profile_tier_level()");
@@ -1301,18 +1301,20 @@ void CNalParser::h265_debug_sps(h265_sps_t* sps, HTREEITEM root)
     }
     my_printf("pic_width_in_luma_samples: %d  (v bits)", sps->pic_width_in_luma_samples); AddTreeItem(isps);
     my_printf("pic_height_in_luma_samples: %d  (v bits)", sps->pic_height_in_luma_samples); AddTreeItem(isps);
-    my_printf_flag("conformance_window_flag", sps->conformance_window_flag); AddTreeItem(isps);
+    my_printf_flag("conformance_window_flag", sps->conformance_window_flag);
+    HTREEITEM cwf = AddTreeItem(isps);
     if (sps->conformance_window_flag)
     {
-        my_printf("conf_win_left_offset: %d  (v bits)", sps->conf_win_left_offset); AddTreeItem(isps);
-        my_printf("conf_win_right_offset: %d  (v bits)", sps->conf_win_right_offset); AddTreeItem(isps);
-        my_printf("conf_win_top_offset: %d  (v bits)", sps->conf_win_top_offset); AddTreeItem(isps);
-        my_printf("conf_win_bottom_offset: %d  (v bits)", sps->conf_win_bottom_offset); AddTreeItem(isps);
+        my_printf("conf_win_left_offset: %d  (v bits)", sps->conf_win_left_offset); AddTreeItem(cwf);
+        my_printf("conf_win_right_offset: %d  (v bits)", sps->conf_win_right_offset); AddTreeItem(cwf);
+        my_printf("conf_win_top_offset: %d  (v bits)", sps->conf_win_top_offset); AddTreeItem(cwf);
+        my_printf("conf_win_bottom_offset: %d  (v bits)", sps->conf_win_bottom_offset); AddTreeItem(cwf);
     }
     my_printf("bit_depth_luma_minus8: %d  (v bits)", sps->bit_depth_luma_minus8); AddTreeItem(isps);
     my_printf("bit_depth_chroma_minus8: %d  (v bits)", sps->bit_depth_chroma_minus8); AddTreeItem(isps);
     my_printf("log2_max_pic_order_cnt_lsb_minus4: %d  (v bits)", sps->log2_max_pic_order_cnt_lsb_minus4); AddTreeItem(isps);
-    my_printf_flag("sps_sub_layer_ordering_info_present_flag", sps->sps_sub_layer_ordering_info_present_flag);
+    my_printf_flag("sps_sub_layer_ordering_info_present_flag", sps->sps_sub_layer_ordering_info_present_flag);AddTreeItem(isps);
+    my_printf("SubLayers");
     HTREEITEM isloripf = AddTreeItem(isps);
     for (int i = (sps->sps_sub_layer_ordering_info_present_flag ? 0 : sps->sps_max_sub_layers_minus1);
         i <= sps->sps_max_sub_layers_minus1; i++ )
@@ -1351,14 +1353,19 @@ void CNalParser::h265_debug_sps(h265_sps_t* sps, HTREEITEM root)
         my_printf("log2_diff_max_min_pcm_luma_coding_block_size: %d  (v bits)", sps->log2_diff_max_min_pcm_luma_coding_block_size); AddTreeItem(pef);
         my_printf_flag("pcm_loop_filter_disabled_flag", sps->pcm_loop_filter_disabled_flag); AddTreeItem(pef);
     }
-    my_printf("num_short_term_ref_pic_sets: %d  (v bits)", sps->num_short_term_ref_pic_sets); AddTreeItem(isps);
+    my_printf("num_short_term_ref_pic_sets: %d  (v bits)", sps->num_short_term_ref_pic_sets); 
     referencePictureSets_t* rps = NULL;
     st_ref_pic_set_t* st = NULL;
+    HTREEITEM nstrps = isps;
+    if (sps->num_short_term_ref_pic_sets > 0)
+    {
+        nstrps = AddTreeItem(isps);
+    }
     for (int i = 0; i < sps->num_short_term_ref_pic_sets; i++)
     {
         st = &sps->st_ref_pic_set[i];
         rps = &sps->m_RPSList[i];
-        h265_debug_short_term_ref_pic_set(sps, st, rps, i, isps);
+        h265_debug_short_term_ref_pic_set(sps, st, rps, i, nstrps);
     }
     my_printf_flag("long_term_ref_pics_present_flag", sps->long_term_ref_pics_present_flag);
     HTREEITEM ltrppf = AddTreeItem(isps);
@@ -1415,6 +1422,7 @@ void CNalParser::h265_debug_sps(h265_sps_t* sps, HTREEITEM root)
 
     // todo sps_3d_extension_flag
 
+    my_printf("rbsp_slice_segment_trailing_bits()"); AddTreeItem(isps);
 }
 
 // pps
@@ -1538,6 +1546,8 @@ void CNalParser::h265_debug_pps(h265_pps_t* pps, HTREEITEM root)
     {
         // todo...
     }
+
+    my_printf("rbsp_slice_segment_trailing_bits()"); AddTreeItem(ipps);
 }
 
 // aud
@@ -1574,8 +1584,8 @@ void CNalParser::h265_debug_seis(h265_stream_t* h, HTREEITEM root)
     for (i = 0; i < num_seis; i++)
     {
         h265_sei_t* s = seis[i];
-        my_printf("payloadType: %d", s->payloadType); AddTreeItem(iisei);
-        my_printf("payloadSize: %d", s->payloadSize); AddTreeItem(iisei);
+        my_printf("payloadType: %d  (v bits)", s->payloadType); AddTreeItem(iisei);
+        my_printf("payloadSize: %d  (v bits)", s->payloadSize); AddTreeItem(iisei);
         my_printf("sei_payload()");
         HTREEITEM sp = AddTreeItem(iisei);
         if (h->nal->nal_unit_type == NAL_UNIT_PREFIX_SEI)
@@ -1667,6 +1677,8 @@ void CNalParser::h265_debug_seis(h265_stream_t* h, HTREEITEM root)
             }
         }
     }
+
+    my_printf("rbsp_slice_segment_trailing_bits()"); AddTreeItem(isei);
 }
 
 void CNalParser::h265_debug_ref_pic_lists_modification(h265_slice_header_t* hrd, HTREEITEM root)
@@ -1698,26 +1710,25 @@ void CNalParser::h265_debug_pred_weight_table(h265_stream_t* h, HTREEITEM root)
         my_printf("delta_chroma_log2_weight_denom: %d  (v bits)", pwt->delta_chroma_log2_weight_denom);
         AddTreeItem(ipwt);
     }
-    // to check
-    /*
+
     HTREEITEM nria;
     if (h->sh->num_ref_idx_l0_active_minus1 >= 0)
     {
         my_printf("NumRefIdxL0Active");
         nria = AddTreeItem(ipwt);
     }
-    */
+
     for (int i = 0; i <= h->sh->num_ref_idx_l0_active_minus1; i++)
     {
         my_printf_flag2("luma_weight_l0_flag", i, pwt->luma_weight_l0_flag[i]);
-        AddTreeItem(ipwt);
+        AddTreeItem(nria);
     }
     if (h->sps->chroma_format_idc != 0)
     {
         for (int i = 0; i <= h->sh->num_ref_idx_l0_active_minus1; i++)
         {
             my_printf_flag2("chroma_weight_l0_flag", i, pwt->chroma_weight_l0_flag[i]);
-            AddTreeItem(ipwt);
+            AddTreeItem(nria);
         }
     }
 
@@ -1726,17 +1737,25 @@ void CNalParser::h265_debug_pred_weight_table(h265_stream_t* h, HTREEITEM root)
     {
         if (pwt->luma_weight_l0_flag[i])
         {
-            my_printf("delta_luma_weight_l0[%d]: %d  (v bits)", i, pwt->delta_luma_weight_l0[i]);AddTreeItem(ipwt);
-            my_printf("luma_offset_l0[%d]: %d  (v bits)", i, pwt->luma_offset_l0[i]);AddTreeItem(ipwt);
+            my_printf("delta_luma_weight_l0[%d]: %d  (v bits)", i, pwt->delta_luma_weight_l0[i]);AddTreeItem(nria);
+            my_printf("luma_offset_l0[%d]: %d  (v bits)", i, pwt->luma_offset_l0[i]);AddTreeItem(nria);
         }
         if (pwt->chroma_weight_l0_flag[i])
         {
             for (int j = 0; j < 2; j++)
             {
-                my_printf("delta_chroma_weight_l0[%d][%d]: %d  (v bits)", i, j, pwt->delta_chroma_weight_l0[i][j]);AddTreeItem(ipwt);
-                my_printf("delta_chroma_offset_l0[%d][%d]: %d  (v bits)", i, j, pwt->delta_chroma_offset_l0[i][j]);AddTreeItem(ipwt);
+                my_printf("delta_chroma_weight_l0[%d][%d]: %d  (v bits)", i, j, pwt->delta_chroma_weight_l0[i][j]);AddTreeItem(nria);
+                my_printf("delta_chroma_offset_l0[%d][%d]: %d  (v bits)", i, j, pwt->delta_chroma_offset_l0[i][j]);AddTreeItem(nria);
             }
         }
+    }
+
+    // to check...
+    HTREEITEM nria_l;
+    if (h->sh->num_ref_idx_l1_active_minus1 >= 0)
+    {
+        my_printf("NumRefIdxL1Active");
+        nria_l = AddTreeItem(ipwt);
     }
 
     if (h->sh->slice_type == H265_SH_SLICE_TYPE_B)
@@ -1744,22 +1763,22 @@ void CNalParser::h265_debug_pred_weight_table(h265_stream_t* h, HTREEITEM root)
         for (int i = 0; i <= h->sh->num_ref_idx_l1_active_minus1; i++)
         {
             my_printf_flag2("luma_weight_l1_flag", i, pwt->luma_weight_l1_flag[i]);
-            AddTreeItem(ipwt);
+            AddTreeItem(nria_l);
         }
         if (h->sps->chroma_format_idc != 0)
         {
             for (int i = 0; i <= h->sh->num_ref_idx_l1_active_minus1; i++)
             {
                 my_printf_flag2("chroma_weight_l1_flag", i, pwt->chroma_weight_l1_flag[i]);
-                AddTreeItem(ipwt);
+                AddTreeItem(nria_l);
             }
         }
         for (int i = 0; i <= h->sh->num_ref_idx_l1_active_minus1; i++)
         {
             if (pwt->luma_weight_l1_flag[i])
             {
-                my_printf("delta_luma_weight_l1[%d]: %d  (v bits)", i, pwt->delta_luma_weight_l1[i]);AddTreeItem(ipwt);
-                my_printf("luma_offset_l1[%d]: %d  (v bits)", i, pwt->luma_offset_l1[i]);AddTreeItem(ipwt);
+                my_printf("delta_luma_weight_l1[%d]: %d  (v bits)", i, pwt->delta_luma_weight_l1[i]);AddTreeItem(nria_l);
+                my_printf("luma_offset_l1[%d]: %d  (v bits)", i, pwt->luma_offset_l1[i]);AddTreeItem(nria_l);
                 
             }
             if (pwt->chroma_weight_l1_flag[i])
@@ -1767,9 +1786,9 @@ void CNalParser::h265_debug_pred_weight_table(h265_stream_t* h, HTREEITEM root)
                 for (int j = 0; j < 2; j++)
                 {
                     my_printf("delta_chroma_weight_l1[%d][%d]: %d  (v bits)", i, j, pwt->delta_chroma_weight_l1[i][j]);
-                    AddTreeItem(ipwt);
+                    AddTreeItem(nria_l);
                     my_printf("delta_chroma_offset_l1[%d][%d]: %d  (v bits)", i, j, pwt->delta_chroma_offset_l1[i][j]);
-                    AddTreeItem(ipwt);
+                    AddTreeItem(nria_l);
                 }
             }
         }
@@ -1839,7 +1858,7 @@ void CNalParser::h265_debug_slice_header(h265_stream_t* h, HTREEITEM root)
         }
         else
         {
-            my_printf("slice_pic_order_cnt_lsb: %d  (v bits)", hrd->slice_pic_order_cnt_lsb);AddTreeItem(dssf);
+            my_printf("slice_pic_order_cnt_lsb: %d  (%d bits)", hrd->slice_pic_order_cnt_lsb, hrd->slice_pic_order_cnt_lsb_bytes);AddTreeItem(dssf);
             my_printf_flag("short_term_ref_pic_set_sps_flag", hrd->short_term_ref_pic_set_sps_flag); AddTreeItem(dssf);
             if (!hrd->short_term_ref_pic_set_sps_flag)
             {
@@ -1894,13 +1913,13 @@ void CNalParser::h265_debug_slice_header(h265_stream_t* h, HTREEITEM root)
         if (hrd->slice_type == H265_SH_SLICE_TYPE_P || hrd->slice_type == H265_SH_SLICE_TYPE_B)
         {
             my_printf_flag("num_ref_idx_active_override_flag", hrd->num_ref_idx_active_override_flag);
-            HTREEITEM nriaof = AddTreeItem(dssf);
+            HTREEITEM nriaof = AddTreeItem(dssf); // 根据H265VideoESViewer，没有节点
             if (hrd->num_ref_idx_active_override_flag)
             {
-                my_printf("num_ref_idx_l0_active_minus1: %d  (v bits)", hrd->num_ref_idx_l0_active_minus1); AddTreeItem(nriaof);
+                my_printf("num_ref_idx_l0_active_minus1: %d  (v bits)", hrd->num_ref_idx_l0_active_minus1); AddTreeItem(dssf);
                 if (hrd->slice_type == H265_SH_SLICE_TYPE_B)
                 {
-                    my_printf("num_ref_idx_l1_active_minus1: %d  (v bits)", hrd->num_ref_idx_l1_active_minus1); AddTreeItem(nriaof);
+                    my_printf("num_ref_idx_l1_active_minus1: %d  (v bits)", hrd->num_ref_idx_l1_active_minus1); AddTreeItem(dssf);
                 }
             }
             if(pps->lists_modification_present_flag)
@@ -1968,11 +1987,12 @@ void CNalParser::h265_debug_slice_header(h265_stream_t* h, HTREEITEM root)
         if (hrd->num_entry_point_offsets > 0)
         {
             my_printf("offset_len_minus1: %d (v bits)", hrd->offset_len_minus1); AddTreeItem(inepo);
-            //my_printf("NumEntryPointOffsets"); AddTreeItem(inepo); // to check
+            my_printf("NumEntryPointOffsets");
+            HTREEITEM iinepo = AddTreeItem(ihrd);
             for (int i = 0; i < hrd->num_entry_point_offsets; i++)
             {
-                my_printf("entry_point_offset_minus1[%d]: %d (v bits)", i, hrd->entry_point_offset_minus1[i]);
-                AddTreeItem(inepo);
+                my_printf("entry_point_offset_minus1[%d]: %d (%d bits)", i, hrd->entry_point_offset_minus1[i], hrd->entry_point_offset_minus1_bytes); // to add len
+                AddTreeItem(iinepo);
             }
         }
     }

@@ -1316,7 +1316,8 @@ void h265_read_slice_header(h265_stream_t* h, bs_t* b)
         //if (nal_unit_type != NAL_UNIT_CODED_SLICE_IDR_W_RADL && nal_unit_type != NAL_UNIT_CODED_SLICE_IDR_N_LP)
         else
         {
-            hrd->slice_pic_order_cnt_lsb = bs_read_u(b, sps->log2_max_pic_order_cnt_lsb_minus4 + 4); // poc v(u)
+            hrd->slice_pic_order_cnt_lsb_bytes = sps->log2_max_pic_order_cnt_lsb_minus4 + 4;
+            hrd->slice_pic_order_cnt_lsb = bs_read_u(b, hrd->slice_pic_order_cnt_lsb_bytes); // poc v(u)
             hrd->short_term_ref_pic_set_sps_flag = bs_read_u1(b);
             if (!hrd->short_term_ref_pic_set_sps_flag)
             {
@@ -1482,13 +1483,14 @@ void h265_read_slice_header(h265_stream_t* h, bs_t* b)
         if (hrd->num_entry_point_offsets > 0)
         {
             hrd->offset_len_minus1   = bs_read_ue(b);
+            hrd->entry_point_offset_minus1_bytes = hrd->offset_len_minus1+1;
             hrd->entry_point_offset_minus1.resize(hrd->num_entry_point_offsets);
             // error
             for (int i = 0; i < hrd->num_entry_point_offsets; i++)
             {
                 // to confirm
-                // entry_point_offset_minus1为u(u),长度在offset_len_minus1的值加上1
-                hrd->entry_point_offset_minus1[i] = bs_read_u(b, hrd->offset_len_minus1+1); // u(v) 
+                // entry_point_offset_minus1为u(u),长度在offset_len_minus1的值加上1，见上
+                hrd->entry_point_offset_minus1[i] = bs_read_u(b, hrd->entry_point_offset_minus1_bytes); // u(v) 
             }
         }
     }

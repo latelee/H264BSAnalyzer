@@ -495,6 +495,7 @@ typedef struct
         int slice_type;
         uint8_t pic_output_flag;
         int colour_plane_id;
+        int slice_pic_order_cnt_lsb_bytes;
         int slice_pic_order_cnt_lsb;
         uint8_t short_term_ref_pic_set_sps_flag;
         st_ref_pic_set_t st_ref_pic_set;
@@ -533,6 +534,7 @@ typedef struct
     uint8_t slice_loop_filter_across_slices_enabled_flag;
     int num_entry_point_offsets;
     int offset_len_minus1;
+    int entry_point_offset_minus1_bytes;
     vector<int> entry_point_offset_minus1;
     int slice_segment_header_extension_length;
     vector<int> slice_segment_header_extension_data_byte;
