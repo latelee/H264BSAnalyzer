@@ -1113,7 +1113,7 @@ void CNalParser::h265_debug_vps(h265_vps_t* vps, HTREEITEM root)
         // do nothing...
     }
 
-    my_printf("rbsp_slice_segment_trailing_bits()"); AddTreeItem(ivps);
+    my_printf("rbsp_trailing_bits()"); AddTreeItem(ivps);
 }
 
 void CNalParser::h265_debug_scaling_list(scaling_list_data_t* sld, HTREEITEM root)
@@ -1422,7 +1422,7 @@ void CNalParser::h265_debug_sps(h265_sps_t* sps, HTREEITEM root)
 
     // todo sps_3d_extension_flag
 
-    my_printf("rbsp_slice_segment_trailing_bits()"); AddTreeItem(isps);
+    my_printf("rbsp_trailing_bits()"); AddTreeItem(isps);
 }
 
 // pps
@@ -1547,7 +1547,7 @@ void CNalParser::h265_debug_pps(h265_pps_t* pps, HTREEITEM root)
         // todo...
     }
 
-    my_printf("rbsp_slice_segment_trailing_bits()"); AddTreeItem(ipps);
+    my_printf("rbsp_trailing_bits()"); AddTreeItem(ipps);
 }
 
 // aud
@@ -1678,7 +1678,7 @@ void CNalParser::h265_debug_seis(h265_stream_t* h, HTREEITEM root)
         }
     }
 
-    my_printf("rbsp_slice_segment_trailing_bits()"); AddTreeItem(isei);
+    my_printf("rbsp_trailing_bits()"); AddTreeItem(isei);
 }
 
 void CNalParser::h265_debug_ref_pic_lists_modification(h265_slice_header_t* hrd, HTREEITEM root)
