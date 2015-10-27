@@ -1750,9 +1750,8 @@ void CNalParser::h265_debug_pred_weight_table(h265_stream_t* h, HTREEITEM root)
         }
     }
 
-    // to check...
     HTREEITEM nria_l;
-    if (h->sh->num_ref_idx_l1_active_minus1 >= 0)
+    if ((h->sh->slice_type == H265_SH_SLICE_TYPE_B) && (h->sh->num_ref_idx_l1_active_minus1 >= 0))
     {
         my_printf("NumRefIdxL1Active");
         nria_l = AddTreeItem(ipwt);
@@ -1926,7 +1925,10 @@ void CNalParser::h265_debug_slice_header(h265_stream_t* h, HTREEITEM root)
             {
                 h265_debug_ref_pic_lists_modification(hrd);
             }
-            my_printf_flag("mvd_l1_zero_flag", hrd->mvd_l1_zero_flag); AddTreeItem(dssf);
+            if (hrd->slice_type == H265_SH_SLICE_TYPE_B)
+            {
+                my_printf_flag("mvd_l1_zero_flag", hrd->mvd_l1_zero_flag); AddTreeItem(dssf);
+            }
             if (pps->cabac_init_present_flag)
             {
                 my_printf_flag("cabac_init_flag", hrd->cabac_init_flag); AddTreeItem(dssf);
