@@ -63,7 +63,6 @@ CH264BSAnalyzerDlg::CH264BSAnalyzerDlg(CWnd* pParent /*=NULL*/)
 void CH264BSAnalyzerDlg::DoDataExchange(CDataExchange* pDX)
 {
     CDialogEx::DoDataExchange(pDX);
-    DDX_Control(pDX, IDC_H264_NALINFO, m_h264NalInfo);
     DDX_Control(pDX, IDC_H264_NALLIST, m_h264NalList);
     DDX_Control(pDX, IDC_EDIT_HEX, m_edHexInfo);
     DDX_Control(pDX, IDC_TREE1, m_cTree);
@@ -80,6 +79,7 @@ BEGIN_MESSAGE_MAP(CH264BSAnalyzerDlg, CDialogEx)
     ON_COMMAND(ID_HELP_ABOUT, &CH264BSAnalyzerDlg::OnHelpAbout)
     ON_COMMAND(ID_HOWTO_USAGE, &CH264BSAnalyzerDlg::OnHowtoUsage)
     ON_NOTIFY(LVN_KEYDOWN, IDC_H264_NALLIST, &CH264BSAnalyzerDlg::OnLvnKeydownH264Nallist)
+    ON_WM_SIZE()
 END_MESSAGE_MAP()
 
 // CH264BSAnalyzerDlg message handlers
@@ -121,12 +121,12 @@ BOOL CH264BSAnalyzerDlg::OnInitDialog()
     m_h264NalList.SetExtendedStyle(dwExStyle);
 
     // 左对齐
-    m_h264NalList.InsertColumn(0,_T("No."),LVCFMT_LEFT,50,0);
-    m_h264NalList.InsertColumn(1,_T("Offset"),LVCFMT_LEFT,70,0);
-    m_h264NalList.InsertColumn(2,_T("Length"),LVCFMT_LEFT,60,0);
-    m_h264NalList.InsertColumn(3,_T("Start Code"),LVCFMT_LEFT,80,0);
-    m_h264NalList.InsertColumn(4,_T("NAL Type"),LVCFMT_LEFT,180,0);
-    m_h264NalList.InsertColumn(5,_T("Info"),LVCFMT_LEFT,80,0);
+    m_h264NalList.InsertColumn(0,_T("No."),LVCFMT_LEFT,40,0);
+    m_h264NalList.InsertColumn(1,_T("Offset"),LVCFMT_LEFT,65,0);
+    m_h264NalList.InsertColumn(2,_T("Length"),LVCFMT_LEFT,45,0);
+    m_h264NalList.InsertColumn(3,_T("Start Code"),LVCFMT_LEFT,79,0);
+    m_h264NalList.InsertColumn(4,_T("NAL Type"),LVCFMT_LEFT,170,0);
+    m_h264NalList.InsertColumn(5,_T("Info"),LVCFMT_LEFT,75,0);
 
     m_nSliceIndex = 0;
 
@@ -751,8 +751,7 @@ void CH264BSAnalyzerDlg::OnLvnItemActivateH264Nallist(NMHDR *pNMHDR, LRESULT *pR
     {
         AfxMessageBox("解析NAL时出错，可能是文件读取出错。");
     }
-    // 把NAL详细信息显示到界面上
-    //m_h264NalInfo.SetWindowText((LPCTSTR)nalInfo);
+
     // 显示十六进制
     m_edHexInfo.SetData((LPBYTE)nalData, m_vNalTypeVector[nIndex].len);
     ::SendMessage(GetDlgItem(IDC_EDIT_HEX)->m_hWnd,WM_KILLFOCUS,-1,0); // 不要控件焦点
@@ -823,8 +822,6 @@ void CH264BSAnalyzerDlg::OnLvnKeydownH264Nallist(NMHDR *pNMHDR, LRESULT *pResult
         AfxMessageBox("解析NAL时出错，可能是文件读取出错。");
     }
 
-     // 把NAL详细信息显示到界面上
-    //m_h264NalInfo.SetWindowText((LPCTSTR)nalInfo);
     // 显示十六进制
     m_edHexInfo.SetData((LPBYTE)nalData, m_vNalTypeVector[nIndex].len);
     ::SendMessage(GetDlgItem(IDC_EDIT_HEX)->m_hWnd,WM_KILLFOCUS,-1,0); // 不要控件焦点
@@ -1049,3 +1046,54 @@ void CAboutDlg::OnLButtonDown(UINT nFlags, CPoint point)
     CDialogEx::OnLButtonDown(nFlags, point);
 }
 
+void CH264BSAnalyzerDlg::OnSize(UINT nType, int cx, int cy)
+{
+    CDialogEx::OnSize(nType, cx, cy);
+    CRect rectList, rectHex, rectInfo, rectTree;
+    CWnd *pWnd = NULL;
+    GetDlgItem(IDC_H264_NALLIST)->GetWindowRect(&rectList);
+    ScreenToClient(rectList);
+    GetDlgItem(IDC_EDIT_HEX)->GetWindowRect(&rectHex);
+    ScreenToClient(rectHex);
+    GetDlgItem(IDC_EDIT_SIMINFO)->GetWindowRect(&rectInfo);
+    ScreenToClient(rectInfo);
+    GetDlgItem(IDC_TREE1)->GetWindowRect(&rectTree);
+    ScreenToClient(rectTree);
+
+    // 列表框
+    /*
+    pWnd = GetDlgItem(IDC_H264_NALLIST);
+    if(pWnd)
+    {
+        //pWnd->MoveWindow(rectInfo.left, rectInfo.top, cx-rectList.Width()-8, rectInfo.Height());
+        pWnd->Invalidate();
+        pWnd->UpdateData();
+    }
+    */
+    // 十六进制框
+    pWnd = GetDlgItem(IDC_EDIT_HEX);
+    if(pWnd)
+    {
+        pWnd->MoveWindow(rectHex.left, rectHex.top, rectHex.Width(), cy - rectList.Height() - 17);
+        pWnd->Invalidate();
+        pWnd->UpdateData();
+    }
+
+    // 信息框
+    pWnd = GetDlgItem(IDC_EDIT_SIMINFO);
+    if(pWnd)
+    {
+        pWnd->MoveWindow(rectInfo.left, rectInfo.top, cx-rectList.Width()-8, rectInfo.Height());
+        pWnd->Invalidate();
+        pWnd->UpdateData();
+    }
+
+    // 树形控件框
+    pWnd = GetDlgItem(IDC_TREE1);
+    if(pWnd)
+    {
+        pWnd->MoveWindow(rectTree.left, rectTree.top, cx-rectHex.Width()-8, cy - rectInfo.Height() - 8);
+        pWnd->Invalidate();
+        pWnd->UpdateData();
+    }
+}

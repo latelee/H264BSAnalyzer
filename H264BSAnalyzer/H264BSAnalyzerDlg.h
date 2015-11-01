@@ -12,7 +12,7 @@ using std::vector;
 
 #pragma once
 
-#define APP_NAM "H264BSAnalyzer"
+#define APP_NAM "H264/H265 BSAnalyzer"
 
 #define MAX_URL_LENGTH 512
 
@@ -45,7 +45,6 @@ protected:
     afx_msg HCURSOR OnQueryDragIcon();
     DECLARE_MESSAGE_MAP()
 public:
-    CEdit m_h264NalInfo;
     CListCtrl m_h264NalList;
     CHexEdit m_edHexInfo;   // 显示十六进制
 
@@ -80,4 +79,5 @@ public:
     afx_msg void OnHowtoUsage();
     afx_msg void OnLvnKeydownH264Nallist(NMHDR *pNMHDR, LRESULT *pResult);
     CTreeCtrl m_cTree;
+    afx_msg void OnSize(UINT nType, int cx, int cy);
 };

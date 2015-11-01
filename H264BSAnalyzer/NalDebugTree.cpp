@@ -698,8 +698,8 @@ void CNalParser::h264_debug_seis( h264_stream_t* h, HTREEITEM root)
     for (i = 0; i < num_seis; i++)
     {
         sei_t* s = seis[i];
-        my_printf("payloadType: %d", s->payloadType); AddTreeItem(iisei);
-        my_printf("payloadSize: %d", s->payloadSize); AddTreeItem(iisei);
+        my_printf("payloadType: %d  (v bits)", s->payloadType); AddTreeItem(iisei);
+        my_printf("payloadSize: %d  (v bits)", s->payloadSize); AddTreeItem(iisei);
         my_printf("sei_payload()");
         HTREEITEM sp = AddTreeItem(iisei);
         switch(s->payloadType)
@@ -730,7 +730,7 @@ void CNalParser::h264_debug_seis( h264_stream_t* h, HTREEITEM root)
                 }
                 my_printf("uuid_iso_iec_11578: %s", uuid);
                 HTREEITEM udpb = AddTreeItem(sp);
-                for (int j = 16; j < s->payloadSize; j++)
+                for (int j = 16; j < s->payloadSize && s->payload[j] != 0; j++)
                 {
                     my_printf("user_data_payload_byte: %d('%c')", s->payload[j], s->payload[j]);
                     AddTreeItem(sp);
@@ -790,6 +790,8 @@ void CNalParser::h264_debug_seis( h264_stream_t* h, HTREEITEM root)
             break;
         }
     }
+
+    my_printf("rbsp_trailing_bits()"); AddTreeItem(isei);
 }
 
 /**
