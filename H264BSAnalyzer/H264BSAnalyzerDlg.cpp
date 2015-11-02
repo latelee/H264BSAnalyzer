@@ -137,6 +137,10 @@ BOOL CH264BSAnalyzerDlg::OnInitDialog()
     m_edHexInfo.SetOptions(1, 1, 1, 1);
     m_edHexInfo.SetBPR(16); // 16字节
 
+    // 主窗口大小
+    this->GetWindowRect(&m_rectMainWnd);
+    ScreenToClient(m_rectMainWnd);
+
     if (m_hFileLock == INVALID_HANDLE_VALUE)
     {
         m_hFileLock = CreateEvent(NULL,FALSE,FALSE,NULL);
@@ -1046,13 +1050,16 @@ void CAboutDlg::OnLButtonDown(UINT nFlags, CPoint point)
     CDialogEx::OnLButtonDown(nFlags, point);
 }
 
+// 固定的数值是测试得到的经验值，无理论依据
 void CH264BSAnalyzerDlg::OnSize(UINT nType, int cx, int cy)
 {
     CDialogEx::OnSize(nType, cx, cy);
-    CRect rectList, rectHex, rectInfo, rectTree;
+    CRect rectList, rectHex, rectTxt, rectInfo, rectTree, rectMainWnd;
     CWnd *pWnd = NULL;
     GetDlgItem(IDC_H264_NALLIST)->GetWindowRect(&rectList);
     ScreenToClient(rectList);
+    GetDlgItem(IDC_STATIC)->GetWindowRect(&rectTxt);
+    ScreenToClient(rectTxt);
     GetDlgItem(IDC_EDIT_HEX)->GetWindowRect(&rectHex);
     ScreenToClient(rectHex);
     GetDlgItem(IDC_EDIT_SIMINFO)->GetWindowRect(&rectInfo);
@@ -1060,40 +1067,82 @@ void CH264BSAnalyzerDlg::OnSize(UINT nType, int cx, int cy)
     GetDlgItem(IDC_TREE1)->GetWindowRect(&rectTree);
     ScreenToClient(rectTree);
 
+
+    int a = rectList.Width();
+    int b = rectList.Height();
+    int a1 = rectList.left;
+    int b1 = rectList.top;
+
+    int c1 = rectTxt.Width();
+    int d1 = rectTxt.Height();
+
+    int c = rectHex.Width();
+    int d = rectHex.Height();
+    int e = rectInfo.Width();
+    int f = rectInfo.Height();
+    int g = rectTree.Width();
+    int h = rectTree.Height();
+
+    int i = m_rectMainWnd.Width() - 16;
+    int j = m_rectMainWnd.Height() - 58;
+
+    float fXRatio = (float)cx / (float)(m_rectMainWnd.Width() - 16);
+    float fYRatio = (float)cy / (float)(m_rectMainWnd.Height() - 58);
+
+    int nNewWidth = 0;
+    int nNewHeight = 0;
+
     // 列表框
-    /*
     pWnd = GetDlgItem(IDC_H264_NALLIST);
-    if(pWnd)
-    {
-        //pWnd->MoveWindow(rectInfo.left, rectInfo.top, cx-rectList.Width()-8, rectInfo.Height());
-        pWnd->Invalidate();
-        pWnd->UpdateData();
-    }
-    */
+    nNewWidth = (int)(fXRatio * (float)rectList.Width());
+    nNewHeight = (int)(fYRatio * (float)rectList.Height());
+    pWnd->MoveWindow(rectList.left, rectList.top, nNewWidth, nNewHeight);
+    pWnd->Invalidate();
+    pWnd->UpdateData();
+    pWnd->GetWindowRect(&rectList);
+    ScreenToClient(rectList);
+
+    // "Hex View" txt
+    pWnd = GetDlgItem(IDC_STATIC);
+    nNewWidth = (int)(fXRatio * (float)rectTxt.Width());
+    nNewHeight = (int)(fYRatio * (float)rectTxt.Height());
+    pWnd->MoveWindow(rectTxt.left, rectList.Height(), nNewWidth, nNewHeight);
+    
+    pWnd->Invalidate();
+    pWnd->SetWindowText("Hex View");
+    pWnd->UpdateData();
+    pWnd->GetWindowRect(&rectTxt);
+    ScreenToClient(rectTxt);
+
     // 十六进制框
     pWnd = GetDlgItem(IDC_EDIT_HEX);
-    if(pWnd)
-    {
-        pWnd->MoveWindow(rectHex.left, rectHex.top, rectHex.Width(), cy - rectList.Height() - 17);
-        pWnd->Invalidate();
-        pWnd->UpdateData();
-    }
+    nNewWidth = (int)(fXRatio * (float)rectHex.Width());
+    nNewHeight = (int)(fYRatio * (float)rectHex.Height());
+    pWnd->MoveWindow(rectHex.left, rectList.Height()+rectTxt.Height(), nNewWidth, cy - rectList.Height() - 20);
+    pWnd->Invalidate();
+    pWnd->UpdateData();
+    pWnd->GetWindowRect(&rectHex);
+    ScreenToClient(rectHex);
 
     // 信息框
     pWnd = GetDlgItem(IDC_EDIT_SIMINFO);
-    if(pWnd)
-    {
-        pWnd->MoveWindow(rectInfo.left, rectInfo.top, cx-rectList.Width()-8, rectInfo.Height());
-        pWnd->Invalidate();
-        pWnd->UpdateData();
-    }
+    nNewWidth = (int)(fXRatio * (float)rectInfo.Width());
+    nNewHeight = (int)(fYRatio * (float)rectInfo.Height());
+    pWnd->MoveWindow(rectList.Width()+6, rectInfo.top, cx - rectList.Width() - 8, nNewHeight);
+    pWnd->Invalidate();
+    pWnd->UpdateData();
+    pWnd->GetWindowRect(&rectInfo);
+    ScreenToClient(rectInfo);
 
     // 树形控件框
     pWnd = GetDlgItem(IDC_TREE1);
-    if(pWnd)
-    {
-        pWnd->MoveWindow(rectTree.left, rectTree.top, cx-rectHex.Width()-8, cy - rectInfo.Height() - 8);
-        pWnd->Invalidate();
-        pWnd->UpdateData();
-    }
+    nNewWidth = (int)(fXRatio * (float)rectTree.Width());
+    nNewHeight = (int)(fYRatio * (float)rectTree.Height());
+    pWnd->MoveWindow(rectList.Width()+6, rectInfo.Height()+5, cx - rectList.Width() - 8, cy - rectInfo.Height() - 8);
+    pWnd->Invalidate();
+    pWnd->UpdateData();
+
+    // 更新当前主窗口大小
+    this->GetWindowRect(&m_rectMainWnd);
+    ScreenToClient(m_rectMainWnd);
 }
