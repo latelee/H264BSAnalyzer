@@ -152,6 +152,7 @@ typedef struct
     int seq_parameter_set_id;
     int entropy_coding_mode_flag;
     int pic_order_present_flag;
+    int bottom_field_pic_order_in_frame_present_flag;
     int num_slice_groups_minus1;
     int slice_group_map_type;
       int run_length_minus1[8]; // up to num_slice_groups_minus1, which is <= 7 in Baseline and Extended, 0 otheriwse

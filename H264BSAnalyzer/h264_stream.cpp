@@ -784,6 +784,7 @@ void read_pic_parameter_set_rbsp(h264_stream_t* h, bs_t* b)
     h->info->encoding_type = pps->entropy_coding_mode_flag;
 
     pps->pic_order_present_flag = bs_read_u1(b);
+    pps->bottom_field_pic_order_in_frame_present_flag = bs_read_u1(b);
     pps->num_slice_groups_minus1 = bs_read_ue(b);
 
     if( pps->num_slice_groups_minus1 > 0 )

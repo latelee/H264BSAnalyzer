@@ -77,22 +77,21 @@ void CNalParser::h264_debug_sps(sps_t* sps, HTREEITEM root)
         }
     }
     my_printf("log2_max_frame_num_minus4: %d  (v bits)", sps->log2_max_frame_num_minus4 ); AddTreeItem(isps);
-    my_printf("pic_order_cnt_type: %d  (v bits)", sps->pic_order_cnt_type );
-    HTREEITEM poct = AddTreeItem(isps);
+    my_printf("pic_order_cnt_type: %d  (v bits)", sps->pic_order_cnt_type ); AddTreeItem(isps);
     if( sps->pic_order_cnt_type == 0 )
     {
         my_printf("log2_max_pic_order_cnt_lsb_minus4: %d  (v bits)", sps->log2_max_pic_order_cnt_lsb_minus4 );
-        AddTreeItem(poct);
+        AddTreeItem(isps);
     }
     else if( sps->pic_order_cnt_type == 1 )
     {
-        my_printf_flag("delta_pic_order_always_zero_flag", sps->delta_pic_order_always_zero_flag );AddTreeItem(poct);
-        my_printf("offset_for_non_ref_pic: %d  (v bits)", sps->offset_for_non_ref_pic );AddTreeItem(poct);
-        my_printf("offset_for_top_to_bottom_field: %d  (v bits)", sps->offset_for_top_to_bottom_field );AddTreeItem(poct);
-        my_printf("num_ref_frames_in_pic_order_cnt_cycle: %d  (v bits)", sps->num_ref_frames_in_pic_order_cnt_cycle );AddTreeItem(poct);
+        my_printf_flag("delta_pic_order_always_zero_flag", sps->delta_pic_order_always_zero_flag );AddTreeItem(isps);
+        my_printf("offset_for_non_ref_pic: %d  (v bits)", sps->offset_for_non_ref_pic );AddTreeItem(isps);
+        my_printf("offset_for_top_to_bottom_field: %d  (v bits)", sps->offset_for_top_to_bottom_field );AddTreeItem(isps);
+        my_printf("num_ref_frames_in_pic_order_cnt_cycle: %d  (v bits)", sps->num_ref_frames_in_pic_order_cnt_cycle );AddTreeItem(isps);
         for( int i = 0; i < sps->num_ref_frames_in_pic_order_cnt_cycle; i++ )
         {
-            my_printf("offset_for_ref_frame[%d]: %d  (v bits)", i, sps->offset_for_ref_frame[i] );AddTreeItem(poct);
+            my_printf("offset_for_ref_frame[%d]: %d  (v bits)", i, sps->offset_for_ref_frame[i] );AddTreeItem(isps);
         }
     }
     my_printf("max_num_ref_frames: %d  (v bits)", sps->max_num_ref_frames );AddTreeItem(isps);
@@ -244,6 +243,7 @@ void CNalParser::h264_debug_pps(pps_t* pps, HTREEITEM root)
     my_printf("seq_parameter_set_id: %d  (v bits)", pps->seq_parameter_set_id ); AddTreeItem(ipps);
     my_printf_flag("entropy_coding_mode_flag", pps->entropy_coding_mode_flag ); AddTreeItem(ipps);
     my_printf_flag("pic_order_present_flag", pps->pic_order_present_flag ); AddTreeItem(ipps);
+    my_printf_flag("bottom_field_pic_order_in_frame_present_flag", pps->bottom_field_pic_order_in_frame_present_flag); AddTreeItem(ipps);
     my_printf("num_slice_groups_minus1: %d  (v bits)", pps->num_slice_groups_minus1 ); AddTreeItem(ipps);
     if( pps->num_slice_groups_minus1 > 0 )
     {
