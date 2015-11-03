@@ -69,7 +69,7 @@ void CNalParser::h264_debug_sps(sps_t* sps, HTREEITEM root)
                     }
                     else
                     {
-                        my_printf("ScalingList4xScalingList8x84[%d]: %d  (v bits)", i, sps->ScalingList8x8[i] );
+                        my_printf("ScalingList8x8[%d]: %d  (v bits)", i, sps->ScalingList8x8[i] );
                         AddTreeItem(ssmpf);
                     }
                 }
@@ -242,7 +242,6 @@ void CNalParser::h264_debug_pps(pps_t* pps, HTREEITEM root)
     my_printf("pic_parameter_set_id: %d  (v bits)", pps->pic_parameter_set_id ); AddTreeItem(ipps);
     my_printf("seq_parameter_set_id: %d  (v bits)", pps->seq_parameter_set_id ); AddTreeItem(ipps);
     my_printf_flag("entropy_coding_mode_flag", pps->entropy_coding_mode_flag ); AddTreeItem(ipps);
-    my_printf_flag("pic_order_present_flag", pps->pic_order_present_flag ); AddTreeItem(ipps);
     my_printf_flag("bottom_field_pic_order_in_frame_present_flag", pps->bottom_field_pic_order_in_frame_present_flag); AddTreeItem(ipps);
     my_printf("num_slice_groups_minus1: %d  (v bits)", pps->num_slice_groups_minus1 ); AddTreeItem(ipps);
     if( pps->num_slice_groups_minus1 > 0 )
@@ -372,7 +371,7 @@ void CNalParser::h264_debug_slice_header(h264_stream_t* h, HTREEITEM root)
     if( sps->pic_order_cnt_type == 0 )
     {
         my_printf("pic_order_cnt_lsb: %d  (%d bits)", sh->pic_order_cnt_lsb, sh->pic_order_cnt_lsb_bytes ); AddTreeItem(iheader);
-        if( pps->pic_order_present_flag && !sh->field_pic_flag )
+        if( pps->bottom_field_pic_order_in_frame_present_flag && !sh->field_pic_flag )
         {
             my_printf("delta_pic_order_cnt_bottom: %d  (v bits)", sh->delta_pic_order_cnt_bottom ); AddTreeItem(iheader);
         }
@@ -381,7 +380,7 @@ void CNalParser::h264_debug_slice_header(h264_stream_t* h, HTREEITEM root)
     if( sps->pic_order_cnt_type == 1 && !sps->delta_pic_order_always_zero_flag )
     {
         my_printf("delta_pic_order_cnt[0]: %d  (v bits)", sh->delta_pic_order_cnt[0] ); AddTreeItem(iheader);
-        if( pps->pic_order_present_flag && !sh->field_pic_flag )
+        if( pps->bottom_field_pic_order_in_frame_present_flag && !sh->field_pic_flag )
         {
             my_printf("delta_pic_order_cnt[1]: %d  (v bits)", sh->delta_pic_order_cnt[1] );
             AddTreeItem(iheader);

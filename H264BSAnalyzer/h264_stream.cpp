@@ -783,7 +783,7 @@ void read_pic_parameter_set_rbsp(h264_stream_t* h, bs_t* b)
     // add by Late Lee
     h->info->encoding_type = pps->entropy_coding_mode_flag;
 
-    pps->pic_order_present_flag = bs_read_u1(b);
+    //2005年版本此处为pps->pic_order_present_flag，2013年版本为bottom_field_pic_order_in_frame_present_flag
     pps->bottom_field_pic_order_in_frame_present_flag = bs_read_u1(b);
     pps->num_slice_groups_minus1 = bs_read_ue(b);
 
@@ -1055,7 +1055,7 @@ void read_slice_header(h264_stream_t* h, bs_t* b)
     {
         sh->pic_order_cnt_lsb_bytes = sps->log2_max_pic_order_cnt_lsb_minus4 + 4;
         sh->pic_order_cnt_lsb = bs_read_u(b,  sh->pic_order_cnt_lsb_bytes); // was u(v)
-        if( pps->pic_order_present_flag && !sh->field_pic_flag )
+        if( pps->bottom_field_pic_order_in_frame_present_flag && !sh->field_pic_flag )
         {
             sh->delta_pic_order_cnt_bottom = bs_read_se(b);
         }
@@ -1063,7 +1063,7 @@ void read_slice_header(h264_stream_t* h, bs_t* b)
     if( sps->pic_order_cnt_type == 1 && !sps->delta_pic_order_always_zero_flag )
     {
         sh->delta_pic_order_cnt[ 0 ] = bs_read_se(b);
-        if( pps->pic_order_present_flag && !sh->field_pic_flag )
+        if( pps->bottom_field_pic_order_in_frame_present_flag && !sh->field_pic_flag )
         {
             sh->delta_pic_order_cnt[ 1 ] = bs_read_se(b);
         }

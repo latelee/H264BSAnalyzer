@@ -42,7 +42,7 @@ void CNalParser::h264_debug_sps(sps_t* sps)
                     if( i < 6 )
                         my_printf("   ScalingList4x4[%d] : %d\r\n", i, sps->ScalingList4x4[i] );
                     else
-                        my_printf("   ScalingList4xScalingList8x84[%d] : %d\r\n", i, sps->ScalingList8x8[i] );
+                        my_printf("   ScalingList8x8[%d] : %d\r\n", i, sps->ScalingList8x8[i] );
                 }
             }
         }

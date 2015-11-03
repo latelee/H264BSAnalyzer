@@ -121,12 +121,12 @@ BOOL CH264BSAnalyzerDlg::OnInitDialog()
     m_h264NalList.SetExtendedStyle(dwExStyle);
 
     // ×ó¶ÔÆë
-    m_h264NalList.InsertColumn(0,_T("No."),LVCFMT_LEFT,40,0);
-    m_h264NalList.InsertColumn(1,_T("Offset"),LVCFMT_LEFT,65,0);
-    m_h264NalList.InsertColumn(2,_T("Length"),LVCFMT_LEFT,45,0);
-    m_h264NalList.InsertColumn(3,_T("Start Code"),LVCFMT_LEFT,79,0);
-    m_h264NalList.InsertColumn(4,_T("NAL Type"),LVCFMT_LEFT,170,0);
-    m_h264NalList.InsertColumn(5,_T("Info"),LVCFMT_LEFT,75,0);
+    m_h264NalList.InsertColumn(0,_T("No."),LVCFMT_LEFT,50,0);
+    m_h264NalList.InsertColumn(1,_T("Offset"),LVCFMT_LEFT,70,0);
+    m_h264NalList.InsertColumn(2,_T("Length"),LVCFMT_LEFT,60,0);
+    m_h264NalList.InsertColumn(3,_T("Start Code"),LVCFMT_LEFT,80,0);
+    m_h264NalList.InsertColumn(4,_T("NAL Type"),LVCFMT_LEFT,180,0);
+    m_h264NalList.InsertColumn(5,_T("Info"),LVCFMT_LEFT,80,0);
 
     m_nSliceIndex = 0;
 
@@ -1054,6 +1054,9 @@ void CAboutDlg::OnLButtonDown(UINT nFlags, CPoint point)
 void CH264BSAnalyzerDlg::OnSize(UINT nType, int cx, int cy)
 {
     CDialogEx::OnSize(nType, cx, cy);
+
+    if (cx <= 0 || cy <= 0) return;
+
     CRect rectList, rectHex, rectTxt, rectInfo, rectTree, rectMainWnd;
     CWnd *pWnd = NULL;
     GetDlgItem(IDC_H264_NALLIST)->GetWindowRect(&rectList);
