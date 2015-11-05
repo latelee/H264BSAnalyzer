@@ -277,7 +277,20 @@ void CNalParser::h264_debug_pps(pps_t* pps, HTREEITEM root)
     my_printf("num_ref_idx_l0_active_minus1: %d  (v bits)", pps->num_ref_idx_l0_active_minus1 ); AddTreeItem(ipps);
     my_printf("num_ref_idx_l1_active_minus1: %d  (v bits)", pps->num_ref_idx_l1_active_minus1 ); AddTreeItem(ipps);
     my_printf_flag("weighted_pred_flag", pps->weighted_pred_flag ); AddTreeItem(ipps);
-    my_printf("weighted_bipred_idc: %d  (2 bits)", pps->weighted_bipred_idc ); AddTreeItem(ipps);
+    const char* weighted_pre = NULL;
+    if (pps->weighted_bipred_idc == 0)
+    {
+        weighted_pre = "Default";
+    }
+    if (pps->weighted_bipred_idc == 1)
+    {
+        weighted_pre = "Explicit";
+    }
+    if (pps->weighted_bipred_idc == 2)
+    {
+        weighted_pre = "Implicit";
+    }
+    my_printf("weighted_bipred_idc: %d  [%s]  (2 bits)", pps->weighted_bipred_idc, weighted_pre); AddTreeItem(ipps);
     my_printf("pic_init_qp_minus26: %d  (v bits)", pps->pic_init_qp_minus26 ); AddTreeItem(ipps);
     my_printf("pic_init_qs_minus26: %d  (v bits)", pps->pic_init_qs_minus26 ); AddTreeItem(ipps);
     my_printf("chroma_qp_index_offset: %d  (v bits)", pps->chroma_qp_index_offset ); AddTreeItem(ipps);
@@ -398,15 +411,15 @@ void CNalParser::h264_debug_slice_header(h264_stream_t* h, HTREEITEM root)
     if( is_slice_type( sh->slice_type, SH_SLICE_TYPE_P ) || is_slice_type( sh->slice_type, SH_SLICE_TYPE_SP ) || is_slice_type( sh->slice_type, SH_SLICE_TYPE_B ) )
     {
         my_printf_flag("num_ref_idx_active_override_flag", sh->num_ref_idx_active_override_flag );
-        HTREEITEM nriao = AddTreeItem(iheader);
+        AddTreeItem(iheader);
         if( sh->num_ref_idx_active_override_flag )
         {
             my_printf("num_ref_idx_l0_active_minus1: %d  (v bits)", sh->num_ref_idx_l0_active_minus1 );
-            AddTreeItem(nriao);
+            AddTreeItem(iheader);
             if( is_slice_type( sh->slice_type, SH_SLICE_TYPE_B ) )
             {
                 my_printf("num_ref_idx_l1_active_minus1: %d  (v bits)", sh->num_ref_idx_l1_active_minus1 );
-                AddTreeItem(nriao);
+                AddTreeItem(iheader);
             }
         }
     }
@@ -592,28 +605,28 @@ void CNalParser::h264_debug_slice_header(h264_stream_t* h, HTREEITEM root)
             {
                 for (unsigned int i = 0; i < sh->drpm.drpm.size(); i++)
                 {
-                    my_printf("memory_management_control_operation: %d  (v bits)", sh->drpm.drpm[i].memory_management_control_operation );
+                    my_printf("memory_management_control_operation[%d]: %d  (v bits)", i, sh->drpm.drpm[i].memory_management_control_operation );
                     AddTreeItem(arpmmf);
                     if( sh->drpm.drpm[i].memory_management_control_operation == 1 ||
                         sh->drpm.drpm[i].memory_management_control_operation == 3 )
                     {
-                        my_printf("difference_of_pic_nums_minus1: %d  (v bits)", sh->drpm.drpm[i].difference_of_pic_nums_minus1 );
+                        my_printf("difference_of_pic_nums_minus1[%d]: %d  (v bits)", i, sh->drpm.drpm[i].difference_of_pic_nums_minus1 );
                         AddTreeItem(arpmmf);
                     }
                     if(sh->drpm.drpm[i].memory_management_control_operation == 2 )
                     {
-                        my_printf("long_term_pic_num: %d  (v bits)", sh->drpm.drpm[i].long_term_pic_num );
+                        my_printf("long_term_pic_num[%d]: %d  (v bits)", i, sh->drpm.drpm[i].long_term_pic_num );
                         AddTreeItem(arpmmf);
                     }
                     if( sh->drpm.drpm[i].memory_management_control_operation == 3 ||
                         sh->drpm.drpm[i].memory_management_control_operation == 6 )
                     {
-                        my_printf("long_term_frame_idx: %d  (v bits)", sh->drpm.drpm[i].long_term_frame_idx );
+                        my_printf("long_term_frame_idx[%d]: %d  (v bits)", i, sh->drpm.drpm[i].long_term_frame_idx );
                         AddTreeItem(arpmmf);
                     }
                     if( sh->drpm.drpm[i].memory_management_control_operation == 4 )
                     {
-                        my_printf("max_long_term_frame_idx_plus1: %d  (v bits)", sh->drpm.drpm[i].max_long_term_frame_idx_plus1 );
+                        my_printf("max_long_term_frame_idx_plus1[%d]: %d  (v bits)", i, sh->drpm.drpm[i].max_long_term_frame_idx_plus1 );
                         AddTreeItem(arpmmf);
                     }
                 }
@@ -640,13 +653,13 @@ void CNalParser::h264_debug_slice_header(h264_stream_t* h, HTREEITEM root)
     if( pps->deblocking_filter_control_present_flag )
     {
         my_printf("disable_deblocking_filter_idc: %d  (v bits)", sh->disable_deblocking_filter_idc );
-        HTREEITEM ddfi = AddTreeItem(iheader);
+        AddTreeItem(iheader);
         if( sh->disable_deblocking_filter_idc != 1 )
         {
             my_printf("slice_alpha_c0_offset_div2: %d  (v bits)", sh->slice_alpha_c0_offset_div2 );
-            AddTreeItem(ddfi);
+            AddTreeItem(iheader);
             my_printf("slice_beta_offset_div2: %d  (v bits)", sh->slice_beta_offset_div2 );
-            AddTreeItem(ddfi);
+            AddTreeItem(iheader);
         }
     }
 

@@ -984,7 +984,7 @@ void CH264BSAnalyzerDlg::OnHowtoUsage()
         "2、程序自动解析，较大文件耗时较大\r\n"
         "3、双击某一项NAL，即可得到详细信息\r\n"
         "限制：本程序仅能分析H264/H265码流文件，其它文件无法分析\r\n"
-        "本程序分析大型文件会有问题，勿怪\r\n";
+        "本程序分析大型文件会有问题，能力有限，勿怪\r\n";
     AfxMessageBox(help);
 }
 
@@ -1104,6 +1104,23 @@ void CH264BSAnalyzerDlg::OnSize(UINT nType, int cx, int cy)
     pWnd->UpdateData();
     pWnd->GetWindowRect(&rectList);
     ScreenToClient(rectList);
+
+    // 列表框里面的
+    /*
+    nNewWidth = m_h264NalList.GetColumnWidth(0) * fXRatio;
+    m_h264NalList.SetColumnWidth(0, nNewWidth);
+    nNewWidth = m_h264NalList.GetColumnWidth(1) * fXRatio;
+    m_h264NalList.SetColumnWidth(1, nNewWidth);
+    nNewWidth = m_h264NalList.GetColumnWidth(2) * fXRatio;
+    m_h264NalList.SetColumnWidth(2, nNewWidth);
+    nNewWidth = m_h264NalList.GetColumnWidth(3) * fXRatio;
+    m_h264NalList.SetColumnWidth(3, nNewWidth);
+    */
+    nNewWidth = m_h264NalList.GetColumnWidth(4) * fXRatio;
+    m_h264NalList.SetColumnWidth(4, nNewWidth);
+    nNewWidth = m_h264NalList.GetColumnWidth(5) * fXRatio;
+    m_h264NalList.SetColumnWidth(5, nNewWidth);
+    ///////////////////////
 
     // "Hex View" txt
     pWnd = GetDlgItem(IDC_STATIC);
