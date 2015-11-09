@@ -437,23 +437,23 @@ void CNalParser::h264_debug_slice_header(h264_stream_t* h, HTREEITEM root)
         if( ! is_slice_type( sh->slice_type, SH_SLICE_TYPE_I ) && ! is_slice_type( sh->slice_type, SH_SLICE_TYPE_SI ) )
         {
             my_printf_flag("ref_pic_list_modification_flag_l0", sh->rplm.ref_pic_list_modification_flag_l0 );
-            HTREEITEM rplmf = AddTreeItem(rplm);
+            AddTreeItem(rplm);
             if( sh->rplm.ref_pic_list_modification_flag_l0 )
             {
                 for (unsigned int i = 0; i < sh->rplm.rplm.size(); i++)
                 {
                     my_printf("modification_of_pic_nums_idc: %d  (v bits)", sh->rplm.rplm[i].modification_of_pic_nums_idc);
-                    AddTreeItem(rplmf);
+                    AddTreeItem(rplm);
                     if( sh->rplm.rplm[i].modification_of_pic_nums_idc == 0 ||
                         sh->rplm.rplm[i].modification_of_pic_nums_idc == 1 )
                     {
                         my_printf("abs_diff_pic_num_minus1: %d  (v bits)", sh->rplm.rplm[i].abs_diff_pic_num_minus1 );
-                        AddTreeItem(rplmf);
+                        AddTreeItem(rplm);
                     }
                     else if( sh->rplm.rplm[i].modification_of_pic_nums_idc == 2 )
                     {
                         my_printf("long_term_pic_num: %d  (v bits)", sh->rplm.rplm[i].long_term_pic_num );
-                        AddTreeItem(rplmf);
+                        AddTreeItem(rplm);
                     }
                 }
             }
@@ -461,23 +461,23 @@ void CNalParser::h264_debug_slice_header(h264_stream_t* h, HTREEITEM root)
         if( is_slice_type( sh->slice_type, SH_SLICE_TYPE_B ) )
         {
             my_printf_flag("ref_pic_list_modification_flag_l1", sh->rplm.ref_pic_list_modification_flag_l1 );
-            HTREEITEM rplmf1 = AddTreeItem(rplm);
+            AddTreeItem(rplm);
             if( sh->rplm.ref_pic_list_modification_flag_l1 )
             {
                 for (unsigned int i = 0; i < sh->rplm.rplm.size(); i++)
                 {
                     my_printf("modification_of_pic_nums_idc: %d  (v bits)", sh->rplm.rplm[i].modification_of_pic_nums_idc );
-                    AddTreeItem(rplmf1);
+                    AddTreeItem(rplm);
                     if( sh->rplm.rplm[i].modification_of_pic_nums_idc == 0 ||
                         sh->rplm.rplm[i].modification_of_pic_nums_idc == 1 )
                     {
                         my_printf("abs_diff_pic_num_minus1: %d  (v bits)", sh->rplm.rplm[i].abs_diff_pic_num_minus1 );
-                        AddTreeItem(rplmf1);
+                        AddTreeItem(rplm);
                     }
                     else if( sh->rplm.rplm[i].modification_of_pic_nums_idc == 2 )
                     {
                         my_printf("long_term_pic_num: %d  (v bits)", sh->rplm.rplm[i].long_term_pic_num );
-                        AddTreeItem(rplmf1);
+                        AddTreeItem(rplm);
                     }
                 }
             }
