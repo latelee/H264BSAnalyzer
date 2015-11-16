@@ -1056,11 +1056,17 @@ void CAboutDlg::OnLButtonDown(UINT nFlags, CPoint point)
     CDialogEx::OnLButtonDown(nFlags, point);
 }
 
-// 固定的数值是测试得到的经验值，无理论依据
+/**
+主窗口使用GetClientRect是因为需要与本函数的cx、cy计算缩放比例。
+控件使用GetWindowRect和ScreenToClient是为了得到相对的坐标。
+note：
+固定的数值是测试得到的经验值，无理论依据
+*/
 void CH264BSAnalyzerDlg::OnSize(UINT nType, int cx, int cy)
 {
     CDialogEx::OnSize(nType, cx, cy);
 
+    // 非法值，什么也不做
     if (cx <= 0 || cy <= 0) return;
 
     CRect rectList, rectHex, rectTxt, rectInfo, rectTree, rectMainWnd;
@@ -1076,7 +1082,7 @@ void CH264BSAnalyzerDlg::OnSize(UINT nType, int cx, int cy)
     GetDlgItem(IDC_TREE1)->GetWindowRect(&rectTree);
     ScreenToClient(rectTree);
 
-
+#if 0
     int a = rectList.Width();
     int b = rectList.Height();
     int a1 = rectList.left;
@@ -1094,9 +1100,10 @@ void CH264BSAnalyzerDlg::OnSize(UINT nType, int cx, int cy)
 
     int i = m_rectMainWnd.Width(); // 16
     int j = m_rectMainWnd.Height(); // 58
+#endif
 
-    float fXRatio = (float)cx / (float)(i);
-    float fYRatio = (float)cy / (float)(j);
+    float fXRatio = (float)cx / (float)(m_rectMainWnd.Width());
+    float fYRatio = (float)cy / (float)(m_rectMainWnd.Height());
 
     int nNewWidth = 0;
     int nNewHeight = 0;
@@ -1108,9 +1115,8 @@ void CH264BSAnalyzerDlg::OnSize(UINT nType, int cx, int cy)
     pWnd->MoveWindow(rectList.left, rectList.top, nNewWidth, nNewHeight);
     pWnd->Invalidate();
     pWnd->UpdateData();
-    pWnd->GetClientRect(&rectList);
-    //pWnd->GetWindowRect(&rectList);
-    //ScreenToClient(rectList);
+    pWnd->GetWindowRect(&rectList);
+    ScreenToClient(rectList);
 
     // 列表框里面的
     /*
@@ -1131,26 +1137,28 @@ void CH264BSAnalyzerDlg::OnSize(UINT nType, int cx, int cy)
 
     // "Hex View" 文本
     pWnd = GetDlgItem(IDC_STATIC);
-    pWnd->GetClientRect(&rectTxt);
+    pWnd->GetWindowRect(&rectTxt);
+    ScreenToClient(rectTxt);
+
     nNewWidth = (int)(fXRatio * (float)rectTxt.Width());
     nNewHeight = (int)(fYRatio * (float)rectTxt.Height());
-    pWnd->MoveWindow(rectTxt.left, rectList.Height() + 1, rectTxt.Width(), rectTxt.Height());
+    pWnd->MoveWindow(rectTxt.left, rectList.Height(), rectTxt.Width(), rectTxt.Height());
     
     pWnd->Invalidate();
     pWnd->SetWindowText("Hex View");
     pWnd->UpdateData();
-    pWnd->GetClientRect(&rectTxt);
-    //ScreenToClient(rectTxt);
+    pWnd->GetWindowRect(&rectTxt);
+    ScreenToClient(rectTxt);
 
     // 十六进制框
     pWnd = GetDlgItem(IDC_EDIT_HEX);
     nNewWidth = (int)(fXRatio * (float)rectHex.Width());
     nNewHeight = (int)(fYRatio * (float)rectHex.Height());
-    pWnd->MoveWindow(rectHex.left, rectList.Height()+rectTxt.Height(), nNewWidth, nNewHeight); //cy - rectList.Height() - 20
+    pWnd->MoveWindow(rectHex.left, rectList.Height()+rectTxt.Height(), nNewWidth, cy - rectList.Height() - 18);
     pWnd->Invalidate();
     pWnd->UpdateData();
-    pWnd->GetClientRect(&rectHex);
-    //ScreenToClient(rectHex);
+    pWnd->GetWindowRect(&rectHex);
+    ScreenToClient(rectHex);
 
     // 信息框
     pWnd = GetDlgItem(IDC_EDIT_SIMINFO);
@@ -1159,8 +1167,8 @@ void CH264BSAnalyzerDlg::OnSize(UINT nType, int cx, int cy)
     pWnd->MoveWindow(rectList.Width()+6, rectInfo.top, cx - rectList.Width() - 8, nNewHeight);
     pWnd->Invalidate();
     pWnd->UpdateData();
-    pWnd->GetClientRect(&rectInfo);
-    //ScreenToClient(rectInfo);
+    pWnd->GetWindowRect(&rectInfo);
+    ScreenToClient(rectInfo);
 
     // 树形控件框
     pWnd = GetDlgItem(IDC_TREE1);
