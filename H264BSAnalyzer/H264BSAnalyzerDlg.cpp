@@ -1119,19 +1119,9 @@ void CH264BSAnalyzerDlg::OnSize(UINT nType, int cx, int cy)
     ScreenToClient(rectList);
 
     // 列表框里面的
-    /*
-    nNewWidth = m_h264NalList.GetColumnWidth(0) * fXRatio;
-    m_h264NalList.SetColumnWidth(0, nNewWidth);
-    nNewWidth = m_h264NalList.GetColumnWidth(1) * fXRatio;
-    m_h264NalList.SetColumnWidth(1, nNewWidth);
-    nNewWidth = m_h264NalList.GetColumnWidth(2) * fXRatio;
-    m_h264NalList.SetColumnWidth(2, nNewWidth);
-    nNewWidth = m_h264NalList.GetColumnWidth(3) * fXRatio;
-    m_h264NalList.SetColumnWidth(3, nNewWidth);
-    */
-    nNewWidth = m_h264NalList.GetColumnWidth(4) * fXRatio;
+    nNewWidth = (int)(m_h264NalList.GetColumnWidth(4) * fXRatio);
     m_h264NalList.SetColumnWidth(4, nNewWidth);
-    nNewWidth = m_h264NalList.GetColumnWidth(5) * fXRatio;
+    nNewWidth = (int)(m_h264NalList.GetColumnWidth(5) * fXRatio);
     m_h264NalList.SetColumnWidth(5, nNewWidth);
     ///////////////////////
 
@@ -1139,9 +1129,6 @@ void CH264BSAnalyzerDlg::OnSize(UINT nType, int cx, int cy)
     pWnd = GetDlgItem(IDC_STATIC);
     pWnd->GetWindowRect(&rectTxt);
     ScreenToClient(rectTxt);
-
-    nNewWidth = (int)(fXRatio * (float)rectTxt.Width());
-    nNewHeight = (int)(fYRatio * (float)rectTxt.Height());
     pWnd->MoveWindow(rectTxt.left, rectList.Height(), rectTxt.Width(), rectTxt.Height());
     
     pWnd->Invalidate();

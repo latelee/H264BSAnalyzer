@@ -4,7 +4,7 @@ H264BSAnalyzer -- H.264/AVC H.265/HEVC码流分析工具
 工程说明
 =======================
 VS2010 MFC工程，使用h264bitstream开源项目实现对H.264码流分析。<br>
-H.265分析参考HM16.6代码。
+H.265分析以h264bitstream为主，同时参考HM16.6代码。
 
 功能
 =======================
@@ -20,7 +20,7 @@ H.265分析参考HM16.6代码。
 
 用法
 =======================
-菜单File->Open选项；直接拖曳文件至工具界面。<br>
+菜单File->Open选项；或者直接拖曳文件至工具界面。<br>
 工具会自动解析。双击某一项即可查看具体的NAL信息。
 
 界面
@@ -33,6 +33,12 @@ V2.0版本H264分析界面：<br>
 
 V2.0版本H265分析界面：<br>
 ![GUI](https://github.com/latelee/H264BSAnalyzer/blob/master/screenshots/v2.0_h265.png)
+
+V2.1版本H264分析界面：<br>
+![GUI](https://github.com/latelee/H264BSAnalyzer/blob/master/screenshots/v2.1_h264.png)
+
+V2.1版本H265分析界面：<br>
+![GUI](https://github.com/latelee/H264BSAnalyzer/blob/master/screenshots/v2.1_h265.png)
 
 声明
 =======================
@@ -50,6 +56,13 @@ H264码流分析功能完成。
 添加H.265/HEVC码流分析功能。<br>
 其它界面及显示信息完善。<br>
 
+* v2.1 <br>
+使用树形控件显示码流字段。显示参考来源为H264Visa、H264VideoESViewer工具。<br>
+增加缩放功能。<br>
+其它界面及显示信息完善。<br>
+遗留问题：<br>
+部分SEI信息未做解析；H264帧率计算可能不准确(是真实帧率的2倍)。<br>
+
 测试
 =======================
 本工程使用H264Visa、CodecVisa及HM工具对比测试。<br>
@@ -66,6 +79,7 @@ bug
 =======================
 * 修正h264bitstream个别bug。详见代码。
 * 基于h264bitstream适应性修改的代码，遵从LGPL协议。
+* 其它部分源码开放。由于作者能力有限，难免有错误，切勿用于商业目的。
 
 作者
 =======================
