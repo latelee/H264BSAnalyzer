@@ -9,6 +9,24 @@
 
 #include "NaLParse.h"
 
+// 静态库
+#if 0
+#pragma comment(lib, "libgcc.a") // divdi3(), etc.
+#pragma comment(lib, "libmingwex.a") // snprintf()....
+#pragma comment(lib, "libiconv.a") // libiconv_open(), etc.
+#pragma comment(lib, "libm.a")
+#pragma comment(lib, "msvcrt.lib")
+#pragma comment(lib, "libmingw32.a")
+
+#pragma comment(lib, "libavcodec.a")
+#pragma comment(lib, "libavformat.a")
+#pragma comment(lib, "libavutil.a")
+#pragma comment(lib, "libswscale.a")
+#pragma comment(lib, "libswresample.a")
+#pragma comment(lib, "libavdevice.a")
+
+#endif
+
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
@@ -58,6 +76,8 @@ CH264BSAnalyzerDlg::CH264BSAnalyzerDlg(CWnd* pParent /*=NULL*/)
     m_hNALThread = INVALID_HANDLE_VALUE;
     m_hFileLock = INVALID_HANDLE_VALUE;
     m_hNALLock = INVALID_HANDLE_VALUE;
+
+    m_pPlayDlg = NULL;
 }
 
 void CH264BSAnalyzerDlg::DoDataExchange(CDataExchange* pDX)
@@ -80,6 +100,7 @@ BEGIN_MESSAGE_MAP(CH264BSAnalyzerDlg, CDialogEx)
     ON_COMMAND(ID_HOWTO_USAGE, &CH264BSAnalyzerDlg::OnHowtoUsage)
     ON_NOTIFY(LVN_KEYDOWN, IDC_H264_NALLIST, &CH264BSAnalyzerDlg::OnLvnKeydownH264Nallist)
     ON_WM_SIZE()
+    ON_COMMAND(ID_PLAY_PLAY, &CH264BSAnalyzerDlg::OnPlayDlg)
 END_MESSAGE_MAP()
 
 // CH264BSAnalyzerDlg message handlers
@@ -199,6 +220,14 @@ BOOL CH264BSAnalyzerDlg::OnInitDialog()
     AddTreeItem(hItem1, strTemp.GetBuffer());
 #endif
 
+    // 初始化 播放 对话框
+    if (m_pPlayDlg == NULL)
+    {
+        m_pPlayDlg = new CPlayDlg();
+        m_pPlayDlg->Create(IDD_PLAYDLG, this);
+        m_pPlayDlg->SetParentWnd(this);
+    }
+
     return TRUE;  // return TRUE  unless you set the focus to a control
 }
 
@@ -251,6 +280,17 @@ HCURSOR CH264BSAnalyzerDlg::OnQueryDragIcon()
     return static_cast<HCURSOR>(m_hIcon);
 }
 
+void CH264BSAnalyzerDlg::ShowPlayWindow()
+{
+    // 非模态对话框
+    if (m_pPlayDlg == NULL)
+    {
+        m_pPlayDlg = new CPlayDlg();
+        m_pPlayDlg->Create(IDD_PLAYDLG, this);
+    }
+
+    m_pPlayDlg->ShowWindow(SW_SHOW);
+}
 
 //添加一条记录
 int CH264BSAnalyzerDlg::ShowNLInfo(NALU_t* nalu)
@@ -1167,4 +1207,9 @@ void CH264BSAnalyzerDlg::OnSize(UINT nType, int cx, int cy)
 
     // 更新当前主窗口大小
     GetClientRect(&m_rectMainWnd);
+}
+
+void CH264BSAnalyzerDlg::OnPlayDlg()
+{
+    this->ShowPlayWindow();
 }

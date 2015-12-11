@@ -37,8 +37,10 @@
 
 #include <afxcontrolbars.h>     // MFC support for ribbons and control bars
 
-
-
+// FFMPEG有个头文件用到
+#ifndef __STDC_CONSTANT_MACROS
+#define __STDC_CONSTANT_MACROS
+#endif
 
 
 
@@ -55,5 +57,4 @@
 #endif
 #endif
 
-#define _CRT_SECURE_NO_WARNINGS
 #include <stdio.h>

@@ -699,8 +699,7 @@ void CNalParser::h264_debug_seis( h264_stream_t* h, HTREEITEM root)
 {
     sei_t** seis = h->seis;
     int num_seis = h->num_seis;
-    const char* sei_type_name;
-    int i;
+    int i = 0;
 
     my_printf("sei_rbsp()");
     HTREEITEM isei = AddTreeItem(root);

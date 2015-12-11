@@ -67,6 +67,12 @@
     <ClInclude Include="h265_stream.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="H264Decode.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PlayDlg.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="H264BSAnalyzer.cpp">
@@ -109,6 +115,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="NalDebugTree.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="H264Decode.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="PlayDlg.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

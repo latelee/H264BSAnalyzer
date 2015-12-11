@@ -42,16 +42,19 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
     <EmbedManifest>false</EmbedManifest>
+    <IncludePath>ffmpeg/include;$(IncludePath)</IncludePath>
+    <LibraryPath>ffmpeg/lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
+    <IncludePath>ffmpeg/include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -104,6 +107,7 @@
     <ClInclude Include="bs.h" />
     <ClInclude Include="H264BSAnalyzer.h" />
     <ClInclude Include="H264BSAnalyzerDlg.h" />
+    <ClInclude Include="H264Decode.h" />
     <ClInclude Include="h264_avcc.h" />
     <ClInclude Include="h264_sei.h" />
     <ClInclude Include="h264_stream.h" />
@@ -112,6 +116,7 @@
     <ClInclude Include="h265_stream.h" />
     <ClInclude Include="hexeditctrl.h" />
     <ClInclude Include="NalParse.h" />
+    <ClInclude Include="PlayDlg.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
@@ -119,6 +124,7 @@
   <ItemGroup>
     <ClCompile Include="H264BSAnalyzer.cpp" />
     <ClCompile Include="H264BSAnalyzerDlg.cpp" />
+    <ClCompile Include="H264Decode.cpp" />
     <ClCompile Include="h264_analyze.cpp" />
     <ClCompile Include="h264_avcc.cpp" />
     <ClCompile Include="h264_sei.cpp" />
@@ -130,6 +136,7 @@
     <ClCompile Include="NalDebugTree.cpp" />
     <ClCompile Include="NalDebugTxt.cpp" />
     <ClCompile Include="NalParse.cpp" />
+    <ClCompile Include="PlayDlg.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>

@@ -1246,8 +1246,8 @@ void CNalParser::h265_debug_seis(h265_stream_t* h)
     int num_seis = h->num_seis;
 
     my_printf("======= HEVC SEI =======\r\n");
-    const char* sei_type_name;
-    int i;
+    int i = 0;
+
     for (i = 0; i < num_seis; i++)
     {
         h265_sei_t* s = seis[i];

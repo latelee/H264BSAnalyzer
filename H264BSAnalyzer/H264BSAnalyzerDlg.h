@@ -6,6 +6,7 @@
 
 #include "NalParse.h"
 #include "hexeditctrl.h"
+#include "PlayDlg.h"
 
 #include <vector>
 using std::vector;
@@ -47,6 +48,8 @@ protected:
 public:
     CListCtrl m_h264NalList;
     CHexEdit m_edHexInfo;   // 显示十六进制
+    
+    CPlayDlg* m_pPlayDlg;
 
     void OnBnClickedH264InputurlOpen();
 
@@ -71,6 +74,7 @@ private:
     void ReadFile(void);
     void PaseNal(void);
 
+    void ShowPlayWindow();
 public:
     afx_msg void OnDropFiles(HDROP hDropInfo);
     afx_msg void OnLvnItemActivateH264Nallist(NMHDR *pNMHDR, LRESULT *pResult);
@@ -81,4 +85,5 @@ public:
     afx_msg void OnLvnKeydownH264Nallist(NMHDR *pNMHDR, LRESULT *pResult);
     CTreeCtrl m_cTree;
     afx_msg void OnSize(UINT nType, int cx, int cy);
+    afx_msg void OnPlayDlg();
 };
