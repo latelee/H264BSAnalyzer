@@ -49,6 +49,10 @@ BOOL CH264BSAnalyzerApp::InitInstance()
     InitCtrls.dwICC = ICC_WIN95_CLASSES;
     InitCommonControlsEx(&InitCtrls);
 
+    GdiplusStartupInput gdiplusStartupInput;
+    //ULONG_PTR gdiplusToken;
+    GdiplusStartup(&m_gdiplusToken, &gdiplusStartupInput, NULL);
+
     CWinApp::InitInstance();
 
 
@@ -92,3 +96,10 @@ BOOL CH264BSAnalyzerApp::InitInstance()
     return FALSE;
 }
 
+int CH264BSAnalyzerApp::ExitInstance()
+{
+    // TODO: Add your specialized code here and/or call the base class
+    GdiplusShutdown(m_gdiplusToken); // ??
+
+    return CWinApp::ExitInstance();
+}

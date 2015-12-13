@@ -1,6 +1,8 @@
 #pragma once
 
-class CH264BSAnalyzerDlg;
+#include "H264Decode.h"
+
+#define DLG_TITTLE "Play"
 
 // CPlayDlg dialog
 
@@ -16,12 +18,31 @@ public:
 	enum { IDD = IDD_PLAYDLG };
 
 public:
-    void SetParentWnd(CH264BSAnalyzerDlg* pWnd) {m_pParentWnd = pWnd;}
+    // 从主窗口拿到视频文件信息
+    void SetVideoInfo(CString strFileName, int nWidth, int nHeight, int nTotalFrame, float nFps);
+
 private:
-    CH264BSAnalyzerDlg *m_pParentWnd; // 窗口参数传递
+    BOOL m_fShowBlack;
+    INT m_nWidth;
+    INT m_nHeight;
+    INT m_nTotalFrame;
+    INT m_nFrameCount;
+    float m_fFps;
+    BYTE* m_pbBmpData;
+    CString m_strFileUrl;   // 视频文件
+
+    CH264Decoder m_cDecoder;    // 解码器
+
+    void ShowPicture(BYTE* pbData, int iSize);
+    void Show(BYTE* pbData, int nSize, int nWidth, int nHeight);
 
 protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
 
 	DECLARE_MESSAGE_MAP()
+public:
+    afx_msg void OnPaint();
+    afx_msg void OnBnClickedBtPlay();
+    afx_msg void OnClose();
+    virtual BOOL OnInitDialog();
 };

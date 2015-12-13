@@ -42,6 +42,10 @@
 #define __STDC_CONSTANT_MACROS
 #endif
 
+//////// GDI库及头文件
+#pragma comment(lib, "gdiplus.lib")
+#include <gdiplus.h>
+using namespace Gdiplus;
 
 
 

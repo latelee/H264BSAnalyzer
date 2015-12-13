@@ -27,6 +27,9 @@ public:
 // Implementation
 
     DECLARE_MESSAGE_MAP()
+
+    ULONG_PTR m_gdiplusToken;
+    virtual int ExitInstance();
 };
 
 extern CH264BSAnalyzerApp theApp;

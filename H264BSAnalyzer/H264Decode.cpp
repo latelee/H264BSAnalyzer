@@ -26,21 +26,21 @@ int debug(const char* fmt, ...)
 }
 #endif
 
-CH264Decode::CH264Decode()
+CH264Decoder::CH264Decoder()
 {
     m_skippedFrame = 0;
     m_picWidth = 0;
     m_picHeight = 0;
+    m_videoStream = -1;
+    m_picBuffer = NULL;
     m_fmtctx  = NULL;
     m_avctx   = NULL;
-    //m_codec   = NULL;
     m_picture = NULL;
     m_frameRGB = NULL;
     m_imgctx = NULL;
-    m_videoStream = -1;           // 视频流，注：不能初始化为0
 }
 
-CH264Decode::~CH264Decode()
+CH264Decoder::~CH264Decoder()
 {
     closeVideoFile();
 #if 0
@@ -77,7 +77,7 @@ CH264Decode::~CH264Decode()
 #endif
 }
 
-int CH264Decode::openVideoFile(const char* avifile)
+int CH264Decoder::openVideoFile(const char* avifile)
 {
     int ret = 0;
     int size = 0;
@@ -92,7 +92,7 @@ int CH264Decode::openVideoFile(const char* avifile)
     }
     av_register_all();
 
-    // 从视频文件检测出视频格式等信息
+    // 打开视频文件
     ret = avformat_open_input(&m_fmtctx, avifile, NULL, NULL);
     if (ret != 0)
     {
@@ -107,11 +107,11 @@ int CH264Decode::openVideoFile(const char* avifile)
     }
 
 #ifdef _DEBUG_
-    // TODO: 测试视频格式，标题、作者、时间长度，文件长度...
+    // 打印视频信息
     av_dump_format(m_fmtctx, 0, avifile, 0);
 #endif
 
-    // 找到视频流
+    // 找视频流
     for (unsigned int i = 0; i < m_fmtctx->nb_streams; i++)
     {
         if (m_fmtctx->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO)
@@ -126,12 +126,12 @@ int CH264Decode::openVideoFile(const char* avifile)
         return -1;
     }
 
-    // 查找并打开解码器
+    // 打开解码器
     m_avctx = m_fmtctx->streams[m_videoStream]->codec;
     codec = avcodec_find_decoder(m_avctx->codec_id);
     if (codec == NULL)
     {
-        debug("unsupoorted codec\n");
+        debug("unsupported codec\n");
         return -1;
     }
 
@@ -180,7 +180,7 @@ int CH264Decode::openVideoFile(const char* avifile)
     return 0;
 }
 
-void CH264Decode::closeVideoFile(void)
+void CH264Decoder::closeVideoFile(void)
 {
     if (m_picture)
     {
@@ -214,7 +214,7 @@ void CH264Decode::closeVideoFile(void)
     }
 }
 
-int CH264Decode::jumpToTime(int64_t time)
+int CH264Decoder::jumpToTime(int64_t time)
 {
     int64_t seekTarget = 0;
     AVRational AV_TIME = {1, AV_TIME_BASE};
@@ -236,7 +236,7 @@ int CH264Decode::jumpToTime(int64_t time)
     return 0;
 }
 
-int CH264Decode::getFrame(unsigned char** yuvBuffer, unsigned char** rgbBuffer, int* size, int* width, int* height)
+int CH264Decoder::getFrame(unsigned char** yuvBuffer, unsigned char** rgbBuffer, int* size, int* width, int* height)
 {
     int got_picture = 0;    // 找到帧标志
     int len = 0;
@@ -291,6 +291,7 @@ int CH264Decode::getFrame(unsigned char** yuvBuffer, unsigned char** rgbBuffer, 
                 //printf("bit_rate: %d width: %d height:%d\n", m_avctx->bit_rate, m_avctx->width, m_avctx->height);
                 return 1;
             } // end of got picture
+            // 这里是否在上面的if中判断len的值？
             else
             {
                 m_skippedFrame++;
@@ -304,7 +305,7 @@ int CH264Decode::getFrame(unsigned char** yuvBuffer, unsigned char** rgbBuffer, 
     return 0;
 }
 
-int CH264Decode::getSkippedFrame(unsigned char** yuvBuffer, unsigned char** rgbBuffer, int* size, int* width, int* height)
+int CH264Decoder::getSkippedFrame(unsigned char** yuvBuffer, unsigned char** rgbBuffer, int* size, int* width, int* height)
 {
     int got_picture = 0;    // 找到帧标志
     int len = 0;
@@ -358,7 +359,7 @@ int CH264Decode::getSkippedFrame(unsigned char** yuvBuffer, unsigned char** rgbB
     return 0;
 }
 
-unsigned char* CH264Decode::convertToRgb()
+unsigned char* CH264Decoder::convertToRgb()
 {
     sws_scale(m_imgctx, m_picture->data, m_picture->linesize, 0, m_avctx->height, 
         m_frameRGB->data, m_frameRGB->linesize);
@@ -366,7 +367,7 @@ unsigned char* CH264Decode::convertToRgb()
     return m_frameRGB->data[0];
 }
 
-int CH264Decode::writeBmpFile(const char* filename)
+int CH264Decoder::writeBmpFile(const char* filename)
 {
     MYBITMAPFILEHEADER bmpHeader;
     MYBITMAPINFOHEADER bmpInfo;
@@ -435,7 +436,7 @@ int CH264Decode::writeBmpFile(const char* filename)
     return 0;
 }
 
-int CH264Decode::writeJPGFile(const char* filename)
+int CH264Decoder::writeJPGFile(const char* filename)
 {
     //char filename[64] = {0};
     int ret = -1;

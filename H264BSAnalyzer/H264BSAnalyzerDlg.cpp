@@ -225,8 +225,19 @@ BOOL CH264BSAnalyzerDlg::OnInitDialog()
     {
         m_pPlayDlg = new CPlayDlg();
         m_pPlayDlg->Create(IDD_PLAYDLG, this);
-        m_pPlayDlg->SetParentWnd(this);
     }
+
+    /*
+    CMenu popMenu;
+    CMenu *pPopup;
+    popMenu.LoadMenu(IDR_MENU);
+
+    pPopup=popMenu.GetSubMenu(1);
+
+    pPopup->EnableMenuItem(ID_PLAY_PLAY, MF_BYCOMMAND|MF_ENABLED);
+    pPopup->Detach();
+    popMenu.DestroyMenu();
+    */
 
     return TRUE;  // return TRUE  unless you set the focus to a control
 }
@@ -753,6 +764,8 @@ void CH264BSAnalyzerDlg::ReadFile(void)
             videoInfo.max_framerate, m_nSliceIndex
             );
         GetDlgItem(IDC_EDIT_SIMINFO)->SetWindowText(strSimpleInfo);
+         // 把主窗口打开的文件信息传到子窗口
+        m_pPlayDlg->SetVideoInfo(m_strFileUrl, videoInfo.width, videoInfo.height, m_nSliceIndex, videoInfo.max_framerate);
     }
 }
 

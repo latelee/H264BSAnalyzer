@@ -49,7 +49,7 @@ public:
     CListCtrl m_h264NalList;
     CHexEdit m_edHexInfo;   // 显示十六进制
     
-    CPlayDlg* m_pPlayDlg;
+    CPlayDlg* m_pPlayDlg;   // 播放窗口
 
     void OnBnClickedH264InputurlOpen();
 

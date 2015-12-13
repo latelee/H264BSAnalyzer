@@ -51,10 +51,10 @@ typedef struct tagMYBITMAPINFOHEADER{
         DWORD      biClrImportant;
 } MYBITMAPINFOHEADER;
 
-class CH264Decode {
+class CH264Decoder {
 public:
-    CH264Decode();
-    ~CH264Decode();
+    CH264Decoder();
+    ~CH264Decoder();
 
     /**
     * openVideoFile - 打开H264视频
@@ -148,14 +148,12 @@ private:
     int m_picWidth;
     int m_picHeight;
 
+    int m_videoStream;    // 视频流索引
+    unsigned char* m_picBuffer;
     AVFormatContext* m_fmtctx;
     AVCodecContext* m_avctx;
     AVFrame *m_picture;
-    int m_videoStream;    // 视频流索引
     AVFrame* m_frameRGB;
-    unsigned char* m_picBuffer;
     struct SwsContext* m_imgctx;
-    
-
 };
 #endif
