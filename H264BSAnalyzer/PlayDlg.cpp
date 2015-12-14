@@ -118,6 +118,7 @@ BEGIN_MESSAGE_MAP(CPlayDlg, CDialogEx)
     ON_WM_PAINT()
     ON_BN_CLICKED(IDC_BT_PLAY, &CPlayDlg::OnBnClickedBtPlay)
     ON_WM_CLOSE()
+    ON_WM_TIMER()
 END_MESSAGE_MAP()
 
 
@@ -154,39 +155,16 @@ void CPlayDlg::OnPaint()
 // 播放
 void CPlayDlg::OnBnClickedBtPlay()
 {
-    BYTE* pRgbBuffer = NULL;
-    int nSize = 0;
-    int nWidth = 0;
-    int nHeight = 0;
-    CString strTittle;
-
     if (m_strFileUrl.IsEmpty())
     {
         MessageBox("Sorry, you open no file.");
         return;
     }
+
     m_cDecoder.openVideoFile(m_strFileUrl.GetBuffer());
-    while (m_cDecoder.getFrame(NULL, &pRgbBuffer, &nSize, &nWidth, &nHeight) > 0)
-    {
-        m_nFrameCount++;
-        
-        strTittle.Format("%d/%d  --  %s", m_nFrameCount, m_nTotalFrame, DLG_TITTLE);
-        this->SetWindowText(strTittle);
 
-        Show(pRgbBuffer, nSize, nWidth, nHeight);
-        Sleep((DWORD)((float)1000/m_fFps));
-    }
-    // 部分文件无法得到缓冲的帧
-    while (m_cDecoder.getSkippedFrame(NULL, &pRgbBuffer, &nSize, &nWidth, &nHeight) > 0)
-    {
-        m_nFrameCount++;
-
-        strTittle.Format("..%d...--%s", m_nFrameCount, DLG_TITTLE);
-        this->SetWindowText(strTittle);
-
-        //Show(pRgbBuffer, nSize, nWidth, nHeight);
-        Sleep((DWORD)((float)1000/m_fFps));
-    }
+    // 初始化定时器
+    SetTimer(1,(UINT)((float)1000/m_fFps),NULL);
 }
 
 // 窗口关闭
@@ -195,9 +173,45 @@ void CPlayDlg::OnClose()
     // 释放、恢复
     m_cDecoder.closeVideoFile();
     m_nFrameCount = 0;
-    delete [] m_pbBmpData;
-    m_pbBmpData = NULL;
+
+    // 在这里先不释放BMP图片缓冲
+    KillTimer(1);
 
     CDialogEx::OnClose();
 }
 
+void CPlayDlg::OnTimer(UINT_PTR nIDEvent)
+{
+    BYTE* pRgbBuffer = NULL;
+    int nSize = 0;
+    int nWidth = 0;
+    int nHeight = 0;
+    int ret = 0;
+    CString strTittle;
+
+    ret = m_cDecoder.getFrame(NULL, &pRgbBuffer, &nSize, &nWidth, &nHeight);
+    if (ret < 0) return;
+    else if ( ret > 0)
+    {
+        m_nFrameCount++;
+        strTittle.Format("%d/%d  %0.2ffps --  %s", m_nFrameCount, m_nTotalFrame, m_fFps, DLG_TITTLE);
+        this->SetWindowText(strTittle);
+        Show(pRgbBuffer, nSize, nWidth, nHeight);
+    }
+    else
+    {
+        ret = m_cDecoder.getSkippedFrame(NULL, &pRgbBuffer, &nSize, &nWidth, &nHeight);
+        if ( ret > 0)
+        {
+            m_nFrameCount++;
+            strTittle.Format("%d/%d  %0.2ffps --  %s", m_nFrameCount, m_nTotalFrame, m_fFps, DLG_TITTLE);
+            this->SetWindowText(strTittle);
+            Show(pRgbBuffer, nSize, nWidth, nHeight);
+        }
+    }
+
+    if (m_nFrameCount >= m_nTotalFrame)
+    {
+        KillTimer(1);
+    }
+}

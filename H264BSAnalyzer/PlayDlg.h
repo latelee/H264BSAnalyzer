@@ -45,4 +45,5 @@ public:
     afx_msg void OnBnClickedBtPlay();
     afx_msg void OnClose();
     virtual BOOL OnInitDialog();
+    afx_msg void OnTimer(UINT_PTR nIDEvent);
 };
