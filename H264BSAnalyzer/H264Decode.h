@@ -8,13 +8,16 @@ extern "C" {
 }
 
 #ifdef WIN32
-// ¶¯Ì¬¿â
-#pragma comment(lib, "avcodec.lib")
-#pragma comment(lib, "avformat.lib")
-#pragma comment(lib, "avutil.lib")
-#pragma comment(lib, "swscale.lib")
-#pragma comment(lib, "swresample.lib")
-#pragma comment(lib, "avdevice.lib")
+// ¾²Ì¬¿â
+#pragma comment(lib, "libgcc.a") // divdi3(), etc.
+#pragma comment(lib, "libmingwex.a") // snprintf()....
+#pragma comment(lib, "libiconv.a") // libiconv_open(), etc.
+
+#pragma comment(lib, "libavcodec.a")
+#pragma comment(lib, "libavformat.a")
+#pragma comment(lib, "libavutil.a")
+#pragma comment(lib, "libswscale.a")
+#pragma comment(lib, "libswresample.a")
 
 #endif
 

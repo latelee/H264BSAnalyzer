@@ -9,24 +9,6 @@
 
 #include "NaLParse.h"
 
-// ¾²Ì¬¿â
-#if 0
-#pragma comment(lib, "libgcc.a") // divdi3(), etc.
-#pragma comment(lib, "libmingwex.a") // snprintf()....
-#pragma comment(lib, "libiconv.a") // libiconv_open(), etc.
-#pragma comment(lib, "libm.a")
-#pragma comment(lib, "msvcrt.lib")
-#pragma comment(lib, "libmingw32.a")
-
-#pragma comment(lib, "libavcodec.a")
-#pragma comment(lib, "libavformat.a")
-#pragma comment(lib, "libavutil.a")
-#pragma comment(lib, "libswscale.a")
-#pragma comment(lib, "libswresample.a")
-#pragma comment(lib, "libavdevice.a")
-
-#endif
-
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
