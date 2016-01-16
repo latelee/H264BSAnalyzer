@@ -46,4 +46,12 @@ public:
     afx_msg void OnClose();
     virtual BOOL OnInitDialog();
     afx_msg void OnTimer(UINT_PTR nIDEvent);
+    afx_msg void OnSize(UINT nType, int cx, int cy);
+    CButton m_bPlay;
+    CButton m_bSaveFrame;
+    CButton m_bStop;
+    CButton m_bNextFrame;
+    afx_msg void OnBnClickedBtNext();
+    afx_msg void OnBnClickedBtSave();
+    afx_msg void OnBnClickedBtStop();
 };

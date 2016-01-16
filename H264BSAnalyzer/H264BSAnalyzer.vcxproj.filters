@@ -23,6 +23,36 @@
       <Filter>Resource Files</Filter>
     </None>
     <None Include="my_log.txt" />
+    <None Include="res\bitmap1.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\first.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\last.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\next.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\open.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\pause.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\play.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\prev.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\save.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\stop.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="H264BSAnalyzer.h">

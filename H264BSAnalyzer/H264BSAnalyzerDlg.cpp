@@ -58,8 +58,9 @@ CH264BSAnalyzerDlg::CH264BSAnalyzerDlg(CWnd* pParent /*=NULL*/)
     m_hNALThread = INVALID_HANDLE_VALUE;
     m_hFileLock = INVALID_HANDLE_VALUE;
     m_hNALLock = INVALID_HANDLE_VALUE;
-
+    m_strFileUrl.Empty();
     m_pPlayDlg = NULL;
+    memset(&m_cVideoInfo, '\0', sizeof(videoinfo_t));
 }
 
 void CH264BSAnalyzerDlg::DoDataExchange(CDataExchange* pDX)
@@ -203,11 +204,13 @@ BOOL CH264BSAnalyzerDlg::OnInitDialog()
 #endif
 
     // 初始化 播放 对话框
+#if 0
     if (m_pPlayDlg == NULL)
     {
         m_pPlayDlg = new CPlayDlg();
         m_pPlayDlg->Create(IDD_PLAYDLG, this);
     }
+#endif
 
     /*
     CMenu popMenu;
@@ -571,13 +574,12 @@ void CH264BSAnalyzerDlg::ReadFile(void)
             ShowNLInfo(&m_vNalTypeVector[i]);
         }
 
-        videoinfo_t videoInfo;
-        m_cParser.getVideoInfo(&videoInfo);
+        m_cParser.getVideoInfo(&m_cVideoInfo);
         // H.265
-        if (videoInfo.type)
+        if (m_cVideoInfo.type)
         {
             // profile类型
-            switch (videoInfo.profile_idc)
+            switch (m_cVideoInfo.profile_idc)
             {
             case PROFILE_NONE:
                 strProfileInfo.Format(_T("None"));
@@ -602,7 +604,7 @@ void CH264BSAnalyzerDlg::ReadFile(void)
                 strProfileInfo.Format(_T("Unkown"));
                 break;
             }
-            switch (videoInfo.level_idc)
+            switch (m_cVideoInfo.level_idc)
             {
             case LEVEL_NONE:
                 strLevelInfo.Format(_T("none(%d)"), LEVEL_NONE);
@@ -653,7 +655,7 @@ void CH264BSAnalyzerDlg::ReadFile(void)
                 strLevelInfo.Format(_T("Unkown"));
                 break;
             }
-            switch (videoInfo.tier_idc)
+            switch (m_cVideoInfo.tier_idc)
             {
             case 1:
                 strTierInfo.Format(_T("Tier High"));
@@ -667,7 +669,7 @@ void CH264BSAnalyzerDlg::ReadFile(void)
         else // h264
         {
             // profile类型
-            switch (videoInfo.profile_idc)
+            switch (m_cVideoInfo.profile_idc)
             {
             case 66:
                 strProfileInfo.Format(_T("Baseline"));
@@ -695,14 +697,14 @@ void CH264BSAnalyzerDlg::ReadFile(void)
                 break;
             }
             strTierInfo.Empty();
-            strLevelInfo.Format(_T("%d"), videoInfo.level_idc);
+            strLevelInfo.Format(_T("%d"), m_cVideoInfo.level_idc);
         }
         // common
         // bit depth
-        strBitDepth.Format(_T("Luma bit: %d Chroma bit: %d"), videoInfo.bit_depth_luma, videoInfo.bit_depth_chroma);
+        strBitDepth.Format(_T("Luma bit: %d Chroma bit: %d"), m_cVideoInfo.bit_depth_luma, m_cVideoInfo.bit_depth_chroma);
 
         // chroma format
-        switch (videoInfo.chroma_format_idc)
+        switch (m_cVideoInfo.chroma_format_idc)
         {
         case 1:
             strVideoFormat.Format(_T("YUV420"));
@@ -736,18 +738,16 @@ void CH264BSAnalyzerDlg::ReadFile(void)
             "Encoding Type \t: %s\r\n"
             "Max fps \t\t: %.03f\r\n"
             "Frame Count \t: %d\r\n",
-            videoInfo.type ? "H.265/HEVC" : "H.264/AVC",
-            videoInfo.width, videoInfo.height,
-            videoInfo.crop_left, videoInfo.crop_right,
-            videoInfo.crop_top, videoInfo.crop_bottom,
+            m_cVideoInfo.type ? "H.265/HEVC" : "H.264/AVC",
+            m_cVideoInfo.width, m_cVideoInfo.height,
+            m_cVideoInfo.crop_left, m_cVideoInfo.crop_right,
+            m_cVideoInfo.crop_top, m_cVideoInfo.crop_bottom,
             strVideoFormat, strBitDepth, 
             strProfileInfo, strLevelInfo, strTierInfo,
-            videoInfo.encoding_type ? "CABAC" : "CAVLC",
-            videoInfo.max_framerate, m_nSliceIndex
+            m_cVideoInfo.encoding_type ? "CABAC" : "CAVLC",
+            m_cVideoInfo.max_framerate, m_nSliceIndex
             );
         GetDlgItem(IDC_EDIT_SIMINFO)->SetWindowText(strSimpleInfo);
-         // 把主窗口打开的文件信息传到子窗口
-        m_pPlayDlg->SetVideoInfo(m_strFileUrl, videoInfo.width, videoInfo.height, m_nSliceIndex, videoInfo.max_framerate);
     }
 }
 
@@ -1206,5 +1206,13 @@ void CH264BSAnalyzerDlg::OnSize(UINT nType, int cx, int cy)
 
 void CH264BSAnalyzerDlg::OnPlayDlg()
 {
+    if (m_pPlayDlg == NULL)
+    {
+        m_pPlayDlg = new CPlayDlg();
+        m_pPlayDlg->Create(IDD_PLAYDLG, this);
+    }
+    // 把主窗口打开的文件信息传到子窗口
+    m_pPlayDlg->SetVideoInfo(m_strFileUrl, m_cVideoInfo.width, m_cVideoInfo.height, m_nSliceIndex, m_cVideoInfo.max_framerate);
+
     this->ShowPlayWindow();
 }
