@@ -19,10 +19,13 @@ public:
 
 public:
     // 从主窗口拿到视频文件信息
-    void SetVideoInfo(CString strFileName, int nWidth, int nHeight, int nTotalFrame, float nFps);
+    int SetVideoInfo(CString strFileName, int nWidth, int nHeight, int nTotalFrame, float nFps);
 
 private:
     BOOL m_fShowBlack;
+    BOOL m_fPlayed;
+    BOOL m_fClosed;
+    BOOL m_fLoop;
     INT m_nWidth;
     INT m_nHeight;
     INT m_nTotalFrame;
@@ -35,6 +38,9 @@ private:
 
     void ShowPicture(BYTE* pbData, int iSize);
     void Show(BYTE* pbData, int nSize, int nWidth, int nHeight);
+
+    void Showing();
+    void Finish();
 
 protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
@@ -54,4 +60,5 @@ public:
     afx_msg void OnBnClickedBtNext();
     afx_msg void OnBnClickedBtSave();
     afx_msg void OnBnClickedBtStop();
+    afx_msg void OnBnClickedCkLoop();
 };

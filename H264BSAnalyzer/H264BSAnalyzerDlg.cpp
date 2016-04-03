@@ -1026,7 +1026,7 @@ void CH264BSAnalyzerDlg::OnHowtoUsage()
         "3、双击某一项NAL，即可得到详细信息\r\n"
         "限制：本程序仅能分析H264/H265码流文件，其它文件无法分析\r\n"
         "本程序分析大型文件会有问题，能力有限，勿怪\r\n";
-    AfxMessageBox(help);
+    MessageBox(help);
 }
 
 // about对话框的东东
@@ -1212,7 +1212,7 @@ void CH264BSAnalyzerDlg::OnPlayDlg()
         m_pPlayDlg->Create(IDD_PLAYDLG, this);
     }
     // 把主窗口打开的文件信息传到子窗口
-    m_pPlayDlg->SetVideoInfo(m_strFileUrl, m_cVideoInfo.width, m_cVideoInfo.height, m_nSliceIndex, m_cVideoInfo.max_framerate);
-
+    int ret = m_pPlayDlg->SetVideoInfo(m_strFileUrl, m_cVideoInfo.width, m_cVideoInfo.height, m_nSliceIndex, m_cVideoInfo.max_framerate);
+    if (ret < 0) return;
     this->ShowPlayWindow();
 }

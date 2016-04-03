@@ -23,9 +23,6 @@
       <Filter>Resource Files</Filter>
     </None>
     <None Include="my_log.txt" />
-    <None Include="res\bitmap1.bmp">
-      <Filter>Resource Files</Filter>
-    </None>
     <None Include="res\first.bmp">
       <Filter>Resource Files</Filter>
     </None>

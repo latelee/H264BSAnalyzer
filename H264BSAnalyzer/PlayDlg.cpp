@@ -15,6 +15,9 @@ CPlayDlg::CPlayDlg(CWnd* pParent /*=NULL*/)
 	: CDialogEx(CPlayDlg::IDD, pParent)
 {
     m_fShowBlack = FALSE;
+    m_fPlayed = FALSE;
+    m_fClosed = TRUE;
+    m_fLoop = FALSE;
     m_nWidth = 0;
     m_nHeight = 0;
     m_nTotalFrame = 0;
@@ -27,6 +30,11 @@ CPlayDlg::CPlayDlg(CWnd* pParent /*=NULL*/)
 
 CPlayDlg::~CPlayDlg()
 {
+    if (m_pbBmpData)
+    {
+        delete m_pbBmpData;
+        m_pbBmpData = NULL;
+    }
 }
 
 void CPlayDlg::DoDataExchange(CDataExchange* pDX)
@@ -47,6 +55,7 @@ BEGIN_MESSAGE_MAP(CPlayDlg, CDialogEx)
     ON_BN_CLICKED(IDC_BT_NEXT, &CPlayDlg::OnBnClickedBtNext)
     ON_BN_CLICKED(IDC_BT_SAVE, &CPlayDlg::OnBnClickedBtSave)
     ON_BN_CLICKED(IDC_BT_STOP, &CPlayDlg::OnBnClickedBtStop)
+    ON_BN_CLICKED(IDC_CK_LOOP, &CPlayDlg::OnBnClickedCkLoop)
 END_MESSAGE_MAP()
 
 
@@ -57,13 +66,13 @@ BOOL CPlayDlg::OnInitDialog()
 
     // 贴图
     m_bPlay.SetBitmap(LoadBitmap(AfxGetInstanceHandle(), MAKEINTRESOURCE(IDB_BM_PLAY)));
-    m_bPlay.EnableWindow(FALSE);
+    m_bPlay.EnableWindow(TRUE);
     m_bStop.SetBitmap(LoadBitmap(AfxGetInstanceHandle(), MAKEINTRESOURCE(IDB_BM_STOP)));
-    m_bStop.EnableWindow(FALSE);
+    m_bStop.EnableWindow(TRUE);
     m_bNextFrame.SetBitmap(LoadBitmap(AfxGetInstanceHandle(), MAKEINTRESOURCE(IDB_BM_NEXT)));
-    m_bNextFrame.EnableWindow(FALSE);
+    m_bNextFrame.EnableWindow(TRUE);
     m_bSaveFrame.SetBitmap(LoadBitmap(AfxGetInstanceHandle(), MAKEINTRESOURCE(IDB_BM_SAVE)));
-    m_bSaveFrame.EnableWindow(FALSE);
+    m_bSaveFrame.EnableWindow(TRUE);
     return TRUE;  // return TRUE unless you set the focus to a control
     // 异常: OCX 属性页应返回 FALSE
 }
@@ -72,8 +81,8 @@ BOOL CPlayDlg::OnInitDialog()
 void CPlayDlg::OnPaint()
 {
     //picture控件背景色为黑色
-    //if (m_fShowBlack)
-    if (0)
+    if (m_fShowBlack)
+    //if (0)
     {
         CRect rtTop;
         CStatic *pWnd = (CStatic*)GetDlgItem(IDC_VIDEO);
@@ -158,7 +167,7 @@ void CPlayDlg::Show(BYTE* pbData, int nSize, int nWidth, int nHeight)
     ShowPicture(m_pbBmpData, bmpHeader.bfSize);
 }
 
-void CPlayDlg::SetVideoInfo(CString strFileName, int nWidth, int nHeight, int nTotalFrame, float nFps)
+int CPlayDlg::SetVideoInfo(CString strFileName, int nWidth, int nHeight, int nTotalFrame, float nFps)
 {
     int ret = 0;
     m_strFileUrl = strFileName;
@@ -167,96 +176,117 @@ void CPlayDlg::SetVideoInfo(CString strFileName, int nWidth, int nHeight, int nT
     m_nTotalFrame = nTotalFrame;
     m_fFps = nFps;
 
-    //return;
-
     if (m_fFps <= 0 ) m_fFps = 25.0;
+
+    if (m_pbBmpData)
+    {
+        delete m_pbBmpData;
+        m_pbBmpData = NULL;
+    }
+
+    m_nFrameCount = 0;
+
+    this->SetWindowText(DLG_TITTLE);
+
+    m_fPlayed = TRUE;
+    m_bPlay.SetBitmap(LoadBitmap(AfxGetInstanceHandle(), MAKEINTRESOURCE(IDB_BM_PLAY)));
 
     m_pbBmpData = new BYTE[m_nWidth * m_nHeight * 3 + 54];
     if (m_pbBmpData == NULL)
     {
         MessageBox("Malloc buffer for RGB data failed.");
-        return;
+        return -1;
     }
     if (m_strFileUrl.IsEmpty())
     {
         MessageBox("Sorry, you open no file...");
-        return;
+        return -1;
     }
-
-    ret = m_cDecoder.openVideoFile(m_strFileUrl.GetBuffer());
-    if (ret < 0)
+    if (m_fClosed)
     {
-        MessageBox("Sorry, open video decoder failed.");
-        return;
+        ret = m_cDecoder.openVideoFile(m_strFileUrl.GetBuffer());
+        if (ret < 0)
+        {
+            MessageBox("Sorry, open video decoder failed.");
+            return -1;
+        }
+        m_fClosed = FALSE;
     }
 
-    BYTE* pRgbBuffer = NULL;
-    int nSize = 0;
-    CString strTittle;
-
-    Sleep(1*1000);
-    while (m_cDecoder.getFrame(NULL, &pRgbBuffer, &nSize) > 0)
-    {
-        m_nFrameCount++;
-        strTittle.Format("%d/%d  %0.2ffps --  %s", m_nFrameCount, m_nTotalFrame, m_fFps, DLG_TITTLE);
-        this->SetWindowText(strTittle);
-        Show(pRgbBuffer, nSize, m_nWidth, m_nHeight);
-        break;
-    }
-
-    // 贴图
-    m_bPlay.EnableWindow(TRUE);
-    m_bStop.EnableWindow(TRUE);
-    m_bNextFrame.EnableWindow(TRUE);
-    m_bSaveFrame.EnableWindow(TRUE);
+    return 0;
 }
 
-// 窗口关闭
-// 在这里先不释放BMP图片缓冲
-void CPlayDlg::OnClose()
+void CPlayDlg::Finish()
 {
-    // 释放、恢复
     m_cDecoder.closeVideoFile();
-    m_nFrameCount = 0;
 
     // 停止定时器
     KillTimer(1);
+
+    m_fClosed = TRUE;
+
+    m_fPlayed = TRUE;
+    m_bPlay.SetBitmap(LoadBitmap(AfxGetInstanceHandle(), MAKEINTRESOURCE(IDB_BM_PLAY)));
+}
+
+void CPlayDlg::Showing()
+{
+    BYTE* pRgbBuffer = NULL;
+    int nSize = 0;
+    int ret = 0;
+
+    CString strTittle;
+    ret = m_cDecoder.getFrame(NULL, &pRgbBuffer, &nSize);
+    m_nFrameCount++;
+    strTittle.Format("%d/%d  %0.2ffps --  %s", m_nFrameCount, m_nTotalFrame, m_fFps, DLG_TITTLE);
+    this->SetWindowText(strTittle);
+
+    CString strDebugInfo;
+    strDebugInfo.Format("debug: getFrame %d ret: %d", m_nFrameCount, ret);
+    GetDlgItem(IDC_S_DEBUG)->SetWindowText(strDebugInfo);
+
+    if (ret < 0) return;
+    else if ( ret > 0)
+    {
+        Show(pRgbBuffer, nSize, m_nWidth, m_nHeight);
+    }
+    else
+    {
+        ret = m_cDecoder.getSkippedFrame(NULL, &pRgbBuffer, &nSize);
+
+        CString strDebugInfo;
+        strDebugInfo.Format("debug: getSkippedFrame %d ret: %d", m_nFrameCount, ret);
+        GetDlgItem(IDC_S_DEBUG)->SetWindowText(strDebugInfo);
+
+        if ( ret > 0)
+        {
+            Show(pRgbBuffer, nSize, m_nWidth, m_nHeight);
+        }
+    }
+}
+
+// 窗口关闭
+void CPlayDlg::OnClose()
+{
+    OnBnClickedBtStop();
 
     CDialogEx::OnClose();
 }
 
 void CPlayDlg::OnTimer(UINT_PTR nIDEvent)
 {
-    BYTE* pRgbBuffer = NULL;
-    int nSize = 0;
-    int ret = 0;
-    CString strTittle;
-
-    ret = m_cDecoder.getFrame(NULL, &pRgbBuffer, &nSize);
-    if (ret < 0) return;
-    else if ( ret > 0)
-    {
-        m_nFrameCount++;
-        strTittle.Format("%d/%d  %0.2ffps --  %s", m_nFrameCount, m_nTotalFrame, m_fFps, DLG_TITTLE);
-        this->SetWindowText(strTittle);
-        Show(pRgbBuffer, nSize, m_nWidth, m_nHeight);
-    }
-    else
-    {
-        ret = m_cDecoder.getSkippedFrame(NULL, &pRgbBuffer, &nSize);
-        if ( ret > 0)
-        {
-            m_nFrameCount++;
-            strTittle.Format("%d/%d  %0.2ffps --  %s", m_nFrameCount, m_nTotalFrame, m_fFps, DLG_TITTLE);
-            this->SetWindowText(strTittle);
-            Show(pRgbBuffer, nSize, m_nWidth, m_nHeight);
-        }
-    }
-
     if (m_nFrameCount >= m_nTotalFrame)
     {
-        KillTimer(1);
+        OnBnClickedBtStop();
+        if (m_fLoop) 
+        {
+            m_fPlayed = TRUE;
+            OnBnClickedBtPlay();
+        }
+        return;
     }
+
+    Showing();
 }
 
 void CPlayDlg::OnSize(UINT nType, int cx, int cy)
@@ -274,28 +304,42 @@ void CPlayDlg::OnBnClickedBtPlay()
         MessageBox("Sorry, you open no file.");
         return;
     }
-#if 0
-    BYTE* pRgbBuffer = NULL;
-    int nSize = 0;
-    int ret = 0;
-    CString strTittle;
 
-    while (m_cDecoder.getFrame(NULL, &pRgbBuffer, &nSize) > 0)
+    if (m_fClosed)
     {
-        m_nFrameCount++;
-        strTittle.Format("%d/%d  %0.2ffps --  %s", m_nFrameCount, m_nTotalFrame, m_fFps, DLG_TITTLE);
-        this->SetWindowText(strTittle);
-        Show(pRgbBuffer, nSize, m_nWidth, m_nHeight);
-        break;
+        if (m_cDecoder.openVideoFile(m_strFileUrl.GetBuffer()) < 0)
+        {
+            MessageBox("Sorry, open video decoder failed.");
+            return;
+        }
+
+        m_fClosed = FALSE;
     }
-#endif
-    // 初始化定时器
-    SetTimer(1,(UINT)((float)1000/m_fFps),NULL);
+
+    if (m_fPlayed)
+    {
+        m_bPlay.SetBitmap(LoadBitmap(AfxGetInstanceHandle(), MAKEINTRESOURCE(IDB_BM_PAUSE))); // show pause...
+        SetTimer(1,(UINT)((float)1000/m_fFps),NULL);
+    }
+    else
+    {
+        m_bPlay.SetBitmap(LoadBitmap(AfxGetInstanceHandle(), MAKEINTRESOURCE(IDB_BM_PLAY))); // show play...
+        KillTimer(1);
+    }
+
+    m_fPlayed = ! m_fPlayed;
+
+    /*
+    CString strDebugInfo;
+    strDebugInfo.Format("debug: play: %d", m_fPlayed);
+    GetDlgItem(IDC_S_DEBUG)->SetWindowText(strDebugInfo);
+    */
 }
 
 void CPlayDlg::OnBnClickedBtStop()
 {
-    KillTimer(1);
+    m_nFrameCount = 0;
+    Finish();
 }
 
 void CPlayDlg::OnBnClickedBtNext()
@@ -306,19 +350,34 @@ void CPlayDlg::OnBnClickedBtNext()
     int nSize = 0;
     CString strTittle;
 
-    Sleep(1*1000);
-    while (m_cDecoder.getFrame(NULL, &pRgbBuffer, &nSize) > 0)
+    // loop
+    if (m_fClosed)
     {
-        m_nFrameCount++;
-        strTittle.Format("%d/%d  %0.2ffps --  %s", m_nFrameCount, m_nTotalFrame, m_fFps, DLG_TITTLE);
-        this->SetWindowText(strTittle);
-        Show(pRgbBuffer, nSize, m_nWidth, m_nHeight);
-        break;
-    }
-}
+        if (m_cDecoder.openVideoFile(m_strFileUrl.GetBuffer()) < 0)
+        {
+            MessageBox("Sorry, open video decoder failed.");
+            return;
+        }
 
+        m_fClosed = FALSE;
+    }
+
+    m_fPlayed = TRUE;
+    m_bPlay.SetBitmap(LoadBitmap(AfxGetInstanceHandle(), MAKEINTRESOURCE(IDB_BM_PLAY)));
+
+    OnTimer(-1);
+    
+    return;
+}
 
 void CPlayDlg::OnBnClickedBtSave()
 {
-    // TODO: 在此添加控件通知处理程序代码
+
+}
+
+
+void CPlayDlg::OnBnClickedCkLoop()
+{
+    CButton* pBtn = (CButton*)GetDlgItem(IDC_CK_LOOP);
+    m_fLoop = pBtn->GetCheck();
 }
