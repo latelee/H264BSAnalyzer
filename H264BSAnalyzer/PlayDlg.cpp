@@ -12,12 +12,13 @@
 IMPLEMENT_DYNAMIC(CPlayDlg, CDialogEx)
 
 CPlayDlg::CPlayDlg(CWnd* pParent /*=NULL*/)
-	: CDialogEx(CPlayDlg::IDD, pParent)
+    : CDialogEx(CPlayDlg::IDD, pParent)
 {
     m_fShowBlack = FALSE;
     m_fPlayed = FALSE;
     m_fClosed = TRUE;
     m_fLoop = FALSE;
+    m_fInit = FALSE;
     m_nWidth = 0;
     m_nHeight = 0;
     m_nTotalFrame = 0;
@@ -64,6 +65,25 @@ BOOL CPlayDlg::OnInitDialog()
 {
     CDialogEx::OnInitDialog();
 
+    m_fInit = TRUE;
+
+    m_vStartX.resize(2);
+
+    m_vStartX[0].push_back(IDC_BT_PLAY);
+    m_vStartX[0].push_back(IDC_BT_STOP);
+    m_vStartX[0].push_back(IDC_BT_NEXT);
+    m_vStartX[0].push_back(IDC_BT_SAVE);
+    m_vStartX[0].push_back(IDC_CK_LOOP);
+    m_vStartX[0].push_back(IDC_S_DEBUG);
+
+    CRect rect;
+    for (unsigned int i = 0; i < m_vStartX[0].size(); i++)
+    {
+        GetDlgItem(m_vStartX[0][i])->GetWindowRect(rect);
+        ScreenToClient(rect);
+        m_vStartX[1].push_back(rect.left);
+    }
+
     // 贴图
     m_bPlay.SetBitmap(LoadBitmap(AfxGetInstanceHandle(), MAKEINTRESOURCE(IDB_BM_PLAY)));
     m_bPlay.EnableWindow(TRUE);
@@ -74,24 +94,11 @@ BOOL CPlayDlg::OnInitDialog()
     m_bSaveFrame.SetBitmap(LoadBitmap(AfxGetInstanceHandle(), MAKEINTRESOURCE(IDB_BM_SAVE)));
     m_bSaveFrame.EnableWindow(TRUE);
     return TRUE;  // return TRUE unless you set the focus to a control
-    // 异常: OCX 属性页应返回 FALSE
-}
 
+}
 
 void CPlayDlg::OnPaint()
 {
-    //picture控件背景色为黑色
-    if (m_fShowBlack)
-    //if (0)
-    {
-        CRect rtTop;
-        CStatic *pWnd = (CStatic*)GetDlgItem(IDC_VIDEO);
-        CDC *cDc = pWnd->GetDC();
-        pWnd->GetClientRect(&rtTop);
-        cDc->FillSolidRect(rtTop.left, rtTop.top, rtTop.Width(), rtTop.Height(),RGB(0,0,0));
-        Invalidate(FALSE);
-    }
-
     CPaintDC dc(this); // device context for painting
     // TODO: 在此处添加消息处理程序代码
     // 不为绘图消息调用 CDialogEx::OnPaint()
@@ -140,8 +147,7 @@ void CPlayDlg::Show(BYTE* pbData, int nSize, int nWidth, int nHeight)
 {
     MYBITMAPFILEHEADER bmpHeader;
     MYBITMAPINFOHEADER bmpInfo;
-    //BYTE* pbBmpData = NULL;
-    //static BYTE pbBmpData[1920*1080*3 + 54] = {};
+
     // 先添加BMP头
     bmpHeader.bfType = 'MB';
     bmpHeader.bfSize = nSize + sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
@@ -191,7 +197,8 @@ int CPlayDlg::SetVideoInfo(CString strFileName, int nWidth, int nHeight, int nTo
     m_fPlayed = TRUE;
     m_bPlay.SetBitmap(LoadBitmap(AfxGetInstanceHandle(), MAKEINTRESOURCE(IDB_BM_PLAY)));
 
-    m_pbBmpData = new BYTE[m_nWidth * m_nHeight * 3 + 54];
+    m_iBmpSize = m_nWidth * m_nHeight * 3 + 54;
+    m_pbBmpData = new BYTE[m_iBmpSize];
     if (m_pbBmpData == NULL)
     {
         MessageBox("Malloc buffer for RGB data failed.");
@@ -216,20 +223,23 @@ int CPlayDlg::SetVideoInfo(CString strFileName, int nWidth, int nHeight, int nTo
     return 0;
 }
 
-void CPlayDlg::Finish()
+void CPlayDlg::ShowFirstFrame()
 {
-    m_cDecoder.closeVideoFile();
-
-    // 停止定时器
-    KillTimer(1);
-
-    m_fClosed = TRUE;
-
-    m_fPlayed = TRUE;
-    m_bPlay.SetBitmap(LoadBitmap(AfxGetInstanceHandle(), MAKEINTRESOURCE(IDB_BM_PLAY)));
+    OnBnClickedBtNext();
 }
 
-void CPlayDlg::Showing()
+//picture控件背景色为黑色
+void CPlayDlg::SetBlack()
+{
+    CRect rtTop;
+    CStatic *pWnd = (CStatic*)GetDlgItem(IDC_VIDEO);
+    CDC *cDc = pWnd->GetDC();
+    pWnd->GetClientRect(&rtTop);
+    cDc->FillSolidRect(rtTop.left, rtTop.top, rtTop.Width(), rtTop.Height(),RGB(0,0,0));
+    Invalidate(FALSE);
+}
+
+void CPlayDlg::ShowingFrame()
 {
     BYTE* pRgbBuffer = NULL;
     int nSize = 0;
@@ -275,6 +285,8 @@ void CPlayDlg::OnClose()
 
 void CPlayDlg::OnTimer(UINT_PTR nIDEvent)
 {
+    ShowingFrame();
+
     if (m_nFrameCount >= m_nTotalFrame)
     {
         OnBnClickedBtStop();
@@ -285,15 +297,32 @@ void CPlayDlg::OnTimer(UINT_PTR nIDEvent)
         }
         return;
     }
-
-    Showing();
 }
 
 void CPlayDlg::OnSize(UINT nType, int cx, int cy)
 {
+    if (!m_fInit) return;
+
     CDialogEx::OnSize(nType, cx, cy);
 
-    // TODO: 在此处添加消息处理程序代码
+    CWnd *pWnd = GetDlgItem(IDC_VIDEO);
+    if (pWnd)
+    {
+        pWnd->MoveWindow(0, 0, cx, cy-26-5);
+        pWnd->Invalidate();
+        pWnd->UpdateData();
+    }
+
+    int startx = 1;
+    // 水平位置相同的按钮
+    for (unsigned int i = 0; i < m_vStartX[0].size(); i++)
+    {
+        pWnd = GetDlgItem(m_vStartX[0][i]);
+        if (pWnd)
+        {
+            pWnd->SetWindowPos(NULL,startx+m_vStartX[1][i],cy-26,0,0,SWP_NOZORDER|SWP_NOSIZE);
+        }
+    }
 }
 
 // 播放
@@ -339,16 +368,24 @@ void CPlayDlg::OnBnClickedBtPlay()
 void CPlayDlg::OnBnClickedBtStop()
 {
     m_nFrameCount = 0;
-    Finish();
+
+    //m_cDecoder.jumpToTime(0);
+
+#if 01
+    m_cDecoder.closeVideoFile();
+    m_fClosed = TRUE;
+#endif
+    // 停止定时器
+    KillTimer(1);
+
+    m_fPlayed = TRUE;
+    m_bPlay.SetBitmap(LoadBitmap(AfxGetInstanceHandle(), MAKEINTRESOURCE(IDB_BM_PLAY)));
+
 }
 
 void CPlayDlg::OnBnClickedBtNext()
 {
     KillTimer(1);
-
-    BYTE* pRgbBuffer = NULL;
-    int nSize = 0;
-    CString strTittle;
 
     // loop
     if (m_fClosed)

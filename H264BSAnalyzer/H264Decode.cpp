@@ -182,6 +182,7 @@ int CH264Decoder::openVideoFile(const char* avifile)
 
 void CH264Decoder::closeVideoFile(void)
 {
+    m_skippedFrame = 0;
     if (m_picture)
     {
         av_free(m_picture);

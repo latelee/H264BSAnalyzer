@@ -276,18 +276,6 @@ HCURSOR CH264BSAnalyzerDlg::OnQueryDragIcon()
     return static_cast<HCURSOR>(m_hIcon);
 }
 
-void CH264BSAnalyzerDlg::ShowPlayWindow()
-{
-    // 非模态对话框
-    if (m_pPlayDlg == NULL)
-    {
-        m_pPlayDlg = new CPlayDlg();
-        m_pPlayDlg->Create(IDD_PLAYDLG, this);
-    }
-
-    m_pPlayDlg->ShowWindow(SW_SHOW);
-}
-
 //添加一条记录
 int CH264BSAnalyzerDlg::ShowNLInfo(NALU_t* nalu)
 {
@@ -1206,6 +1194,7 @@ void CH264BSAnalyzerDlg::OnSize(UINT nType, int cx, int cy)
 
 void CH264BSAnalyzerDlg::OnPlayDlg()
 {
+    // 非模态对话框
     if (m_pPlayDlg == NULL)
     {
         m_pPlayDlg = new CPlayDlg();
@@ -1213,6 +1202,10 @@ void CH264BSAnalyzerDlg::OnPlayDlg()
     }
     // 把主窗口打开的文件信息传到子窗口
     int ret = m_pPlayDlg->SetVideoInfo(m_strFileUrl, m_cVideoInfo.width, m_cVideoInfo.height, m_nSliceIndex, m_cVideoInfo.max_framerate);
-    if (ret < 0) return;
-    this->ShowPlayWindow();
+    //if (ret < 0) return;
+
+    m_pPlayDlg->ShowWindow(SW_SHOW);
+
+    m_pPlayDlg->SetBlack();
+    //m_pPlayDlg->ShowFirstFrame(); // 注：在调用ShowWindow后再显示第一帧图像
 }
