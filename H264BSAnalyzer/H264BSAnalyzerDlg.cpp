@@ -1206,6 +1206,6 @@ void CH264BSAnalyzerDlg::OnPlayDlg()
 
     m_pPlayDlg->ShowWindow(SW_SHOW);
 
-    m_pPlayDlg->SetBlack();
-    //m_pPlayDlg->ShowFirstFrame(); // 注：在调用ShowWindow后再显示第一帧图像
+    //m_pPlayDlg->SetBlack();
+    m_pPlayDlg->ShowFirstFrame(); // 注：在调用ShowWindow后再显示第一帧图像
 }

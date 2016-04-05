@@ -1,6 +1,9 @@
 #pragma once
 
+#include <string>
 #include <vector>
+#include <map>
+
 #include "H264Decode.h"
 
 #define DLG_TITTLE "Play"
@@ -23,6 +26,20 @@ public:
     int SetVideoInfo(CString strFileName, int nWidth, int nHeight, int nTotalFrame, float nFps);
     void ShowFirstFrame();
     void SetBlack();
+
+private:
+    void ShowPicture(BYTE* pbData, int iSize);
+    void Show(BYTE* pbData, int nSize, int nWidth, int nHeight);
+
+    void ShowingFrame();
+
+typedef int (*savefunc)(const char* filename);
+
+    int SaveYUVFile(const char* pFileName);
+    int SaveBMPFile(const char* pFileName);
+    int SaveJPGFile(const char* pFileName);
+    int SaveVideoFile(const char* pFileName);
+    
 private:
     BOOL m_fShowBlack;
     BOOL m_fPlayed;
@@ -36,16 +53,12 @@ private:
     float m_fFps;
     BYTE* m_pbBmpData;
     INT m_iBmpSize;
-    CString m_strFileUrl;   // 视频文件
+    CString m_strPathName;   // 视频文件
 
     CH264Decoder m_cDecoder;    // 解码器
 
     std::vector<std::vector<int> > m_vStartX;
-
-    void ShowPicture(BYTE* pbData, int iSize);
-    void Show(BYTE* pbData, int nSize, int nWidth, int nHeight);
-
-    void ShowingFrame();
+    std::map<const char*, savefunc> m_vSaveFunc;
 
 protected:
     virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support

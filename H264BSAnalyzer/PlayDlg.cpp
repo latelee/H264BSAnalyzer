@@ -25,7 +25,7 @@ CPlayDlg::CPlayDlg(CWnd* pParent /*=NULL*/)
     m_nFrameCount = 0;
     m_fFps = 0.0;
     m_pbBmpData = NULL;
-    m_strFileUrl.Empty();
+    m_strPathName.Empty();
     m_pParentWnd = NULL;
 }
 
@@ -65,10 +65,10 @@ BOOL CPlayDlg::OnInitDialog()
 {
     CDialogEx::OnInitDialog();
 
-    m_fInit = TRUE;
+    //savefunc p = &CPlayDlg::SaveYUVFile;
+    //m_vSaveFunc.insert(std::make_pair("yuv", &CPlayDlg::SaveYUVFile));
 
     m_vStartX.resize(2);
-
     m_vStartX[0].push_back(IDC_BT_PLAY);
     m_vStartX[0].push_back(IDC_BT_STOP);
     m_vStartX[0].push_back(IDC_BT_NEXT);
@@ -93,6 +93,9 @@ BOOL CPlayDlg::OnInitDialog()
     m_bNextFrame.EnableWindow(TRUE);
     m_bSaveFrame.SetBitmap(LoadBitmap(AfxGetInstanceHandle(), MAKEINTRESOURCE(IDB_BM_SAVE)));
     m_bSaveFrame.EnableWindow(TRUE);
+
+    m_fInit = TRUE;
+
     return TRUE;  // return TRUE unless you set the focus to a control
 
 }
@@ -176,7 +179,7 @@ void CPlayDlg::Show(BYTE* pbData, int nSize, int nWidth, int nHeight)
 int CPlayDlg::SetVideoInfo(CString strFileName, int nWidth, int nHeight, int nTotalFrame, float nFps)
 {
     int ret = 0;
-    m_strFileUrl = strFileName;
+    m_strPathName = strFileName;
     m_nWidth = nWidth;
     m_nHeight = nHeight;
     m_nTotalFrame = nTotalFrame;
@@ -204,14 +207,14 @@ int CPlayDlg::SetVideoInfo(CString strFileName, int nWidth, int nHeight, int nTo
         MessageBox("Malloc buffer for RGB data failed.");
         return -1;
     }
-    if (m_strFileUrl.IsEmpty())
+    if (m_strPathName.IsEmpty())
     {
         MessageBox("Sorry, you open no file...");
         return -1;
     }
     if (m_fClosed)
     {
-        ret = m_cDecoder.openVideoFile(m_strFileUrl.GetBuffer());
+        ret = m_cDecoder.openVideoFile(m_strPathName.GetBuffer());
         if (ret < 0)
         {
             MessageBox("Sorry, open video decoder failed.");
@@ -225,7 +228,14 @@ int CPlayDlg::SetVideoInfo(CString strFileName, int nWidth, int nHeight, int nTo
 
 void CPlayDlg::ShowFirstFrame()
 {
-    OnBnClickedBtNext();
+    if (m_fClosed)
+    {
+        SetBlack();
+    }
+    else
+    {
+        OnBnClickedBtNext();
+    }
 }
 
 //picture控件背景色为黑色
@@ -273,6 +283,26 @@ void CPlayDlg::ShowingFrame()
             Show(pRgbBuffer, nSize, m_nWidth, m_nHeight);
         }
     }
+}
+
+int CPlayDlg::SaveYUVFile(const char* pFileName)
+{
+    return 0;
+}
+
+int CPlayDlg::SaveBMPFile(const char* pFileName)
+{
+    return 1;
+}
+
+int CPlayDlg::SaveJPGFile(const char* pFileName)
+{
+    return 2;
+}
+
+int CPlayDlg::SaveVideoFile(const char* pFileName)
+{
+    return 3;
 }
 
 // 窗口关闭
@@ -328,7 +358,7 @@ void CPlayDlg::OnSize(UINT nType, int cx, int cy)
 // 播放
 void CPlayDlg::OnBnClickedBtPlay()
 {
-    if (m_strFileUrl.IsEmpty())
+    if (m_strPathName.IsEmpty())
     {
         MessageBox("Sorry, you open no file.");
         return;
@@ -336,7 +366,7 @@ void CPlayDlg::OnBnClickedBtPlay()
 
     if (m_fClosed)
     {
-        if (m_cDecoder.openVideoFile(m_strFileUrl.GetBuffer()) < 0)
+        if (m_cDecoder.openVideoFile(m_strPathName.GetBuffer()) < 0)
         {
             MessageBox("Sorry, open video decoder failed.");
             return;
@@ -390,7 +420,7 @@ void CPlayDlg::OnBnClickedBtNext()
     // loop
     if (m_fClosed)
     {
-        if (m_cDecoder.openVideoFile(m_strFileUrl.GetBuffer()) < 0)
+        if (m_cDecoder.openVideoFile(m_strPathName.GetBuffer()) < 0)
         {
             MessageBox("Sorry, open video decoder failed.");
             return;
@@ -407,8 +437,46 @@ void CPlayDlg::OnBnClickedBtNext()
     return;
 }
 
+
 void CPlayDlg::OnBnClickedBtSave()
 {
+    char szFilter[] = "YUV File(*.yuv)|*.yuv|"
+                         "BMP File(*.bmp)|*.bmp|"
+                         "JPG File(*.jpg)|*.jpg|"
+                         "MKV File(*.mkv)|*.mkv|"
+                         "AVI File(*.avi)|*.avi|"
+                         "MP4 File(*.mp4)|*.mp4|"
+                         "||";
+    char szExt[16] = {0};
+    char szFileName[128] = "foobar";
+    char* pExt = _T("yuv");
+
+    CFile cFile;
+    CString strFile;
+
+    KillTimer(1);
+    m_fPlayed = TRUE;
+    m_bPlay.SetBitmap(LoadBitmap(AfxGetInstanceHandle(), MAKEINTRESOURCE(IDB_BM_PLAY)));
+
+    _splitpath(m_strPathName, NULL, NULL, szFileName, szExt);
+    strFile.Format(_T("%s_%d.%s"), szFileName, m_nFrameCount, pExt);
+
+    CFileDialog fileDlg(FALSE, _T("yuv"), strFile.GetBuffer(), OFN_HIDEREADONLY | OFN_NOCHANGEDIR | OFN_OVERWRITEPROMPT, szFilter);
+    fileDlg.GetOFN().lpstrTitle = _T("Save File");
+    if (fileDlg.DoModal() != IDOK)
+        return;
+
+    CString strTemp = fileDlg.GetFileName();
+    CString strExt = fileDlg.GetFileExt();
+    if (!strTemp.Compare(_T("bmp")))
+    {
+    }
+
+
+    int ret = 0;
+    CString strDebugInfo;
+    strDebugInfo.Format("debug: save file: %s ret: %d", strTemp, ret);
+    GetDlgItem(IDC_S_DEBUG)->SetWindowText(strDebugInfo);
 
 }
 
