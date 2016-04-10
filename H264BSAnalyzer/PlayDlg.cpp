@@ -65,9 +65,6 @@ BOOL CPlayDlg::OnInitDialog()
 {
     CDialogEx::OnInitDialog();
 
-    //savefunc p = &CPlayDlg::SaveYUVFile;
-    //m_vSaveFunc.insert(std::make_pair("yuv", &CPlayDlg::SaveYUVFile));
-
     m_vStartX.resize(2);
     m_vStartX[0].push_back(IDC_BT_PLAY);
     m_vStartX[0].push_back(IDC_BT_STOP);
@@ -285,18 +282,112 @@ void CPlayDlg::ShowingFrame()
     }
 }
 
+void CPlayDlg::Pause()
+{
+    KillTimer(1);
+
+    m_fPlayed = TRUE;
+    m_bPlay.SetBitmap(LoadBitmap(AfxGetInstanceHandle(), MAKEINTRESOURCE(IDB_BM_PLAY)));
+
+}
+
+// 文件名带%d %05d等表现保存所有图片
+static bool IsSingleFile(const char* filename)
+{
+    std::string pathname = filename;
+
+    std::string::size_type pos = pathname.find_first_of('%');
+    if (pos == std::string::npos)
+    {
+        return true;
+    }
+    std::string::size_type pos1 = pathname.find_first_of('d', pos);
+
+    if (pos1 == std::string::npos)
+    {
+        return true;
+    }
+
+    return false;
+}
+
 int CPlayDlg::SaveYUVFile(const char* pFileName)
 {
+    if (IsSingleFile(pFileName))
+    {
+        m_cDecoder.writeYUVFile(pFileName);
+    }
+    else
+    {
+        CH264Decoder foo;
+        foo.openVideoFile(m_strPathName);
+        char szFileName[256] = {0};
+        int cnt = 1;
+        while (1)
+        {
+            int ret = foo.getFrame();
+            if (ret < 0) break;
+            if (ret > 0)
+            {
+                sprintf(szFileName, pFileName, cnt++);
+                foo.writeYUVFile(szFileName);
+            }
+            if (ret == 0)
+            {
+                ret = foo.getSkippedFrame();
+                if (ret < 0) break;
+                if (ret > 0)
+                {
+                    sprintf(szFileName, pFileName, cnt++);
+                    foo.writeYUVFile(szFileName);
+                }
+            }
+        }
+    }
+
     return 0;
 }
 
 int CPlayDlg::SaveBMPFile(const char* pFileName)
 {
+    if (IsSingleFile(pFileName))
+    {
+        m_cDecoder.writeBmpFile(pFileName);
+    }
+    else
+    {
+        CH264Decoder foo;
+        foo.openVideoFile(m_strPathName);
+        char szFileName[256] = {0};
+        int cnt = 1;
+        while (1)
+        {
+            int ret = foo.getFrame();
+            if (ret < 0) break;
+            if (ret > 0)
+            {
+                sprintf(szFileName, pFileName, cnt++);
+                foo.writeBmpFile(szFileName);
+            }
+            if (ret == 0)
+            {
+                ret = foo.getSkippedFrame();
+                if (ret < 0) break;
+                if (ret > 0)
+                {
+                    sprintf(szFileName, pFileName, cnt++);
+                    foo.writeBmpFile(szFileName);
+                }
+            }
+        }
+    }
+
     return 1;
 }
 
 int CPlayDlg::SaveJPGFile(const char* pFileName)
 {
+    m_cDecoder.writeJPGFile(pFileName);
     return 2;
 }
 
@@ -386,36 +477,22 @@ void CPlayDlg::OnBnClickedBtPlay()
         KillTimer(1);
     }
 
-    m_fPlayed = ! m_fPlayed;
-
-    /*
-    CString strDebugInfo;
-    strDebugInfo.Format("debug: play: %d", m_fPlayed);
-    GetDlgItem(IDC_S_DEBUG)->SetWindowText(strDebugInfo);
-    */
+    m_fPlayed = !m_fPlayed;
 }
 
 void CPlayDlg::OnBnClickedBtStop()
 {
+    Pause();
+
     m_nFrameCount = 0;
 
-    //m_cDecoder.jumpToTime(0);
-
-#if 01
     m_cDecoder.closeVideoFile();
     m_fClosed = TRUE;
-#endif
-    // 停止定时器
-    KillTimer(1);
-
-    m_fPlayed = TRUE;
-    m_bPlay.SetBitmap(LoadBitmap(AfxGetInstanceHandle(), MAKEINTRESOURCE(IDB_BM_PLAY)));
-
 }
 
 void CPlayDlg::OnBnClickedBtNext()
 {
-    KillTimer(1);
+    Pause();
 
     // loop
     if (m_fClosed)
@@ -428,9 +505,6 @@ void CPlayDlg::OnBnClickedBtNext()
 
         m_fClosed = FALSE;
     }
-
-    m_fPlayed = TRUE;
-    m_bPlay.SetBitmap(LoadBitmap(AfxGetInstanceHandle(), MAKEINTRESOURCE(IDB_BM_PLAY)));
 
     OnTimer(-1);
     
@@ -447,35 +521,60 @@ void CPlayDlg::OnBnClickedBtSave()
                          "AVI File(*.avi)|*.avi|"
                          "MP4 File(*.mp4)|*.mp4|"
                          "||";
-    char szExt[16] = {0};
     char szFileName[128] = "foobar";
     char* pExt = _T("yuv");
 
     CFile cFile;
     CString strFile;
 
-    KillTimer(1);
-    m_fPlayed = TRUE;
-    m_bPlay.SetBitmap(LoadBitmap(AfxGetInstanceHandle(), MAKEINTRESOURCE(IDB_BM_PLAY)));
+    Pause();
 
-    _splitpath(m_strPathName, NULL, NULL, szFileName, szExt);
+#if 0
+    std::string pathname = m_strPathName;
+
+    std::string::size_type pos = pathname.find_last_of('.');
+    if (pos != std::string::npos)
+    {
+        
+    }
+    std::string extname = pathname.substr(pos+1);
+
+    std::string::size_type pos1 = pathname.find_last_of('\\');
+    std::string filename = pathname.substr(pos1+1, pos-pos1-1);
+    if (pos != std::string::npos)
+    {
+        
+    }
+    std::string dirname = filename.substr(0, pos1);
+#endif
+    
+    _splitpath(m_strPathName, NULL, NULL, szFileName, NULL);
     strFile.Format(_T("%s_%d.%s"), szFileName, m_nFrameCount, pExt);
 
-    CFileDialog fileDlg(FALSE, _T("yuv"), strFile.GetBuffer(), OFN_HIDEREADONLY | OFN_NOCHANGEDIR | OFN_OVERWRITEPROMPT, szFilter);
+    CFileDialog fileDlg(FALSE, _T("Save File"), strFile.GetBuffer(), OFN_HIDEREADONLY | OFN_NOCHANGEDIR | OFN_OVERWRITEPROMPT, szFilter);
     fileDlg.GetOFN().lpstrTitle = _T("Save File");
     if (fileDlg.DoModal() != IDOK)
         return;
 
-    CString strTemp = fileDlg.GetFileName();
+    CString strSaveFile = fileDlg.GetPathName();
     CString strExt = fileDlg.GetFileExt();
-    if (!strTemp.Compare(_T("bmp")))
-    {
-    }
-
 
     int ret = 0;
+    if (!strExt.CompareNoCase(_T("yuv")))
+    {
+        ret = SaveYUVFile(strSaveFile.GetBuffer());
+    }
+    else if (!strExt.CompareNoCase(_T("bmp")))
+    {
+        ret = SaveBMPFile(strSaveFile.GetBuffer());
+    }
+    else if (!strExt.CompareNoCase(_T("jpg")))
+    {
+        ret = SaveJPGFile(strSaveFile.GetBuffer());
+    }
+    
     CString strDebugInfo;
-    strDebugInfo.Format("debug: save file: %s ret: %d", strTemp, ret);
+    strDebugInfo.Format("debug:  ret: %d, file: %s", ret, strSaveFile);
     GetDlgItem(IDC_S_DEBUG)->SetWindowText(strDebugInfo);
 
 }

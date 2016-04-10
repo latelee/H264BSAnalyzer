@@ -360,6 +360,36 @@ int CH264Decoder::getSkippedFrame(unsigned char** yuvBuffer, unsigned char** rgb
     return 0;
 }
 
+int CH264Decoder::writeYUVFile(const char* filename)
+{
+    unsigned char* yuvbuffer = m_picture->data[0];
+    int len = m_picture->linesize[0];
+    FILE* fp = NULL;
+
+    fp = fopen(filename, "wb");
+    if (fp == NULL)
+    {
+        debug("open file %s failed.\n", filename);
+        return -1;
+    }
+
+    for (int i = 0; i < m_picture->height; i++)
+    {
+        int ret = fwrite(m_picture->data[0] + i * m_picture->linesize[0], 1, m_picture->width, fp);
+    }
+    for (int i = 0; i < m_picture->height/2; i++)
+    {
+        int ret = fwrite(m_picture->data[1] + i * m_picture->linesize[1], 1, m_picture->width/2, fp);
+    }
+    for (int i = 0; i < m_picture->height/2; i++)
+    {
+        int ret = fwrite(m_picture->data[2] + i * m_picture->linesize[2], 1, m_picture->width/2, fp);
+    }
+
+    fclose(fp);
+    return 0;
+}
+
 unsigned char* CH264Decoder::convertToRgb()
 {
     sws_scale(m_imgctx, m_picture->data, m_picture->linesize, 0, m_avctx->height, 

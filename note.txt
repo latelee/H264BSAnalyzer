@@ -9,3 +9,10 @@ h265测试：
 分辨率：x265编码592x326，正确显示 (CodecVisa显示592x328)
 
 button贴图，要记得将其属性bitmap设置为TRUE。
+
+
+av_read_frame(avFormatCtx, readPacket)
+if(readpacket->flags &AV_PKT_FLAG_KEY )
+{
+key frame
+}

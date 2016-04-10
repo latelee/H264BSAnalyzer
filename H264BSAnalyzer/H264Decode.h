@@ -117,7 +117,17 @@ public:
     *        疑问：如果是开头几帧跳过不解，到最后才调用这个函数，得到的帧是开始的还是最后的？——测试结果表明，是最后的
     */
     int getSkippedFrame(unsigned char** yuvBuffer = NULL, unsigned char** rgbBuffer = NULL, int* size = NULL, int* width = NULL, int* height = NULL);
-    
+
+    /**
+    * writeYUVFile - 写YUV文件到指定文件
+    *
+    * @param   filename  图片文件名称
+    *
+    * @return  0 - 成功  -1 - 写文件失败
+    *
+    */
+    int writeYUVFile(const char* filename);
+
     /**
     * writeBmpFile - 写BMP图片到指定文件
     *

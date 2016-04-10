@@ -32,8 +32,7 @@ private:
     void Show(BYTE* pbData, int nSize, int nWidth, int nHeight);
 
     void ShowingFrame();
-
-typedef int (*savefunc)(const char* filename);
+    void Pause();
 
     int SaveYUVFile(const char* pFileName);
     int SaveBMPFile(const char* pFileName);
@@ -58,7 +57,6 @@ private:
     CH264Decoder m_cDecoder;    // ½âÂëÆ÷
 
     std::vector<std::vector<int> > m_vStartX;
-    std::map<const char*, savefunc> m_vSaveFunc;
 
 protected:
     virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
