@@ -965,8 +965,12 @@ void CH264BSAnalyzerDlg::OnDropFiles(HDROP hDropInfo)
     }
     fclose(fp);
 
-    m_cParser.init(m_strFileUrl.GetBuffer(), &m_cTree);
-    
+    int ret = m_cParser.init(m_strFileUrl.GetBuffer(), &m_cTree);
+    if (ret < 0)
+    {
+        MessageBox("Maybe not H264 or H265 file?");
+        return;
+    }
     OnBnClickedH264InputurlOpen();
 }
 
@@ -991,7 +995,12 @@ void CH264BSAnalyzerDlg::OnFileOpen()
     }
     fclose(fp);
 
-    m_cParser.init(m_strFileUrl.GetBuffer(), &m_cTree);
+    int ret = m_cParser.init(m_strFileUrl.GetBuffer(), &m_cTree);
+    if (ret < 0)
+    {
+        MessageBox("Maybe not H264 or H265 file?");
+        return;
+    }
 
     OnBnClickedH264InputurlOpen();
 }

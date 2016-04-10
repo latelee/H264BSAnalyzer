@@ -45,6 +45,7 @@ enum FileType
 {
     FILE_H264 = 0,
     FILE_H265 = 1,
+    FILE_UNK  = 2,
 };
 
 const int MAX_NAL_SIZE = 1*1024*1024;

@@ -30,8 +30,12 @@ int CNalParser::init(const char* filename, CTreeCtrl* tree)
     // judge file 
     m_nType = judeVideoFile(m_filename);
 
+    if (m_nType == FILE_UNK)
+    {
+        return -1;
+    }
     // init handle
-    if (m_nType == FILE_H265)
+    else if (m_nType == FILE_H265)
     {
         if (m_hH265 != NULL)
         {
@@ -92,6 +96,10 @@ int CNalParser::probeNALU(vector<NALU_t>& vNal, int num)
 
     offset = findFirstNALU(fp, &(n.startcodeLen));
 
+    if (offset < 0)
+    {
+        return -1;
+    }
     fseek(fp, offset, SEEK_SET);
     while (!feof(fp))
     {
@@ -348,6 +356,11 @@ int CNalParser::findFirstNALU(FILE* fp, int* startcodeLenght)
         }
 
         found = (info2 == 1 || info3 == 1);
+        if (pos >= MAX_NAL_SIZE)
+        {
+            free(buffer);
+            return -1;
+        }
     }
 
     // 文件指针要恢复
@@ -387,6 +400,10 @@ FileType CNalParser::judeVideoFile(const char* filename)
 
         fp = fopen(filename, "r+b");
         offset = findFirstNALU(fp, &startcode);
+        if (offset < 0)
+        {
+            return FILE_UNK;
+        }
         fseek(fp, offset+startcode, SEEK_SET);
         fread((void*)&nalHader,1,1,fp);
         // check h264 first...

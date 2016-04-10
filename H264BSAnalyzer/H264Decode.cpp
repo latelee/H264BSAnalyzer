@@ -373,6 +373,13 @@ int CH264Decoder::writeYUVFile(const char* filename)
         return -1;
     }
 
+    // data[0] -- y data[1] -- u data[2] -v
+    // yuv420p
+    fwrite(m_picture->data[0], m_picture->width * m_picture->height, 1, fp);
+    fwrite(m_picture->data[1], m_picture->width * m_picture->height/4, 1, fp);
+    fwrite(m_picture->data[2], m_picture->width * m_picture->height/4, 1, fp);
+
+#if 0
     for (int i = 0; i < m_picture->height; i++)
     {
         int ret = fwrite(m_picture->data[0] + i * m_picture->linesize[0], 1, m_picture->width, fp);
@@ -385,7 +392,7 @@ int CH264Decoder::writeYUVFile(const char* filename)
     {
         int ret = fwrite(m_picture->data[2] + i * m_picture->linesize[2], 1, m_picture->width/2, fp);
     }
-
+#endif
     fclose(fp);
     return 0;
 }
