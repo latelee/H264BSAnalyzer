@@ -48,6 +48,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>ffmpeg/include;$(IncludePath)</IncludePath>
+    <LibraryPath>ffmpeg/lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -117,6 +118,7 @@
     <ClInclude Include="H264BSAnalyzer.h" />
     <ClInclude Include="H264BSAnalyzerDlg.h" />
     <ClInclude Include="H264Decode.h" />
+    <ClInclude Include="H264ToVideo.h" />
     <ClInclude Include="h264_avcc.h" />
     <ClInclude Include="h264_sei.h" />
     <ClInclude Include="h264_stream.h" />
@@ -134,6 +136,7 @@
     <ClCompile Include="H264BSAnalyzer.cpp" />
     <ClCompile Include="H264BSAnalyzerDlg.cpp" />
     <ClCompile Include="H264Decode.cpp" />
+    <ClCompile Include="H264ToVideo.cpp" />
     <ClCompile Include="h264_analyze.cpp" />
     <ClCompile Include="h264_avcc.cpp" />
     <ClCompile Include="h264_sei.cpp" />
