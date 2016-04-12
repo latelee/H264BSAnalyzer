@@ -27,54 +27,26 @@ int debug(const char* fmt, ...)
 #endif
 
 CH264Decoder::CH264Decoder()
+    :m_skippedFrame(0),
+    m_picWidth(0),
+    m_picHeight(0),
+    m_videoStream(-1),
+    m_picBuffer(NULL),
+    m_fmtctx(NULL),
+    m_avctx(NULL),
+    m_picture(NULL),
+    m_frameRGB(NULL),
+    m_bufferYUV(NULL),
+    m_frameYUV(NULL),
+    m_imgctx(NULL),
+    m_imgctxyuv(NULL)
 {
-    m_skippedFrame = 0;
-    m_picWidth = 0;
-    m_picHeight = 0;
-    m_videoStream = -1;
-    m_picBuffer = NULL;
-    m_fmtctx  = NULL;
-    m_avctx   = NULL;
-    m_picture = NULL;
-    m_frameRGB = NULL;
-    m_imgctx = NULL;
+
 }
 
 CH264Decoder::~CH264Decoder()
 {
     closeVideoFile();
-#if 0
-    if (m_picture)
-    {
-        av_free(m_picture);
-        m_picture = NULL;
-    }
-    if (m_avctx)
-    {
-        avcodec_close(m_avctx);
-        m_avctx = NULL;
-    }
-    if (m_fmtctx)
-    {
-        avformat_close_input(&m_fmtctx);
-        m_fmtctx = NULL;
-    }
-    if (m_picBuffer)
-    {
-        av_free(m_picBuffer);
-        m_picBuffer = NULL;
-    }
-    if (m_frameRGB)
-    {
-        av_free(m_frameRGB);
-        m_frameRGB = NULL;
-    }
-    if (m_imgctx)
-    {
-        sws_freeContext(m_imgctx);
-        m_imgctx = NULL;
-    }
-#endif
 }
 
 int CH264Decoder::openVideoFile(const char* avifile)
@@ -82,8 +54,6 @@ int CH264Decoder::openVideoFile(const char* avifile)
     int ret = 0;
     int size = 0;
     AVCodec* codec = NULL;
-
-    PixelFormat fmtRGB = PIX_FMT_BGR24;     // !!! 如果是PIX_FMT_RGB24，图像颜色有偏差(即r、b互换)
 
     if (avifile == NULL)
     {
@@ -154,8 +124,7 @@ int CH264Decoder::openVideoFile(const char* avifile)
         av_free(m_picture);
         return -1;
     }
-    size = avpicture_get_size(fmtRGB, m_avctx->width, m_avctx->height);
-
+    size = avpicture_get_size(PIX_FMT_BGR24, m_avctx->width, m_avctx->height);
     // m_picBuffer要到最后释放
     m_picBuffer = (unsigned char *)av_malloc(size);
     if (!m_picBuffer)
@@ -164,11 +133,10 @@ int CH264Decoder::openVideoFile(const char* avifile)
         av_free(m_frameRGB);
         return -1;
     }
-    avpicture_fill((AVPicture *)m_frameRGB, m_picBuffer, fmtRGB, m_avctx->width, m_avctx->height);
-
+    avpicture_fill((AVPicture *)m_frameRGB, m_picBuffer, PIX_FMT_BGR24, m_avctx->width, m_avctx->height);
     // 创建转换上下文
     m_imgctx = sws_getContext(m_avctx->width, m_avctx->height, m_avctx->pix_fmt, m_avctx->width, m_avctx->height, 
-        fmtRGB, SWS_BICUBIC, NULL, NULL, NULL);
+        PIX_FMT_BGR24, SWS_BICUBIC, NULL, NULL, NULL);
     if (m_imgctx == NULL)
     {
         av_free(m_picture);
@@ -176,7 +144,37 @@ int CH264Decoder::openVideoFile(const char* avifile)
         av_free(m_picBuffer);
         return -1;
     }
-    //debug("---%s %d fmt: %d %d\n", __func__, __LINE__, m_avctx->pix_fmt, fmtRGB);
+
+    // for yuv
+    m_frameYUV = av_frame_alloc();
+    if (!m_frameYUV)
+    {
+        av_free(m_picture);
+        av_free(m_frameRGB);
+        return -1;
+    }
+    size = avpicture_get_size(PIX_FMT_YUV420P, m_avctx->width, m_avctx->height);
+    m_bufferYUV = (unsigned char *)av_malloc(size);
+    if (!m_bufferYUV)
+    {
+        av_free(m_picture);
+        av_free(m_frameRGB);
+        av_free(m_frameYUV);
+        return -1;
+    }
+    avpicture_fill((AVPicture *)m_frameYUV, m_bufferYUV, PIX_FMT_YUV420P, m_avctx->width, m_avctx->height);
+    m_imgctxyuv = sws_getContext(m_avctx->width, m_avctx->height, m_avctx->pix_fmt, m_avctx->width, m_avctx->height, 
+        PIX_FMT_YUV420P, SWS_BICUBIC, NULL, NULL, NULL);
+    if (m_imgctxyuv == NULL)
+    {
+        av_free(m_picture);
+        av_free(m_frameRGB);
+        av_free(m_picBuffer);
+        av_free(m_bufferYUV);
+        sws_freeContext(m_imgctx);
+        return -1;
+    }
+    //debug("---%s %d fmt: %d %d\n", __func__, __LINE__, m_avctx->pix_fmt, PIX_FMT_BGR24);
     return 0;
 }
 
@@ -212,6 +210,21 @@ void CH264Decoder::closeVideoFile(void)
     {
         sws_freeContext(m_imgctx);
         m_imgctx = NULL;
+    }
+    if (m_bufferYUV)
+    {
+        av_free(m_bufferYUV);
+        m_bufferYUV = NULL;
+    }
+    if (m_frameYUV)
+    {
+        av_free(m_frameYUV);
+        m_frameYUV = NULL;
+    }
+    if (m_imgctxyuv)
+    {
+        sws_freeContext(m_imgctxyuv);
+        m_imgctxyuv = NULL;
     }
 }
 
@@ -366,32 +379,24 @@ int CH264Decoder::writeYUVFile(const char* filename)
     int len = m_picture->linesize[0];
     FILE* fp = NULL;
 
+    sws_scale(m_imgctxyuv, m_picture->data, m_picture->linesize, 0, m_avctx->height, 
+        m_frameYUV->data, m_frameYUV->linesize);
+
     fp = fopen(filename, "wb");
     if (fp == NULL)
     {
         debug("open file %s failed.\n", filename);
         return -1;
     }
-
+    fwrite(m_frameYUV->data[0], m_avctx->width * m_avctx->height, 1, fp);
+    fwrite(m_frameYUV->data[1], m_avctx->width * m_avctx->height/4, 1, fp);
+    fwrite(m_frameYUV->data[2], m_avctx->width * m_avctx->height/4, 1, fp);
+#if 0
     // data[0] -- y data[1] -- u data[2] -v
     // yuv420p
     fwrite(m_picture->data[0], m_picture->width * m_picture->height, 1, fp);
     fwrite(m_picture->data[1], m_picture->width * m_picture->height/4, 1, fp);
     fwrite(m_picture->data[2], m_picture->width * m_picture->height/4, 1, fp);
-
-#if 0
-    for (int i = 0; i < m_picture->height; i++)
-    {
-        int ret = fwrite(m_picture->data[0] + i * m_picture->linesize[0], 1, m_picture->width, fp);
-    }
-    for (int i = 0; i < m_picture->height/2; i++)
-    {
-        int ret = fwrite(m_picture->data[1] + i * m_picture->linesize[1], 1, m_picture->width/2, fp);
-    }
-    for (int i = 0; i < m_picture->height/2; i++)
-    {
-        int ret = fwrite(m_picture->data[2] + i * m_picture->linesize[2], 1, m_picture->width/2, fp);
-    }
 #endif
     fclose(fp);
     return 0;

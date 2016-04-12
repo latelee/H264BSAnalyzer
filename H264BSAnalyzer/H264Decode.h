@@ -165,8 +165,11 @@ private:
     unsigned char* m_picBuffer;
     AVFormatContext* m_fmtctx;
     AVCodecContext* m_avctx;
-    AVFrame *m_picture;
+    AVFrame* m_picture;
     AVFrame* m_frameRGB;
+    unsigned char* m_bufferYUV;
+    AVFrame* m_frameYUV;
     struct SwsContext* m_imgctx;
+    struct SwsContext* m_imgctxyuv;
 };
 #endif
