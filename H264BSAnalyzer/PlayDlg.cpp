@@ -6,6 +6,9 @@
 #include "PlayDlg.h"
 #include "afxdialogex.h"
 
+#include "ffmpeg_lib.h"
+
+#pragma comment(lib, "libffmpeg.a")
 
 // CPlayDlg dialog
 
@@ -572,7 +575,12 @@ void CPlayDlg::OnBnClickedBtSave()
     {
         ret = SaveJPGFile(strSaveFile.GetBuffer());
     }
-    
+	char* param[] = {
+	"a",
+	"f",
+	"dd"
+	}; 
+	ffmpeg_transcode_main(3, param);
     CString strDebugInfo;
     strDebugInfo.Format("debug:  ret: %d, file: %s", ret, strSaveFile);
     GetDlgItem(IDC_S_DEBUG)->SetWindowText(strDebugInfo);
