@@ -6,8 +6,14 @@
 #include "PlayDlg.h"
 #include "afxdialogex.h"
 
+#include <Psapi.h> // GetProcessMemoryInfo
+
 #include "ffmpeg_lib.h"
 
+#pragma comment(lib, "Psapi.lib") // GetProcessMemoryInfo
+#pragma comment(lib, "libavdevice.a")
+#pragma comment(lib, "libavfilter.a")
+#pragma comment(lib, "libpostproc.a")
 #pragma comment(lib, "libffmpeg.a")
 
 // CPlayDlg dialog
@@ -316,6 +322,7 @@ static bool IsSingleFile(const char* filename)
 
 int CPlayDlg::SaveYUVFile(const char* pFileName)
 {
+    int ret = 0;
     if (IsSingleFile(pFileName))
     {
         m_cDecoder.writeYUVFile(pFileName);
@@ -329,7 +336,11 @@ int CPlayDlg::SaveYUVFile(const char* pFileName)
         while (1)
         {
             int ret = foo.getFrame();
-            if (ret < 0) break;
+            if (ret < 0)
+            {
+                ret = -1;
+                break;
+            }
             if (ret > 0)
             {
                 sprintf(szFileName, pFileName, cnt++);
@@ -338,7 +349,11 @@ int CPlayDlg::SaveYUVFile(const char* pFileName)
             if (ret == 0)
             {
                 ret = foo.getSkippedFrame();
-                if (ret < 0) break;
+                if (ret <= 0)
+                {
+                    //ret = -1;
+                    break;
+                }
                 if (ret > 0)
                 {
                     sprintf(szFileName, pFileName, cnt++);
@@ -348,14 +363,95 @@ int CPlayDlg::SaveYUVFile(const char* pFileName)
         }
     }
 
-    return 0;
+    return ret;
 }
 
 int CPlayDlg::SaveBMPFile(const char* pFileName)
 {
+    int ret = 0;
     if (IsSingleFile(pFileName))
     {
-        m_cDecoder.writeBmpFile(pFileName);
+        m_cDecoder.writeBmpFile("aaa.bmp");//pFileName
+    }
+    else if (1)
+    {
+        CH264Decoder foo;
+        foo.openVideoFile(m_strPathName);
+        char szFileName[256] = {0};
+        int cnt = 1;
+        while (1)
+        {
+            int ret = foo.getFrame();
+            if (ret < 0)
+            {
+                ret = -1;
+                break;
+            }
+            if (ret > 0)
+            {
+                sprintf(szFileName, pFileName, cnt++);
+                foo.writeBmpFile(szFileName);
+            }
+            if (ret == 0)
+            {
+                ret = foo.getSkippedFrame();
+                if (ret <= 0)
+                {
+                    //ret = -1;
+                    break;
+                }
+                if (ret > 0)
+                {
+                    sprintf(szFileName, pFileName, cnt++);
+                    foo.writeBmpFile(szFileName);
+                }
+            }
+        }
+    }
+    else if (0)
+    {
+#if 01
+        char* param[6] = {NULL};
+
+        for (int i = 0; i < 6; i++)
+        {
+            param[i] = new char[256];
+        }
+        strcpy(param[0], "aaa");
+        strcpy(param[1], "-i");
+        strcpy(param[2], m_strPathName.GetBuffer());
+        strcpy(param[3], "-f");
+        strcpy(param[4], "image2");
+        strcpy(param[5], pFileName);
+#else
+        char* param[6] = {
+            "ffmpeg.exe",
+            "-i",
+            "rzdf_720p_30_qp22.h264",
+            "-f",
+            "image2",
+            "%d.bmp"
+        };
+#endif
+        // a.out -i input.h264 -f image2 %d.bmp
+        int ret = ffmpeg_transcode_main(6, param);
+
+        int foo = ret;
+    }
+    else
+    {
+
+    }
+
+    return ret;
+}
+
+int CPlayDlg::SaveJPGFile(const char* pFileName)
+{
+    int ret = 0;
+    if (IsSingleFile(pFileName))
+    {
+        m_cDecoder.writeJPGFile(pFileName);
     }
     else
     {
@@ -366,37 +462,63 @@ int CPlayDlg::SaveBMPFile(const char* pFileName)
         while (1)
         {
             int ret = foo.getFrame();
-            if (ret < 0) break;
+            int temp = ret;
+            if (ret < 0)
+            {
+                //ret = -1;
+                break;
+            }
             if (ret > 0)
             {
                 sprintf(szFileName, pFileName, cnt++);
-                foo.writeBmpFile(szFileName);
+                foo.writeJPGFile(szFileName);
             }
             if (ret == 0)
             {
                 ret = foo.getSkippedFrame();
-                if (ret < 0) break;
+                if (ret <= 0)
+                {
+                    //ret = -1;
+                    break;
+                }
                 if (ret > 0)
                 {
                     sprintf(szFileName, pFileName, cnt++);
-                    foo.writeBmpFile(szFileName);
+                    foo.writeJPGFile(szFileName);
                 }
             }
         }
     }
 
-    return 1;
-}
-
-int CPlayDlg::SaveJPGFile(const char* pFileName)
-{
-    m_cDecoder.writeJPGFile(pFileName);
-    return 2;
+    return ret;
 }
 
 int CPlayDlg::SaveVideoFile(const char* pFileName)
 {
-    return 3;
+    int ret = 0;
+    
+    ret = m_cSaveVideo.openBSFile(m_strPathName.GetBuffer());
+    if (ret < 0)
+    {
+        MessageBox("Open bs stream file failed");
+        return -1;
+    }
+    ret = m_cSaveVideo.openVideoFile(pFileName, m_nWidth, m_nHeight);
+    if (ret < 0)
+    {
+        MessageBox("Open video file failed");
+        return -1;
+    }
+    ret = m_cSaveVideo.writeFrame();
+    if (ret < 0)
+    {
+        MessageBox("Write to video file failed");
+        return -1;
+    }
+    
+    m_cSaveVideo.close();
+
+    return 0;
 }
 
 // ´°¿Ú¹Ø±Õ
@@ -520,8 +642,8 @@ void CPlayDlg::OnBnClickedBtSave()
     char szFilter[] = "YUV File(*.yuv)|*.yuv|"
                          "BMP File(*.bmp)|*.bmp|"
                          "JPG File(*.jpg)|*.jpg|"
-                         "MKV File(*.mkv)|*.mkv|"
                          "AVI File(*.avi)|*.avi|"
+                         "MKV File(*.mkv)|*.mkv|"
                          "MP4 File(*.mp4)|*.mp4|"
                          "||";
     char szFileName[128] = "foobar";
@@ -575,12 +697,15 @@ void CPlayDlg::OnBnClickedBtSave()
     {
         ret = SaveJPGFile(strSaveFile.GetBuffer());
     }
-	char* param[] = {
-	"a",
-	"f",
-	"dd"
-	}; 
-	ffmpeg_transcode_main(3, param);
+    else if (!strExt.CompareNoCase(_T("avi")))
+    {
+        ret = SaveVideoFile(strSaveFile.GetBuffer());
+    }
+
+    if (ret == 0)
+    {
+        MessageBox("Done.");
+    }
     CString strDebugInfo;
     strDebugInfo.Format("debug:  ret: %d, file: %s", ret, strSaveFile);
     GetDlgItem(IDC_S_DEBUG)->SetWindowText(strDebugInfo);

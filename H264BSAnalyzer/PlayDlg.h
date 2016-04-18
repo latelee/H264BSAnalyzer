@@ -5,6 +5,7 @@
 #include <map>
 
 #include "H264Decode.h"
+#include "H264ToVideo.h"
 
 #define DLG_TITTLE "Play"
 
@@ -55,6 +56,7 @@ private:
     CString m_strPathName;   // 视频文件
 
     CH264Decoder m_cDecoder;    // 解码器
+    H264BS2Video m_cSaveVideo;
 
     std::vector<std::vector<int> > m_vStartX;
 

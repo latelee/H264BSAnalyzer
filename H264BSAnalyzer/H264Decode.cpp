@@ -256,6 +256,7 @@ int CH264Decoder::getFrame(unsigned char** yuvBuffer, unsigned char** rgbBuffer,
     int len = 0;
     AVPacket avpkt;
 
+    memset(&avpkt, '\0', sizeof(AVPacket));
     av_init_packet(&avpkt);
     //int frame = 0;
     // av_read_fram返回下一帧，发生错误或文件结束返回<0
@@ -325,12 +326,15 @@ int CH264Decoder::getSkippedFrame(unsigned char** yuvBuffer, unsigned char** rgb
     int len = 0;
     AVPacket avpkt;
 
+    memset(&avpkt, '\0', sizeof(AVPacket));
     av_init_packet(&avpkt);
 
     // 是否还有缓存的帧
     while (m_skippedFrame-- > 0)
     {
         // 解码视频流
+        avpkt.data = NULL;
+        avpkt.size = 0;
         len = avcodec_decode_video2(m_avctx, m_picture, &got_picture, &avpkt);
         if (len < 0)
         {
@@ -367,7 +371,7 @@ int CH264Decoder::getSkippedFrame(unsigned char** yuvBuffer, unsigned char** rgb
             return 1;
         } // end of got picture
 
-        av_free_packet(&avpkt);
+        av_packet_unref(&avpkt);
     } // end of read frame
 
     return 0;
@@ -485,7 +489,7 @@ int CH264Decoder::writeJPGFile(const char* filename)
     int ret = -1;
     FILE* fp = NULL;
     int sizeJPG = 0;
-    PixelFormat fmtJPG = AV_PIX_FMT_YUVJ420P;//AV_PIX_FMT_YUVJ420P;
+    AVPixelFormat fmtJPG = AV_PIX_FMT_YUVJ420P;//AV_PIX_FMT_YUVJ420P;
     struct SwsContext* imgctx = NULL;
     // jpeg
     AVCodecContext* JPGCodecCtx;
@@ -517,7 +521,6 @@ int CH264Decoder::writeJPGFile(const char* filename)
         return -1;
     }
 
-
     JPGCodecCtx->bit_rate      = avctx->bit_rate;
     JPGCodecCtx->width         = avctx->width;
     JPGCodecCtx->height        = avctx->height;
@@ -544,14 +547,16 @@ int CH264Decoder::writeJPGFile(const char* filename)
         return -1;
     }
 
-    size = avpicture_get_size(fmtJPG, avctx->width, avctx->height); // PIX_FMT_YUVJ420P
+    size = av_image_get_buffer_size(fmtJPG, avctx->width, avctx->height, 1); // PIX_FMT_YUVJ420P
     picture_buf = (unsigned char *)av_malloc(size);
     if (!picture_buf)
     {
         av_free(frameJPG);
         return -1;
     }
-    avpicture_fill((AVPicture *)frameJPG, picture_buf, fmtJPG, avctx->width, avctx->height);
+    //avpicture_fill((AVPicture *)frameJPG, picture_buf, fmtJPG, avctx->width, avctx->height);
+    av_image_fill_arrays(frameJPG->data, frameJPG->linesize,
+                        picture_buf, fmtJPG, avctx->width, avctx->height, 1);
 
 #if 0
     buffer = (unsigned char *)av_malloc(size);
@@ -565,7 +570,7 @@ int CH264Decoder::writeJPGFile(const char* filename)
     // 转换成JPEG格式
     // 目标格式写 AV_PIX_FMT_YUV420P 就正常，写m_picture->format就不正常。
     imgctx = sws_getContext(JPGCodecCtx->width, JPGCodecCtx->height, (AVPixelFormat)m_picture->format, JPGCodecCtx->width,
-        JPGCodecCtx->height, AV_PIX_FMT_YUV420P, SWS_BICUBIC, NULL, NULL, NULL); // JPGCodecCtx->pix_fmt fmtJPG
+                            JPGCodecCtx->height, static_cast<AVPixelFormat>(m_picture->format), SWS_BICUBIC, NULL, NULL, NULL); // JPGCodecCtx->pix_fmt fmtJPG
 
     debug("%s %d fmt: %d %d\n", __FUNCTION__, __LINE__, m_picture->format, AV_PIX_FMT_YUVJ420P);
     if (imgctx)
@@ -579,6 +584,9 @@ int CH264Decoder::writeJPGFile(const char* filename)
         frameJPG->format = JPGCodecCtx->pix_fmt;
         //debug("----%s %d \n", __func__, __LINE__);
         //sizeJPG = avcodec_encode_video(JPGCodecCtx, buffer, size, frameJPG);    // 编码，buffer为jpeg数据
+        memset(&avpkt, '\0', sizeof(AVPacket));
+        //avpkt.data = NULL;
+        //avpkt.size = 0;
         av_init_packet(&avpkt);
         ret = avcodec_encode_video2(JPGCodecCtx, &avpkt, frameJPG, &got_picture);    // 编码，buffer为jpeg数据
         if (ret < 0)

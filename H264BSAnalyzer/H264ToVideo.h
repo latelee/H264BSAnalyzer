@@ -81,22 +81,17 @@ public:
      * 打开H.264视频文件并初始化
      *
      * @param videofile 视频文件路径全称(包括目录和视频文件名称)
-     * @param fps 帧率
-     * @param gop GOP大小，如果视频没有B帧，则GOP大小为I帧间隔
      * @param width 视频宽
      * @param height 视频高 
+     * @param fps 帧率
+     * @param gop GOP大小，如果视频没有B帧，则GOP大小为I帧间隔
      * @param bitrate 视频码率，默认为2048kbps
      *
      * @return =< 0 成功：= 0， 失败 = -1
      *
      * @note 当前只测试封装成avi格式的视频文件
      */
-    int openVideoFile(const char* videofile,
-                    int fps = 25,
-                    int gop = 10,
-                    int width=1920,
-                    int height=1080,
-                    int bitrate = 2097152);
+    int openVideoFile(const char* videofile, int width=1920, int height=1080, int fps = 25, int gop = 10, int bitrate = 2097152);
     /**
      * 申请内部缓冲区
      *
@@ -108,17 +103,17 @@ public:
      * 初始化H.264视频参数
      *
      * @param fmt 封装格式，avi、mp4、mkv，默认avi
-     * @param fps 帧率
-     * @param gop GOP大小，如果视频没有B帧，则GOP大小为I帧间隔
      * @param width 视频宽
      * @param height 视频高 
+     * @param fps 帧率
+     * @param gop GOP大小，如果视频没有B帧，则GOP大小为I帧间隔
      * @param bitrate 视频码率，默认为2048kbps
      *
      * @return =< 0 成功：= 0， 失败 = -1
      *
      * @note 当前只测试封装成avi格式的视频文件
      */
-    int openVideoMem(const char* fmt = "avi", int fps = 25, int gop = 10, int width=1920, int height=1080, int bitrate = 2097152);
+    int openVideoMem(const char* fmt = "avi", int width=1920, int height=1080, int fps = 25, int gop = 10, int bitrate = 2097152);
 
     /**
      * 保存一帧H.264视频

@@ -70,7 +70,7 @@ int H264BS2Video::openBSFile(const char* rawfile)
     return 0;
 }
 
-int H264BS2Video::openVideoFile(const char* videofile, int fps, int gop, int width, int height, int bitrate)
+int H264BS2Video::openVideoFile(const char* videofile, int width, int height, int fps, int gop, int bitrate)
 {
     int ret = 0;
     AVOutputFormat *fmt = NULL;
@@ -102,7 +102,7 @@ int H264BS2Video::openVideoFile(const char* videofile, int fps, int gop, int wid
         return -1;
     }
 
-    m_stream->codec->codec_id = CODEC_ID_H264;
+    m_stream->codec->codec_id = AV_CODEC_ID_H264;
     m_stream->codec->codec_type = AVMEDIA_TYPE_VIDEO;
     m_stream->codec->bit_rate = bitrate;
     m_stream->codec->width = width;
@@ -111,7 +111,7 @@ int H264BS2Video::openVideoFile(const char* videofile, int fps, int gop, int wid
     m_stream->time_base.num = 1;
     m_stream->time_base.den = fps;
     m_stream->codec->gop_size = gop;
-    m_stream->codec->pix_fmt = PIX_FMT_YUV420P;
+    m_stream->codec->pix_fmt = AV_PIX_FMT_YUV420P;
     m_stream->codec->max_b_frames = 0;
 
     m_stream->r_frame_rate.den = 1;
@@ -195,7 +195,7 @@ static int64_t seekBuffer(void *opaque, int64_t offset, int whence)
     fake_pos = min(new_pos, pIO->totalSize);
     if (fake_pos != pIO->pos)
     {
-        pIO->pos = fake_pos;
+        pIO->pos = (int)fake_pos;
     }
 
     return new_pos;
@@ -217,7 +217,7 @@ int H264BS2Video::allocBuffer(int size)
     return 0;
 }
 
-int H264BS2Video::openVideoMem(const char* fmt, int fps, int gop, int width, int height, int bitrate)
+int H264BS2Video::openVideoMem(const char* fmt, int width, int height, int fps, int gop, int bitrate)
 {
     int ret = 0;
 
@@ -240,7 +240,7 @@ int H264BS2Video::openVideoMem(const char* fmt, int fps, int gop, int width, int
         debug("avformat_new_stream failed.\n");
         return -1;
     }
-    m_stream->codec->codec_id = CODEC_ID_H264;
+    m_stream->codec->codec_id = AV_CODEC_ID_H264;
     m_stream->codec->codec_type = AVMEDIA_TYPE_VIDEO;
     m_stream->codec->bit_rate = bitrate;
     m_stream->codec->width = width;
@@ -249,7 +249,7 @@ int H264BS2Video::openVideoMem(const char* fmt, int fps, int gop, int width, int
     m_stream->time_base.num = 1;
     m_stream->time_base.den = fps;
     m_stream->codec->gop_size = gop;
-    m_stream->codec->pix_fmt = PIX_FMT_YUV420P;
+    m_stream->codec->pix_fmt = AV_PIX_FMT_YUV420P;
     m_stream->codec->max_b_frames = 0;
 
     m_stream->r_frame_rate.den = 1;
@@ -270,6 +270,7 @@ int H264BS2Video::writeFrame(char* bitstream, int size, int keyframe)
     AVPacket pkt;
     int ret = 0;
 
+    memset(&pkt, '\0', sizeof(AVPacket));
     av_init_packet(&pkt);
 
     if (keyframe)
@@ -290,19 +291,20 @@ int H264BS2Video::writeFrame(void)
 {
     AVPacket avpkt;
 
+    memset(&avpkt, '\0', sizeof(AVPacket));
     av_init_packet(&avpkt);
-    int idx = 0;
     // av_read_fram返回下一帧，发生错误或文件结束返回<0
     while (av_read_frame(m_infctx, &avpkt) >= 0)
     {
         // 解码视频流
         if (avpkt.stream_index == m_videoidx)
         {
+            // static int idx = 0;
             //debug("write %d, size: %d\n", idx++, avpkt.size);
             av_write_frame(m_outfctx, &avpkt);
         }
 
-        av_free_packet(&avpkt);
+        av_packet_unref(&avpkt);
     }
 
     return 0;
