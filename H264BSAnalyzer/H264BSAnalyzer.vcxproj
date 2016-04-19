@@ -42,13 +42,13 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
     <EmbedManifest>false</EmbedManifest>
-    <IncludePath>ffmpeg/include;$(IncludePath)</IncludePath>
-    <LibraryPath>ffmpeg/lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>ffmpeg/include;libjpeg/include;$(IncludePath)</IncludePath>
+    <LibraryPath>ffmpeg/lib;libjpeg/lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>ffmpeg/include;$(IncludePath)</IncludePath>
-    <LibraryPath>ffmpeg/lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>ffmpeg/include;libjpeg/include;$(IncludePath)</IncludePath>
+    <LibraryPath>ffmpeg/lib;libjpeg/lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -56,10 +56,12 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalOptions>/NODEFAULTLIB:library %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <IgnoreSpecificDefaultLibraries>libcmt.lib</IgnoreSpecificDefaultLibraries>
     </Link>
     <Midl>
       <MkTypLibCompatible>false</MkTypLibCompatible>
@@ -86,6 +88,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <IgnoreSpecificDefaultLibraries>libcmt.lib</IgnoreSpecificDefaultLibraries>
     </Link>
     <Midl>
       <MkTypLibCompatible>false</MkTypLibCompatible>
@@ -114,6 +117,7 @@
     <None Include="res\stop.bmp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="bmp_utils.h" />
     <ClInclude Include="bs.h" />
     <ClInclude Include="H264BSAnalyzer.h" />
     <ClInclude Include="H264BSAnalyzerDlg.h" />
@@ -131,8 +135,10 @@
     <ClInclude Include="Resource.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
+    <ClInclude Include="tjpeg_utils.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="bmp_utils.cpp" />
     <ClCompile Include="H264BSAnalyzer.cpp" />
     <ClCompile Include="H264BSAnalyzerDlg.cpp" />
     <ClCompile Include="H264Decode.cpp" />
@@ -153,6 +159,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="tjpeg_utils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="H264BSAnalyzer.rc" />

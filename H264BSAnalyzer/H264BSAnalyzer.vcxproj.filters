@@ -103,6 +103,12 @@
     <ClInclude Include="H264ToVideo.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="bmp_utils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="tjpeg_utils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="H264BSAnalyzer.cpp">
@@ -154,6 +160,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="H264ToVideo.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="bmp_utils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="tjpeg_utils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

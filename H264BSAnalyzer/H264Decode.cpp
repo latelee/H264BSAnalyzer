@@ -8,6 +8,7 @@
 #include "H264Decode.h"
 
 #include "bmp_utils.h"
+#include "tjpeg_utils.h"
 
 #ifdef _DEBUG_
 int debug(const char* fmt, ...)
@@ -126,7 +127,7 @@ int CH264Decoder::openVideoFile(const char* avifile)
         av_free(m_picture);
         return -1;
     }
-    size = avpicture_get_size(PIX_FMT_BGR24, m_avctx->width, m_avctx->height);
+    size = avpicture_get_size(AV_PIX_FMT_BGR24, m_avctx->width, m_avctx->height);
     // m_picBuffer要到最后释放
     m_picBuffer = (unsigned char *)av_malloc(size);
     if (!m_picBuffer)
@@ -135,10 +136,10 @@ int CH264Decoder::openVideoFile(const char* avifile)
         av_free(m_frameRGB);
         return -1;
     }
-    avpicture_fill((AVPicture *)m_frameRGB, m_picBuffer, PIX_FMT_BGR24, m_avctx->width, m_avctx->height);
+    avpicture_fill((AVPicture *)m_frameRGB, m_picBuffer, AV_PIX_FMT_BGR24, m_avctx->width, m_avctx->height);
     // 创建转换上下文
     m_imgctx = sws_getContext(m_avctx->width, m_avctx->height, m_avctx->pix_fmt, m_avctx->width, m_avctx->height, 
-        PIX_FMT_BGR24, SWS_BICUBIC, NULL, NULL, NULL);
+        AV_PIX_FMT_BGR24, SWS_BICUBIC, NULL, NULL, NULL);
     if (m_imgctx == NULL)
     {
         av_free(m_picture);
@@ -155,7 +156,7 @@ int CH264Decoder::openVideoFile(const char* avifile)
         av_free(m_frameRGB);
         return -1;
     }
-    size = avpicture_get_size(PIX_FMT_YUV420P, m_avctx->width, m_avctx->height);
+    size = avpicture_get_size(AV_PIX_FMT_YUV420P, m_avctx->width, m_avctx->height);
     m_bufferYUV = (unsigned char *)av_malloc(size);
     if (!m_bufferYUV)
     {
@@ -164,9 +165,9 @@ int CH264Decoder::openVideoFile(const char* avifile)
         av_free(m_frameYUV);
         return -1;
     }
-    avpicture_fill((AVPicture *)m_frameYUV, m_bufferYUV, PIX_FMT_YUV420P, m_avctx->width, m_avctx->height);
+    avpicture_fill((AVPicture *)m_frameYUV, m_bufferYUV, AV_PIX_FMT_YUV420P, m_avctx->width, m_avctx->height);
     m_imgctxyuv = sws_getContext(m_avctx->width, m_avctx->height, m_avctx->pix_fmt, m_avctx->width, m_avctx->height, 
-        PIX_FMT_YUV420P, SWS_BICUBIC, NULL, NULL, NULL);
+        AV_PIX_FMT_YUV420P, SWS_BICUBIC, NULL, NULL, NULL);
     if (m_imgctxyuv == NULL)
     {
         av_free(m_picture);
@@ -176,7 +177,7 @@ int CH264Decoder::openVideoFile(const char* avifile)
         sws_freeContext(m_imgctx);
         return -1;
     }
-    //debug("---%s %d fmt: %d %d\n", __func__, __LINE__, m_avctx->pix_fmt, PIX_FMT_BGR24);
+    //debug("---%s %d fmt: %d %d\n", __func__, __LINE__, m_avctx->pix_fmt, AV_PIX_FMT_BGR24);
     return 0;
 }
 
@@ -416,13 +417,8 @@ unsigned char* CH264Decoder::convertToRgb()
     return m_frameRGB->data[0];
 }
 
-int CH264Decoder::writeBmpFile(const char* filename)
+int CH264Decoder::writeBMPFile(const char* filename)
 {
-#if 1
-    unsigned char* rgbBuffer = NULL;
-    rgbBuffer = convertToRgb();
-    return write_bmp_file(filename, rgbBuffer, m_picWidth, m_picHeight);
-#else
     MYBITMAPFILEHEADER bmpHeader;
     MYBITMAPINFOHEADER bmpInfo;
     FILE* fp = NULL;
@@ -488,12 +484,17 @@ int CH264Decoder::writeBmpFile(const char* filename)
     fclose(fp);
 
     return 0;
-#endif
+}
+
+int CH264Decoder::writeBMPFile2(const char* filename)
+{
+    unsigned char* rgbBuffer = NULL;
+    rgbBuffer = convertToRgb();
+    return write_bmp_file(filename, rgbBuffer, m_picWidth, m_picHeight);
 }
 
 int CH264Decoder::writeJPGFile(const char* filename)
 {
-    //char filename[64] = {0};
     int ret = -1;
     FILE* fp = NULL;
     int sizeJPG = 0;
@@ -631,4 +632,32 @@ int CH264Decoder::writeJPGFile(const char* filename)
     av_free(frameJPG);
     frameJPG = NULL;
     return 0;
+}
+
+int CH264Decoder::writeJPGFile2(const char* filename)
+{
+    FILE* fp = NULL;
+    unsigned char* buffer = convertToRgb();
+    int width = m_picWidth;
+    int height = m_picHeight;
+    unsigned char* jpg_buffer = NULL;
+    unsigned long  jpg_size = 0;
+
+    swap_rgb(buffer, width*height*3); // swap...
+
+    trgb2jpeg(buffer, width, height, 100, &jpg_buffer, &jpg_size);
+
+    fp = fopen(filename, "wb");
+    if (fp == NULL)
+    {
+        printf("open file %s failed.\n", filename);
+        return -1;
+    }
+    fwrite(jpg_buffer, 1, jpg_size, fp);
+
+    free(jpg_buffer);
+
+    fclose(fp);
+    return 0;
+
 }

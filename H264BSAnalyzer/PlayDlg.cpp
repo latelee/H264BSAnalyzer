@@ -333,33 +333,15 @@ int CPlayDlg::SaveYUVFile(const char* pFileName)
         foo.openVideoFile(m_strPathName);
         char szFileName[256] = {0};
         int cnt = 1;
-        while (1)
+        while (foo.getFrame() > 0)
         {
-            int ret = foo.getFrame();
-            if (ret < 0)
-            {
-                ret = -1;
-                break;
-            }
-            if (ret > 0)
-            {
-                sprintf(szFileName, pFileName, cnt++);
-                foo.writeYUVFile(szFileName);
-            }
-            if (ret == 0)
-            {
-                ret = foo.getSkippedFrame();
-                if (ret <= 0)
-                {
-                    //ret = -1;
-                    break;
-                }
-                if (ret > 0)
-                {
-                    sprintf(szFileName, pFileName, cnt++);
-                    foo.writeYUVFile(szFileName);
-                }
-            }
+            sprintf(szFileName, pFileName, cnt++);
+            foo.writeYUVFile(szFileName);
+        }
+        while (foo.getSkippedFrame() > 0)
+        {
+            sprintf(szFileName, pFileName, cnt++);
+            foo.writeYUVFile(szFileName);
         }
     }
 
@@ -371,7 +353,7 @@ int CPlayDlg::SaveBMPFile(const char* pFileName)
     int ret = 0;
     if (IsSingleFile(pFileName))
     {
-        m_cDecoder.writeBmpFile("aaa.bmp");//pFileName
+        m_cDecoder.writeBMPFile2(pFileName);//pFileName
     }
     else if (1)
     {
@@ -379,33 +361,15 @@ int CPlayDlg::SaveBMPFile(const char* pFileName)
         foo.openVideoFile(m_strPathName);
         char szFileName[256] = {0};
         int cnt = 1;
-        while (1)
+        while (foo.getFrame() > 0)
         {
-            int ret = foo.getFrame();
-            if (ret < 0)
-            {
-                ret = -1;
-                break;
-            }
-            if (ret > 0)
-            {
-                sprintf(szFileName, pFileName, cnt++);
-                foo.writeBmpFile(szFileName);
-            }
-            if (ret == 0)
-            {
-                ret = foo.getSkippedFrame();
-                if (ret <= 0)
-                {
-                    //ret = -1;
-                    break;
-                }
-                if (ret > 0)
-                {
-                    sprintf(szFileName, pFileName, cnt++);
-                    foo.writeBmpFile(szFileName);
-                }
-            }
+            sprintf(szFileName, pFileName, cnt++);
+            foo.writeBMPFile2(szFileName);
+        }
+        while (foo.getSkippedFrame() > 0)
+        {
+            sprintf(szFileName, pFileName, cnt++);
+            foo.writeBMPFile2(szFileName);
         }
     }
     else if (0)
@@ -451,7 +415,7 @@ int CPlayDlg::SaveJPGFile(const char* pFileName)
     int ret = 0;
     if (IsSingleFile(pFileName))
     {
-        m_cDecoder.writeJPGFile(pFileName);
+        m_cDecoder.writeJPGFile2(pFileName);
     }
     else
     {
@@ -459,34 +423,15 @@ int CPlayDlg::SaveJPGFile(const char* pFileName)
         foo.openVideoFile(m_strPathName);
         char szFileName[256] = {0};
         int cnt = 1;
-        while (1)
+        while (foo.getFrame() > 0)
         {
-            int ret = foo.getFrame();
-            int temp = ret;
-            if (ret < 0)
-            {
-                //ret = -1;
-                break;
-            }
-            if (ret > 0)
-            {
-                sprintf(szFileName, pFileName, cnt++);
-                foo.writeJPGFile(szFileName);
-            }
-            if (ret == 0)
-            {
-                ret = foo.getSkippedFrame();
-                if (ret <= 0)
-                {
-                    //ret = -1;
-                    break;
-                }
-                if (ret > 0)
-                {
-                    sprintf(szFileName, pFileName, cnt++);
-                    foo.writeJPGFile(szFileName);
-                }
-            }
+            sprintf(szFileName, pFileName, cnt++);
+            foo.writeJPGFile2(szFileName);
+        }
+        while (foo.getSkippedFrame() > 0)
+        {
+            sprintf(szFileName, pFileName, cnt++);
+            foo.writeJPGFile2(szFileName);
         }
     }
 

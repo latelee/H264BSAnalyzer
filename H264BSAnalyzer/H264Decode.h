@@ -137,7 +137,9 @@ public:
     * @return  0 - 成功  -1 - 写文件失败
     *
     */
-    int writeBmpFile(const char* filename);
+    int writeBMPFile(const char* filename);
+
+    int writeBMPFile2(const char* filename);
 
     /**
     * writeBmpFile - 写JPEG图片到指定文件
@@ -148,6 +150,8 @@ public:
     *
     */
     int writeJPGFile(const char* filename);
+
+    int writeJPGFile2(const char* filename);
 
 private:
     /**
