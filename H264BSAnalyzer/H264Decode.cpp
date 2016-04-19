@@ -7,6 +7,8 @@
 
 #include "H264Decode.h"
 
+#include "bmp_utils.h"
+
 #ifdef _DEBUG_
 int debug(const char* fmt, ...)
 {
@@ -416,6 +418,11 @@ unsigned char* CH264Decoder::convertToRgb()
 
 int CH264Decoder::writeBmpFile(const char* filename)
 {
+#if 1
+    unsigned char* rgbBuffer = NULL;
+    rgbBuffer = convertToRgb();
+    return write_bmp_file(filename, rgbBuffer, m_picWidth, m_picHeight);
+#else
     MYBITMAPFILEHEADER bmpHeader;
     MYBITMAPINFOHEADER bmpInfo;
     FILE* fp = NULL;
@@ -481,6 +488,7 @@ int CH264Decoder::writeBmpFile(const char* filename)
     fclose(fp);
 
     return 0;
+#endif
 }
 
 int CH264Decoder::writeJPGFile(const char* filename)
