@@ -6,16 +6,6 @@
 #include "PlayDlg.h"
 #include "afxdialogex.h"
 
-#include <Psapi.h> // GetProcessMemoryInfo
-
-#include "ffmpeg_lib.h"
-
-#pragma comment(lib, "Psapi.lib") // GetProcessMemoryInfo
-#pragma comment(lib, "libavdevice.a")
-#pragma comment(lib, "libavfilter.a")
-#pragma comment(lib, "libpostproc.a")
-#pragma comment(lib, "libffmpeg.a")
-
 // CPlayDlg dialog
 
 IMPLEMENT_DYNAMIC(CPlayDlg, CDialogEx)
@@ -353,9 +343,9 @@ int CPlayDlg::SaveBMPFile(const char* pFileName)
     int ret = 0;
     if (IsSingleFile(pFileName))
     {
-        m_cDecoder.writeBMPFile2(pFileName);//pFileName
+        m_cDecoder.writeBMPFile2(pFileName);
     }
-    else if (1)
+    else
     {
         CH264Decoder foo;
         foo.openVideoFile(m_strPathName);
@@ -371,40 +361,6 @@ int CPlayDlg::SaveBMPFile(const char* pFileName)
             sprintf(szFileName, pFileName, cnt++);
             foo.writeBMPFile2(szFileName);
         }
-    }
-    else if (0)
-    {
-#if 01
-        char* param[6] = {NULL};
-
-        for (int i = 0; i < 6; i++)
-        {
-            param[i] = new char[256];
-        }
-        strcpy(param[0], "aaa");
-        strcpy(param[1], "-i");
-        strcpy(param[2], m_strPathName.GetBuffer());
-        strcpy(param[3], "-f");
-        strcpy(param[4], "image2");
-        strcpy(param[5], pFileName);
-#else
-        char* param[6] = {
-            "ffmpeg.exe",
-            "-i",
-            "rzdf_720p_30_qp22.h264",
-            "-f",
-            "image2",
-            "%d.bmp"
-        };
-#endif
-        // a.out -i input.h264 -f image2 %d.bmp
-        int ret = ffmpeg_transcode_main(6, param);
-
-        int foo = ret;
-    }
-    else
-    {
-
     }
 
     return ret;
@@ -642,7 +598,8 @@ void CPlayDlg::OnBnClickedBtSave()
     {
         ret = SaveJPGFile(strSaveFile.GetBuffer());
     }
-    else if (!strExt.CompareNoCase(_T("avi")))
+    //else if (!strExt.CompareNoCase(_T("avi")))
+    else
     {
         ret = SaveVideoFile(strSaveFile.GetBuffer());
     }
@@ -654,7 +611,6 @@ void CPlayDlg::OnBnClickedBtSave()
     CString strDebugInfo;
     strDebugInfo.Format("debug:  ret: %d, file: %s", ret, strSaveFile);
     GetDlgItem(IDC_S_DEBUG)->SetWindowText(strDebugInfo);
-
 }
 
 
