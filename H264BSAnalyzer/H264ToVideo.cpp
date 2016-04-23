@@ -70,13 +70,14 @@ int H264BS2Video::openBSFile(const char* rawfile)
     return 0;
 }
 
-int H264BS2Video::openVideoFile(const char* videofile, int width, int height, int fps, int gop, int bitrate)
+int H264BS2Video::openVideoFile(const char* videofile, int type, int width, int height, int fps, int gop, int bitrate)
 {
     int ret = 0;
-    AVOutputFormat *fmt = NULL;
 
     av_register_all(); // ×¢²áÐ­Òé£¬µÈ
 
+#if 0
+    AVOutputFormat *fmt = NULL;
     fmt = av_guess_format(NULL, videofile, NULL);
     if (!fmt)
     {
@@ -91,9 +92,11 @@ int H264BS2Video::openVideoFile(const char* videofile, int width, int height, in
         debug("avformat_alloc_context failed.\n");
         return -1;
     }
-
     m_outfctx->oformat = fmt;
     strcpy(m_outfctx->filename, videofile);
+#endif
+
+    avformat_alloc_output_context2(&m_outfctx, NULL, NULL, videofile);
 
     m_stream = avformat_new_stream(m_outfctx, NULL);
     if (!m_stream)
@@ -102,7 +105,7 @@ int H264BS2Video::openVideoFile(const char* videofile, int width, int height, in
         return -1;
     }
 
-    m_stream->codec->codec_id = AV_CODEC_ID_H264;
+    m_stream->codec->codec_id = type ? AV_CODEC_ID_HEVC : AV_CODEC_ID_H264;
     m_stream->codec->codec_type = AVMEDIA_TYPE_VIDEO;
     m_stream->codec->bit_rate = bitrate;
     m_stream->codec->width = width;

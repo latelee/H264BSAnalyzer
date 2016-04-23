@@ -13,6 +13,7 @@ CNalParser::CNalParser()
     m_hH264 = NULL;
     m_hH265 = NULL;
     m_naluData = NULL;
+    m_pFile = NULL;
 
     memset(m_tmpStore, '\0', 1024);
     memset(m_outputInfo, '\0', OUTPUT_SIZE);
@@ -58,6 +59,14 @@ int CNalParser::init(const char* filename, CTreeCtrl* tree)
         m_pTree->DeleteAllItems();
     }
 
+    if (m_pFile != NULL)
+    {
+        fclose(m_pFile);
+        m_pFile = NULL;
+    }
+
+    m_pFile = fopen(m_filename, "r+b");
+
     return 0;
 }
 
@@ -73,6 +82,12 @@ int CNalParser::release(void)
         h265_free(m_hH265);
         m_hH265 = NULL;
     }
+    if (m_pFile != NULL)
+    {
+        fclose(m_pFile);
+        m_pFile = NULL;
+    }
+
     return 0;
 }
 
@@ -81,33 +96,26 @@ int CNalParser::probeNALU(vector<NALU_t>& vNal, int num)
     NALU_t n;
     int nal_num=0;
     int offset=0;
-    int nalLen;
-    FILE* fp = NULL;
-
-    fp=fopen(m_filename, "r+b");
-    if (fp == NULL)
-    {
-        return -1;
-    }
+    int nalLen = 0;
 
     memset(&n, '\0', sizeof(NALU_t));
 
-    n.type = m_nType; // h.265
+    n.type = m_nType;
 
-    offset = findFirstNALU(fp, &(n.startcodeLen));
+    offset = findFirstNALU(m_pFile, &(n.startcodeLen));
 
     if (offset < 0)
     {
         return -1;
     }
-    fseek(fp, offset, SEEK_SET);
-    while (!feof(fp))
+    fseek(m_pFile, offset, SEEK_SET);
+    while (!feof(m_pFile))
     {
         if (num > 0 && nal_num == num)
         {
             break;
         }
-        nalLen = getAnnexbNALU(fp, &n);//每执行一次，文件的指针指向本次找到的NALU的末尾，下一个位置即为下个NALU的起始码0x000001
+        nalLen = getAnnexbNALU(m_pFile, &n);//每执行一次，文件的指针指向本次找到的NALU的末尾，下一个位置即为下个NALU的起始码0x000001
         n.offset = offset;
         n.num = nal_num;
         offset = offset + nalLen;
@@ -128,14 +136,8 @@ int CNalParser::parseNALU(NALU_t& vNal, char** naluData, char** naluInfo)
     }
     m_naluData = (uint8_t *)malloc(vNal.len);
 
-    FILE *fp = fopen(m_filename, "rb");
-    if (fp == NULL)
-    {
-        return -1;
-    }
-
-    fseek(fp, vNal.offset, SEEK_SET);
-    fread(m_naluData, vNal.len, 1, fp);
+    fseek(m_pFile, vNal.offset, SEEK_SET);
+    fread(m_naluData, vNal.len, 1, m_pFile);
 
     // 不需要再次查询nal
     //find_nal_unit(m_naluData, vNal.len, &nal_start, &nal_end);
@@ -155,7 +157,6 @@ int CNalParser::parseNALU(NALU_t& vNal, char** naluData, char** naluInfo)
     *naluData = (char*)m_naluData;
     *naluInfo = m_outputInfo;
 
-    fclose(fp);
     return 0;
 }
 
@@ -421,6 +422,7 @@ FileType CNalParser::judeVideoFile(const char* filename)
                 type = FILE_H265;
             }
         }
+        fclose(fp);
     }
 
     return type;

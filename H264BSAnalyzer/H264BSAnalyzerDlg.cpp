@@ -1210,7 +1210,7 @@ void CH264BSAnalyzerDlg::OnPlayDlg()
         m_pPlayDlg->Create(IDD_PLAYDLG, this);
     }
     // 把主窗口打开的文件信息传到子窗口
-    int ret = m_pPlayDlg->SetVideoInfo(m_strFileUrl, m_cVideoInfo.width, m_cVideoInfo.height, m_nSliceIndex, m_cVideoInfo.max_framerate);
+    int ret = m_pPlayDlg->SetVideoInfo(m_strFileUrl, m_cVideoInfo.type, m_cVideoInfo.width, m_cVideoInfo.height, m_nSliceIndex, m_cVideoInfo.max_framerate);
     //if (ret < 0) return;
 
     m_pPlayDlg->ShowWindow(SW_SHOW);

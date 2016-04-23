@@ -24,7 +24,7 @@ public:
 
 public:
     // 从主窗口拿到视频文件信息
-    int SetVideoInfo(CString strFileName, int nWidth, int nHeight, int nTotalFrame, float nFps);
+    int SetVideoInfo(CString strFileName, int nType, int nWidth, int nHeight, int nTotalFrame, float nFps);
     void ShowFirstFrame();
     void SetBlack();
 
@@ -46,6 +46,7 @@ private:
     BOOL m_fClosed;
     BOOL m_fLoop;
     BOOL m_fInit;
+    INT m_nVideoType;
     INT m_nWidth;
     INT m_nHeight;
     INT m_nTotalFrame;

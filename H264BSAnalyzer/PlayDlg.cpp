@@ -18,6 +18,7 @@ CPlayDlg::CPlayDlg(CWnd* pParent /*=NULL*/)
     m_fClosed = TRUE;
     m_fLoop = FALSE;
     m_fInit = FALSE;
+    m_nVideoType = 0;
     m_nWidth = 0;
     m_nHeight = 0;
     m_nTotalFrame = 0;
@@ -172,7 +173,7 @@ void CPlayDlg::Show(BYTE* pbData, int nSize, int nWidth, int nHeight)
     ShowPicture(m_pbBmpData, bmpHeader.bfSize);
 }
 
-int CPlayDlg::SetVideoInfo(CString strFileName, int nWidth, int nHeight, int nTotalFrame, float nFps)
+int CPlayDlg::SetVideoInfo(CString strFileName, int nType, int nWidth, int nHeight, int nTotalFrame, float nFps)
 {
     int ret = 0;
     m_strPathName = strFileName;
@@ -180,6 +181,7 @@ int CPlayDlg::SetVideoInfo(CString strFileName, int nWidth, int nHeight, int nTo
     m_nHeight = nHeight;
     m_nTotalFrame = nTotalFrame;
     m_fFps = nFps;
+    m_nVideoType = nType;
 
     if (m_fFps <= 0 ) m_fFps = 25.0;
 
@@ -404,7 +406,7 @@ int CPlayDlg::SaveVideoFile(const char* pFileName)
         MessageBox("Open bs stream file failed");
         return -1;
     }
-    ret = m_cSaveVideo.openVideoFile(pFileName, m_nWidth, m_nHeight);
+    ret = m_cSaveVideo.openVideoFile(pFileName, m_nVideoType, m_nWidth, m_nHeight);
     if (ret < 0)
     {
         MessageBox("Open video file failed");

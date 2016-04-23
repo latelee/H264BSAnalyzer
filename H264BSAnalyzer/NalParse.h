@@ -154,5 +154,6 @@ private:
     uint8_t* m_naluData;
     void* dlg;
     CTreeCtrl* m_pTree;
+    FILE* m_pFile;
 };
 #endif
