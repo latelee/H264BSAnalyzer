@@ -335,9 +335,10 @@ int CH264Decoder::getSkippedFrame(unsigned char** yuvBuffer, unsigned char** rgb
     // 是否还有缓存的帧
     while (m_skippedFrame-- > 0)
     {
-        // 解码视频流
+        // 注：avpkt要清空data和size，否则无法解码
         avpkt.data = NULL;
         avpkt.size = 0;
+        // 解码视频流 注：此时如解码成功，返回值为0
         len = avcodec_decode_video2(m_avctx, m_picture, &got_picture, &avpkt);
         if (len < 0)
         {
@@ -346,6 +347,8 @@ int CH264Decoder::getSkippedFrame(unsigned char** yuvBuffer, unsigned char** rgb
         }
         if (got_picture)
         {
+            m_picWidth  = m_avctx->width;
+            m_picHeight = m_avctx->height;
             // 传出原始数据指针，由于内部已经申请了，不用再开辟数据
             if (yuvBuffer != NULL)
             {
@@ -360,8 +363,6 @@ int CH264Decoder::getSkippedFrame(unsigned char** yuvBuffer, unsigned char** rgb
             {
                 *size = len;
             }
-            m_picWidth  = m_avctx->width;
-            m_picHeight = m_avctx->height;
             if (width != NULL)
             {
                 *width = m_picWidth;

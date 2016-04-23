@@ -260,7 +260,7 @@ void CPlayDlg::ShowingFrame()
     this->SetWindowText(strTittle);
 
     CString strDebugInfo;
-    strDebugInfo.Format("debug: getFrame %d ret: %d", m_nFrameCount, ret);
+    strDebugInfo.Format("debug: %d ret: %d size: %d", m_nFrameCount, ret,nSize);
     GetDlgItem(IDC_S_DEBUG)->SetWindowText(strDebugInfo);
 
     if (ret < 0) return;
@@ -271,11 +271,11 @@ void CPlayDlg::ShowingFrame()
     else
     {
         ret = m_cDecoder.getSkippedFrame(NULL, &pRgbBuffer, &nSize);
+        nSize = nSize ? nSize: m_nWidth*m_nHeight*3; // 解码缓存的帧时，获取的size为0，所以这样判断
 
         CString strDebugInfo;
-        strDebugInfo.Format("debug: getSkippedFrame %d ret: %d", m_nFrameCount, ret);
+        strDebugInfo.Format("skip %d ret: %d size: %d", m_nFrameCount, ret, nSize);
         GetDlgItem(IDC_S_DEBUG)->SetWindowText(strDebugInfo);
-
         if ( ret > 0)
         {
             Show(pRgbBuffer, nSize, m_nWidth, m_nHeight);
@@ -292,7 +292,7 @@ void CPlayDlg::Pause()
 
 }
 
-// 文件名带%d %05d等表现保存所有图片
+// 文件名带%d %05d等表示保存所有图片
 static bool IsSingleFile(const char* filename)
 {
     std::string pathname = filename;

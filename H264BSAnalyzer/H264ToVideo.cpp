@@ -304,7 +304,8 @@ int H264BS2Video::writeFrame(void)
         {
             // static int idx = 0;
             //debug("write %d, size: %d\n", idx++, avpkt.size);
-            av_write_frame(m_outfctx, &avpkt);
+            avpkt.pts = av_rescale_q(avpkt.pts, m_stream->time_base, m_stream->time_base);
+            int ret = av_write_frame(m_outfctx, &avpkt);
         }
 
         av_packet_unref(&avpkt);
