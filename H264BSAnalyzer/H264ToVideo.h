@@ -81,7 +81,6 @@ public:
      * 打开H.264视频文件并初始化
      *
      * @param videofile 视频文件路径全称(包括目录和视频文件名称)
-     * @param type 0:h264 1:h265
      * @param width 视频宽
      * @param height 视频高 
      * @param fps 帧率
@@ -92,7 +91,7 @@ public:
      *
      * @note 当前只测试封装成avi格式的视频文件
      */
-    int openVideoFile(const char* videofile, int type = 0, int width=1920, int height=1080, int fps = 25, int gop = 10, int bitrate = 2097152);
+    int openVideoFile(const char* videofile, int width=1920, int height=1080, int fps = 25, int gop = 10, int bitrate = 2097152);
     /**
      * 申请内部缓冲区
      *
@@ -165,8 +164,9 @@ public:
 
 private:
     AVFormatContext *m_infctx;
-    AVFormatContext *m_outfctx; 
-    AVStream *m_stream;
+    AVFormatContext *m_outfctx;
+    AVStream *m_instream;
+    AVStream *m_outstream;
     AVIOContext *m_avio;
     AVIOBufferContext m_avbuffer;
     int m_videoidx;

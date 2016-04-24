@@ -13,7 +13,8 @@ static unsigned char g_szIOBuffer[IO_BUFFER_SIZE];
 H264BS2Video::H264BS2Video()
     :m_infctx(NULL),
     m_outfctx(NULL),
-    m_stream(NULL),
+    m_instream(NULL),
+    m_outstream(NULL),
     m_avio(NULL),
     m_videoidx(-1),
     m_isfile(0)
@@ -57,6 +58,7 @@ int H264BS2Video::openBSFile(const char* rawfile)
         if (m_infctx->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO)
         {
             m_videoidx = i;
+            m_instream = m_infctx->streams[i];
             break;
         }
     }
@@ -70,55 +72,61 @@ int H264BS2Video::openBSFile(const char* rawfile)
     return 0;
 }
 
-int H264BS2Video::openVideoFile(const char* videofile, int type, int width, int height, int fps, int gop, int bitrate)
+int H264BS2Video::openVideoFile(const char* videofile, int width, int height, int fps, int gop, int bitrate)
 {
     int ret = 0;
 
     av_register_all(); // 注册协议，等
 
-#if 0
-    AVOutputFormat *fmt = NULL;
-    fmt = av_guess_format(NULL, videofile, NULL);
-    if (!fmt)
-    {
-        debug("av_guess_format failed.\n");
-        return -1;
-    }
-    debug("file guess format: %s(%s) flag: %d\n", fmt->name, fmt->long_name, fmt->flags);
-
-    m_outfctx = avformat_alloc_context();
-    if (!m_outfctx)
-    {
-        debug("avformat_alloc_context failed.\n");
-        return -1;
-    }
-    m_outfctx->oformat = fmt;
-    strcpy(m_outfctx->filename, videofile);
-#endif
-
     avformat_alloc_output_context2(&m_outfctx, NULL, NULL, videofile);
 
-    m_stream = avformat_new_stream(m_outfctx, NULL);
-    if (!m_stream)
+    m_outstream = avformat_new_stream(m_outfctx, NULL);
+    if (!m_outstream)
     {
         debug("avformat_new_stream failed.\n");
         return -1;
     }
 
-    m_stream->codec->codec_id = type ? AV_CODEC_ID_HEVC : AV_CODEC_ID_H264;
-    m_stream->codec->codec_type = AVMEDIA_TYPE_VIDEO;
-    m_stream->codec->bit_rate = bitrate;
-    m_stream->codec->width = width;
-    m_stream->codec->height = height;
+    // 复制
+    avcodec_copy_context(m_outstream->codec, m_instream->codec);
 
-    m_stream->time_base.num = 1;
-    m_stream->time_base.den = fps;
-    m_stream->codec->gop_size = gop;
-    m_stream->codec->pix_fmt = AV_PIX_FMT_YUV420P;
-    m_stream->codec->max_b_frames = 0;
+    m_outstream->codec->bit_rate = bitrate;
+    m_outstream->time_base.num = 1;
+    m_outstream->time_base.den = fps;
+    m_outstream->r_frame_rate.den = 1;
+    m_outstream->r_frame_rate.num = fps;
+    if (m_outfctx->oformat->flags & AVFMT_GLOBALHEADER)
+    m_outstream->codec->flags |= CODEC_FLAG_GLOBAL_HEADER;
 
-    m_stream->r_frame_rate.den = 1;
-    m_stream->r_frame_rate.num = fps;
+#if 0
+    m_outstream->codec->codec_id = m_instream->codec->codec_id;
+    m_outstream->codec->codec_type = m_instream->codec->codec_type;
+    m_outstream->codec->bit_rate = bitrate;
+    m_outstream->codec->width = m_instream->codec->width;
+    m_outstream->codec->height = m_instream->codec->height;
+
+    m_outstream->time_base.num = 1;
+    m_outstream->time_base.den = fps;
+    //m_outstream->codec->time_base.num = 1;
+    //m_outstream->codec->time_base.den = fps;
+    m_outstream->codec->gop_size = m_instream->codec->gop_size;
+    m_outstream->codec->pix_fmt = m_instream->codec->pix_fmt;
+    m_outstream->codec->max_b_frames = 0;
+    // for mp4...
+    m_outstream->codec->extradata = m_instream->codec->extradata;
+    m_outstream->codec->extradata_size  = m_instream->codec->extradata_size ;
+
+    m_outstream->codec->flags = m_instream->codec->flags;
+    m_outstream->codec->flags |= CODEC_FLAG_GLOBAL_HEADER;
+    m_outstream->codec->me_range = m_instream->codec->me_range;
+    m_outstream->codec->max_qdiff = m_instream->codec->max_qdiff;
+    m_outstream->codec->qmin = m_instream->codec->qmin;
+    m_outstream->codec->qmax = m_instream->codec->qmax;
+    m_outstream->codec->qcompress = m_instream->codec->qcompress;
+
+    m_outstream->r_frame_rate.den = 1;
+    m_outstream->r_frame_rate.num = fps;
+#endif
 
     if (!(m_outfctx->flags & AVFMT_NOFILE))
     {
@@ -133,6 +141,7 @@ int H264BS2Video::openVideoFile(const char* videofile, int type, int width, int 
         debug("nb_streams failed.\n");
         return -1;
     }
+
     ret = avformat_write_header(m_outfctx, NULL);
     if (ret < 0)
     {
@@ -237,26 +246,26 @@ int H264BS2Video::openVideoMem(const char* fmt, int width, int height, int fps, 
     m_outfctx->flags=AVFMT_FLAG_CUSTOM_IO;
     debug("guess format: %s(%s) flag: %d\n", m_outfctx->oformat->name, m_outfctx->oformat->long_name, m_outfctx->oformat->flags);
 
-    m_stream = avformat_new_stream(m_outfctx, NULL);
-    if (!m_stream)
+    m_outstream = avformat_new_stream(m_outfctx, NULL);
+    if (!m_outstream)
     {
         debug("avformat_new_stream failed.\n");
         return -1;
     }
-    m_stream->codec->codec_id = AV_CODEC_ID_H264;
-    m_stream->codec->codec_type = AVMEDIA_TYPE_VIDEO;
-    m_stream->codec->bit_rate = bitrate;
-    m_stream->codec->width = width;
-    m_stream->codec->height = height;
+    m_outstream->codec->codec_id = AV_CODEC_ID_H264;
+    m_outstream->codec->codec_type = AVMEDIA_TYPE_VIDEO;
+    m_outstream->codec->bit_rate = bitrate;
+    m_outstream->codec->width = width;
+    m_outstream->codec->height = height;
 
-    m_stream->time_base.num = 1;
-    m_stream->time_base.den = fps;
-    m_stream->codec->gop_size = gop;
-    m_stream->codec->pix_fmt = AV_PIX_FMT_YUV420P;
-    m_stream->codec->max_b_frames = 0;
+    m_outstream->time_base.num = 1;
+    m_outstream->time_base.den = fps;
+    m_outstream->codec->gop_size = gop;
+    m_outstream->codec->pix_fmt = AV_PIX_FMT_YUV420P;
+    m_outstream->codec->max_b_frames = 0;
 
-    m_stream->r_frame_rate.den = 1;
-    m_stream->r_frame_rate.num = fps;
+    m_outstream->r_frame_rate.den = 1;
+    m_outstream->r_frame_rate.num = fps;
 
     ret = avformat_write_header(m_outfctx, NULL);
     if (ret < 0)
@@ -281,7 +290,7 @@ int H264BS2Video::writeFrame(char* bitstream, int size, int keyframe)
         pkt.flags |= AV_PKT_FLAG_KEY;
     }
 
-    pkt.stream_index = m_stream->index;
+    pkt.stream_index = m_outstream->index;
     pkt.data = (unsigned char*)bitstream;
     pkt.size = size;
 
@@ -290,11 +299,40 @@ int H264BS2Video::writeFrame(char* bitstream, int size, int keyframe)
     return ret;
 }
 
+#define AV_TS_MAX_STRING_SIZE 32
+static inline char *av_ts_make_string(char *buf, int64_t ts)
+{
+    if (ts == AV_NOPTS_VALUE) _snprintf(buf, AV_TS_MAX_STRING_SIZE, "NOPTS");
+    else                      _snprintf(buf, AV_TS_MAX_STRING_SIZE, "%lld", ts);
+    return buf;
+}
+
+char g_buf[32] = {0};
+
+#define av_ts2str(ts) av_ts_make_string(g_buf, ts)
+
 int H264BS2Video::writeFrame(void)
 {
-    AVPacket avpkt;
+    AVPacket avpkt = { 0 };
+    int idx = 0;
 
-    memset(&avpkt, '\0', sizeof(AVPacket));
+    int last_pts = 0;
+    int last_dts = 0;
+
+    int64_t pts, dts;
+
+    char* filename = "../ffmpeg_log.txt";
+    FILE* fp = NULL;
+    char buffer[128] = {0};
+
+    fp = fopen(filename, "w");
+    if (fp == NULL)
+    {
+        printf("open file %s failed.\n", filename);
+        return -1;
+    }
+    m_outstream->time_base.num = 1;
+    m_outstream->time_base.den = 25;
     av_init_packet(&avpkt);
     // av_read_fram返回下一帧，发生错误或文件结束返回<0
     while (av_read_frame(m_infctx, &avpkt) >= 0)
@@ -302,15 +340,56 @@ int H264BS2Video::writeFrame(void)
         // 解码视频流
         if (avpkt.stream_index == m_videoidx)
         {
-            // static int idx = 0;
             //debug("write %d, size: %d\n", idx++, avpkt.size);
-            avpkt.pts = av_rescale_q(avpkt.pts, m_stream->time_base, m_stream->time_base);
-            int ret = av_write_frame(m_outfctx, &avpkt);
+
+            if (avpkt.pts == AV_NOPTS_VALUE)
+            {
+#if 01
+                sprintf(buffer, "000 %d pts: %s dts: %s duration: %d\n", idx, av_ts2str(avpkt.pts),  av_ts2str(avpkt.dts), avpkt.duration);
+                fwrite(buffer, 1, strlen(buffer), fp);
+
+                AVRational time_base = m_outstream->time_base;
+                int a = av_q2d(m_outstream->r_frame_rate);
+                int64_t duration=(int64_t)((double)AV_TIME_BASE/a);
+                int b = av_q2d(time_base)*AV_TIME_BASE;
+                avpkt.pts=(int64_t)((double)(idx*duration)/(double)(b));
+                avpkt.dts=avpkt.pts;
+                int c = av_q2d(time_base)*AV_TIME_BASE;
+                avpkt.duration=(int)((double)duration/(double)(c));
+
+                //Convert PTS/DTS  
+                avpkt.pts = av_rescale_q_rnd(avpkt.pts, m_instream->time_base, m_outstream->time_base, (AVRounding)(AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX));
+                avpkt.dts = av_rescale_q_rnd(avpkt.dts, m_instream->time_base, m_outstream->time_base, (AVRounding)(AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX));
+                avpkt.duration = av_rescale_q(avpkt.duration, m_instream->time_base, m_outstream->time_base);
+                avpkt.pos = -1;
+                idx++;
+                //pkt.stream_index=stream_index;
+                sprintf(buffer, "111 %d pts: %d dts: %d duration: %d\n", idx, avpkt.pts, avpkt.dts, avpkt.duration);
+                fwrite(buffer, 1, strlen(buffer), fp);
+#else
+                int a = 0;
+                pts = avpkt.pts;
+                avpkt.pts += last_pts;
+                dts = avpkt.dts;
+                avpkt.dts += last_dts;
+
+                last_dts += dts;
+                last_pts += pts;
+
+#endif
+            }
+
+            int ret = av_interleaved_write_frame(m_outfctx, &avpkt);
         }
 
         av_packet_unref(&avpkt);
+        //av_init_packet(&avpkt);
+
+        avpkt.data = NULL;
+        avpkt.size = 0;
     }
 
+    fclose(fp);
     return 0;
 }
 
