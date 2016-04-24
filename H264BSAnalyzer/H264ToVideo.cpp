@@ -90,6 +90,7 @@ int H264BS2Video::openVideoFile(const char* videofile, int width, int height, in
     // 复制
     avcodec_copy_context(m_outstream->codec, m_instream->codec);
 
+    // 注：使用以下参数，则生成的avi文件会有马赛克现象，但mp4却没有
 #if 0
     m_outstream->codec->bit_rate = bitrate;
 
@@ -330,25 +331,21 @@ int H264BS2Video::writeFrame(void)
         // 解码视频流
         if (avpkt.stream_index == m_videoidx)
         {
-            // note：从formatcontext中获取
-            AVStream* in_stream  = m_infctx->streams[avpkt.stream_index];
-            AVStream* out_stream = m_outfctx->streams[m_videoidx];
-
             //debug("write %d, size: %d\n", idx++, avpkt.size);
 
             if (avpkt.pts == AV_NOPTS_VALUE)
             {
                 // 计算PTS/DTS
-                AVRational time_base = in_stream->time_base;
-                int64_t duration=(int64_t)((double)AV_TIME_BASE/(double)av_q2d(in_stream->r_frame_rate));
+                AVRational time_base = m_instream->time_base;
+                int64_t duration=(int64_t)((double)AV_TIME_BASE/(double)av_q2d(m_instream->r_frame_rate));
                 avpkt.pts=(int64_t)((double)(idx*duration)/(double)(av_q2d(time_base)*AV_TIME_BASE));
                 avpkt.dts=avpkt.pts;
                 avpkt.duration=(int)((double)duration/(double)(av_q2d(time_base)*AV_TIME_BASE));
 
                 // 转换 PTS/DTS
-                avpkt.pts = av_rescale_q_rnd(avpkt.pts, in_stream->time_base, out_stream->time_base, (AVRounding)(AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX));
-                avpkt.dts = av_rescale_q_rnd(avpkt.dts, in_stream->time_base, out_stream->time_base, (AVRounding)(AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX));
-                avpkt.duration = (int)av_rescale_q(avpkt.duration, in_stream->time_base, out_stream->time_base);
+                avpkt.pts = av_rescale_q_rnd(avpkt.pts, m_instream->time_base, m_outstream->time_base, (AVRounding)(AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX));
+                avpkt.dts = av_rescale_q_rnd(avpkt.dts, m_instream->time_base, m_outstream->time_base, (AVRounding)(AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX));
+                avpkt.duration = (int)av_rescale_q(avpkt.duration, m_instream->time_base, m_outstream->time_base);
 
                 idx++;
 #if 0
