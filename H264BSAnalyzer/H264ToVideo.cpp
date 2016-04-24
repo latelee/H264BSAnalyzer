@@ -80,7 +80,7 @@ int H264BS2Video::openVideoFile(const char* videofile, int width, int height, in
 
     avformat_alloc_output_context2(&m_outfctx, NULL, NULL, videofile);
 
-    m_outstream = avformat_new_stream(m_outfctx, NULL);
+    m_outstream = avformat_new_stream(m_outfctx, m_instream->codec->codec);
     if (!m_outstream)
     {
         debug("avformat_new_stream failed.\n");
@@ -90,11 +90,16 @@ int H264BS2Video::openVideoFile(const char* videofile, int width, int height, in
     // 复制
     avcodec_copy_context(m_outstream->codec, m_instream->codec);
 
+#if 0
     m_outstream->codec->bit_rate = bitrate;
+
     m_outstream->time_base.num = 1;
     m_outstream->time_base.den = fps;
+    //m_outstream->codec->time_base.num = 1;
+    //m_outstream->codec->time_base.den = fps;
     m_outstream->r_frame_rate.den = 1;
     m_outstream->r_frame_rate.num = fps;
+#endif
     if (m_outfctx->oformat->flags & AVFMT_GLOBALHEADER)
     m_outstream->codec->flags |= CODEC_FLAG_GLOBAL_HEADER;
 
@@ -299,28 +304,12 @@ int H264BS2Video::writeFrame(char* bitstream, int size, int keyframe)
     return ret;
 }
 
-#define AV_TS_MAX_STRING_SIZE 32
-static inline char *av_ts_make_string(char *buf, int64_t ts)
-{
-    if (ts == AV_NOPTS_VALUE) _snprintf(buf, AV_TS_MAX_STRING_SIZE, "NOPTS");
-    else                      _snprintf(buf, AV_TS_MAX_STRING_SIZE, "%lld", ts);
-    return buf;
-}
-
-char g_buf[32] = {0};
-
-#define av_ts2str(ts) av_ts_make_string(g_buf, ts)
-
 int H264BS2Video::writeFrame(void)
 {
     AVPacket avpkt = { 0 };
     int idx = 0;
 
-    int last_pts = 0;
-    int last_dts = 0;
-
-    int64_t pts, dts;
-
+#if 0
     char* filename = "../ffmpeg_log.txt";
     FILE* fp = NULL;
     char buffer[128] = {0};
@@ -331,51 +320,40 @@ int H264BS2Video::writeFrame(void)
         printf("open file %s failed.\n", filename);
         return -1;
     }
-    m_outstream->time_base.num = 1;
-    m_outstream->time_base.den = 25;
+#endif
+
     av_init_packet(&avpkt);
+
     // av_read_fram返回下一帧，发生错误或文件结束返回<0
     while (av_read_frame(m_infctx, &avpkt) >= 0)
     {
         // 解码视频流
         if (avpkt.stream_index == m_videoidx)
         {
+            // note：从formatcontext中获取
+            AVStream* in_stream  = m_infctx->streams[avpkt.stream_index];
+            AVStream* out_stream = m_outfctx->streams[m_videoidx];
+
             //debug("write %d, size: %d\n", idx++, avpkt.size);
 
             if (avpkt.pts == AV_NOPTS_VALUE)
             {
-#if 01
-                sprintf(buffer, "000 %d pts: %s dts: %s duration: %d\n", idx, av_ts2str(avpkt.pts),  av_ts2str(avpkt.dts), avpkt.duration);
-                fwrite(buffer, 1, strlen(buffer), fp);
-
-                AVRational time_base = m_outstream->time_base;
-                int a = av_q2d(m_outstream->r_frame_rate);
-                int64_t duration=(int64_t)((double)AV_TIME_BASE/a);
-                int b = av_q2d(time_base)*AV_TIME_BASE;
-                avpkt.pts=(int64_t)((double)(idx*duration)/(double)(b));
+                // 计算PTS/DTS
+                AVRational time_base = in_stream->time_base;
+                int64_t duration=(int64_t)((double)AV_TIME_BASE/(double)av_q2d(in_stream->r_frame_rate));
+                avpkt.pts=(int64_t)((double)(idx*duration)/(double)(av_q2d(time_base)*AV_TIME_BASE));
                 avpkt.dts=avpkt.pts;
-                int c = av_q2d(time_base)*AV_TIME_BASE;
-                avpkt.duration=(int)((double)duration/(double)(c));
+                avpkt.duration=(int)((double)duration/(double)(av_q2d(time_base)*AV_TIME_BASE));
 
-                //Convert PTS/DTS  
-                avpkt.pts = av_rescale_q_rnd(avpkt.pts, m_instream->time_base, m_outstream->time_base, (AVRounding)(AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX));
-                avpkt.dts = av_rescale_q_rnd(avpkt.dts, m_instream->time_base, m_outstream->time_base, (AVRounding)(AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX));
-                avpkt.duration = av_rescale_q(avpkt.duration, m_instream->time_base, m_outstream->time_base);
-                avpkt.pos = -1;
+                // 转换 PTS/DTS
+                avpkt.pts = av_rescale_q_rnd(avpkt.pts, in_stream->time_base, out_stream->time_base, (AVRounding)(AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX));
+                avpkt.dts = av_rescale_q_rnd(avpkt.dts, in_stream->time_base, out_stream->time_base, (AVRounding)(AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX));
+                avpkt.duration = (int)av_rescale_q(avpkt.duration, in_stream->time_base, out_stream->time_base);
+
                 idx++;
-                //pkt.stream_index=stream_index;
+#if 0
                 sprintf(buffer, "111 %d pts: %d dts: %d duration: %d\n", idx, avpkt.pts, avpkt.dts, avpkt.duration);
                 fwrite(buffer, 1, strlen(buffer), fp);
-#else
-                int a = 0;
-                pts = avpkt.pts;
-                avpkt.pts += last_pts;
-                dts = avpkt.dts;
-                avpkt.dts += last_dts;
-
-                last_dts += dts;
-                last_pts += pts;
-
 #endif
             }
 
@@ -389,7 +367,8 @@ int H264BS2Video::writeFrame(void)
         avpkt.size = 0;
     }
 
-    fclose(fp);
+    //fclose(fp);
+
     return 0;
 }
 

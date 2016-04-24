@@ -17,7 +17,6 @@ extern "C" {
 #include "libswscale/swscale.h"
 }
 
-
 #ifdef WIN32
 // ¾²Ì¬¿â
 #pragma comment(lib, "libgcc.a") // divdi3(), etc.
