@@ -18,7 +18,6 @@ CPlayDlg::CPlayDlg(CWnd* pParent /*=NULL*/)
     m_fClosed = TRUE;
     m_fLoop = FALSE;
     m_fInit = FALSE;
-    m_nVideoType = 0;
     m_nWidth = 0;
     m_nHeight = 0;
     m_nTotalFrame = 0;
@@ -173,7 +172,7 @@ void CPlayDlg::Show(BYTE* pbData, int nSize, int nWidth, int nHeight)
     ShowPicture(m_pbBmpData, bmpHeader.bfSize);
 }
 
-int CPlayDlg::SetVideoInfo(CString strFileName, int nType, int nWidth, int nHeight, int nTotalFrame, float nFps)
+int CPlayDlg::SetVideoInfo(CString strFileName, int nWidth, int nHeight, int nTotalFrame, float nFps)
 {
     int ret = 0;
     m_strPathName = strFileName;
@@ -181,7 +180,6 @@ int CPlayDlg::SetVideoInfo(CString strFileName, int nType, int nWidth, int nHeig
     m_nHeight = nHeight;
     m_nTotalFrame = nTotalFrame;
     m_fFps = nFps;
-    m_nVideoType = nType;
 
     if (m_fFps <= 0 ) m_fFps = 25.0;
 
@@ -226,14 +224,7 @@ int CPlayDlg::SetVideoInfo(CString strFileName, int nType, int nWidth, int nHeig
 
 void CPlayDlg::ShowFirstFrame()
 {
-    if (m_fClosed)
-    {
-        SetBlack();
-    }
-    else
-    {
-        OnBnClickedBtNext();
-    }
+    OnBnClickedBtNext();
 }
 
 //picture控件背景色为黑色
@@ -281,15 +272,6 @@ void CPlayDlg::ShowingFrame()
             Show(pRgbBuffer, nSize, m_nWidth, m_nHeight);
         }
     }
-}
-
-void CPlayDlg::Pause()
-{
-    KillTimer(1);
-
-    m_fPlayed = TRUE;
-    m_bPlay.SetBitmap(LoadBitmap(AfxGetInstanceHandle(), MAKEINTRESOURCE(IDB_BM_PLAY)));
-
 }
 
 // 文件名带%d %05d等表示保存所有图片
@@ -399,27 +381,28 @@ int CPlayDlg::SaveJPGFile(const char* pFileName)
 int CPlayDlg::SaveVideoFile(const char* pFileName)
 {
     int ret = 0;
-    
-    ret = m_cSaveVideo.openBSFile(m_strPathName.GetBuffer());
+    H264BS2Video cSaveVideo;
+
+    ret = cSaveVideo.openBSFile(m_strPathName.GetBuffer());
     if (ret < 0)
     {
         MessageBox("Open bs stream file failed");
         return -1;
     }
-    ret = m_cSaveVideo.openVideoFile(pFileName, m_nVideoType, m_nWidth, m_nHeight);
+    ret = cSaveVideo.openVideoFile(pFileName, m_nWidth, m_nHeight);
     if (ret < 0)
     {
         MessageBox("Open video file failed");
         return -1;
     }
-    ret = m_cSaveVideo.writeFrame();
+    ret = cSaveVideo.writeFrame();
     if (ret < 0)
     {
         MessageBox("Write to video file failed");
         return -1;
     }
     
-    m_cSaveVideo.close();
+    cSaveVideo.close();
 
     return 0;
 }
@@ -432,13 +415,65 @@ void CPlayDlg::OnClose()
     CDialogEx::OnClose();
 }
 
+
+void CPlayDlg::Pause()
+{
+    KillTimer(1);
+
+    m_fPlayed = TRUE;
+    m_bPlay.SetBitmap(LoadBitmap(AfxGetInstanceHandle(), MAKEINTRESOURCE(IDB_BM_PLAY)));
+
+}
+
+void CPlayDlg::CloseVideo()
+{
+    if (m_fClosed == TRUE)
+    {
+        m_nFrameCount = 0;
+        m_cDecoder.closeVideoFile();
+    }  
+}
+
+// 使用关闭文件再打开的方式，是因为没有封装ffmpeg的复位操作
+void CPlayDlg::ReOpenVideo()
+{
+    CloseVideo();
+
+    if (m_fClosed == TRUE)
+    {
+        if (m_cDecoder.openVideoFile(m_strPathName.GetBuffer()) < 0)
+        {
+            MessageBox("Sorry, open video decoder failed.");
+            return;
+        }
+
+        m_fClosed = FALSE;
+    }
+}
+
+void CPlayDlg::OnBnClickedBtStop()
+{
+    Pause();
+
+    m_fClosed = TRUE;
+
+    CloseVideo();
+
+    CString strTittle;
+    strTittle.Format("%d/%d  %0.2ffps --  %s", m_nFrameCount, m_nTotalFrame, m_fFps, DLG_TITTLE);
+    this->SetWindowText(strTittle);
+
+    ShowFirstFrame();
+}
+
 void CPlayDlg::OnTimer(UINT_PTR nIDEvent)
 {
     ShowingFrame();
 
     if (m_nFrameCount >= m_nTotalFrame)
     {
-        OnBnClickedBtStop();
+        Pause();
+        m_fClosed = TRUE;
         if (m_fLoop) 
         {
             m_fPlayed = TRUE;
@@ -483,16 +518,7 @@ void CPlayDlg::OnBnClickedBtPlay()
         return;
     }
 
-    if (m_fClosed)
-    {
-        if (m_cDecoder.openVideoFile(m_strPathName.GetBuffer()) < 0)
-        {
-            MessageBox("Sorry, open video decoder failed.");
-            return;
-        }
-
-        m_fClosed = FALSE;
-    }
+    ReOpenVideo();
 
     if (m_fPlayed)
     {
@@ -508,31 +534,12 @@ void CPlayDlg::OnBnClickedBtPlay()
     m_fPlayed = !m_fPlayed;
 }
 
-void CPlayDlg::OnBnClickedBtStop()
-{
-    Pause();
-
-    m_nFrameCount = 0;
-
-    m_cDecoder.closeVideoFile();
-    m_fClosed = TRUE;
-}
-
 void CPlayDlg::OnBnClickedBtNext()
 {
     Pause();
 
     // loop
-    if (m_fClosed)
-    {
-        if (m_cDecoder.openVideoFile(m_strPathName.GetBuffer()) < 0)
-        {
-            MessageBox("Sorry, open video decoder failed.");
-            return;
-        }
-
-        m_fClosed = FALSE;
-    }
+    ReOpenVideo();
 
     OnTimer(-1);
     
@@ -546,8 +553,8 @@ void CPlayDlg::OnBnClickedBtSave()
                          "BMP File(*.bmp)|*.bmp|"
                          "JPG File(*.jpg)|*.jpg|"
                          "AVI File(*.avi)|*.avi|"
-                         "MKV File(*.mkv)|*.mkv|"
                          "MP4 File(*.mp4)|*.mp4|"
+                         "MOV File(*.mov)|*.mov|"
                          "||";
     char szFileName[128] = "foobar";
     char* pExt = _T("yuv");
@@ -600,7 +607,6 @@ void CPlayDlg::OnBnClickedBtSave()
     {
         ret = SaveJPGFile(strSaveFile.GetBuffer());
     }
-    //else if (!strExt.CompareNoCase(_T("avi")))
     else
     {
         ret = SaveVideoFile(strSaveFile.GetBuffer());
@@ -608,7 +614,7 @@ void CPlayDlg::OnBnClickedBtSave()
 
     if (ret == 0)
     {
-        MessageBox("Done.");
+        MessageBox("Job done.");
     }
     CString strDebugInfo;
     strDebugInfo.Format("debug:  ret: %d, file: %s", ret, strSaveFile);

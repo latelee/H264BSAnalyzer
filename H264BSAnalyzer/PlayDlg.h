@@ -24,7 +24,7 @@ public:
 
 public:
     // 从主窗口拿到视频文件信息
-    int SetVideoInfo(CString strFileName, int nType, int nWidth, int nHeight, int nTotalFrame, float nFps);
+    int SetVideoInfo(CString strFileName, int nWidth, int nHeight, int nTotalFrame, float nFps);
     void ShowFirstFrame();
     void SetBlack();
 
@@ -34,6 +34,8 @@ private:
 
     void ShowingFrame();
     void Pause();
+    void CloseVideo();
+    void ReOpenVideo();
 
     int SaveYUVFile(const char* pFileName);
     int SaveBMPFile(const char* pFileName);
@@ -46,7 +48,6 @@ private:
     BOOL m_fClosed;
     BOOL m_fLoop;
     BOOL m_fInit;
-    INT m_nVideoType;
     INT m_nWidth;
     INT m_nHeight;
     INT m_nTotalFrame;
@@ -57,7 +58,6 @@ private:
     CString m_strPathName;   // 视频文件
 
     CH264Decoder m_cDecoder;    // 解码器
-    H264BS2Video m_cSaveVideo;
 
     std::vector<std::vector<int> > m_vStartX;
 
