@@ -431,6 +431,7 @@ int H264BS2Video::close()
     {
         //printf("write trailer....\n");
         av_write_trailer(m_outfctx);
+#if 0
         for (unsigned int i = 0; i < m_outfctx->nb_streams; ++i)
         {
             av_freep(&m_outfctx->streams[i]->codec);
@@ -441,10 +442,12 @@ int H264BS2Video::close()
             //printf("close...\n");
             avio_close(m_outfctx->pb);
         }
-
-        //avformat_free_context(m_outfctx);
-        av_free(m_outfctx);
+        //av_free(m_outfctx);
+#endif
+        avformat_free_context(m_outfctx);
         m_outfctx = NULL;
+        avformat_free_context(m_infctx);
+        m_infctx = NULL;
     }
 
     return 0;
