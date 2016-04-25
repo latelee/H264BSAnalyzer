@@ -442,7 +442,8 @@ int H264BS2Video::close()
             avio_close(m_outfctx->pb);
         }
 
-        avformat_free_context(m_outfctx);
+        //avformat_free_context(m_outfctx);
+        av_free(m_outfctx);
         m_outfctx = NULL;
     }
 
