@@ -527,9 +527,9 @@ void CH264BSAnalyzerDlg::OnBnClickedH264InputurlOpen()
     SetEvent(m_hFileLock);
 }
 
-UINT CH264BSAnalyzerDlg::ThreadFuncReadFile(LPVOID* lpvoid)
+UINT CH264BSAnalyzerDlg::ThreadFuncReadFile(LPVOID lpvoid)
 {
-    CH264BSAnalyzerDlg* dlg = (CH264BSAnalyzerDlg*)lpvoid;
+    CH264BSAnalyzerDlg* dlg = static_cast<CH264BSAnalyzerDlg*>(lpvoid);
     dlg->ReadFile();
     return 0;
 }
@@ -587,7 +587,6 @@ void CH264BSAnalyzerDlg::ReadFile(void)
                 break;
             case PROFILE_HIGHTHROUGHPUTREXT:
                 strProfileInfo.Format(_T("High Throughput RExt"));
-                break;
                 break;
             default:
                 strProfileInfo.Format(_T("Unkown"));
@@ -740,12 +739,13 @@ void CH264BSAnalyzerDlg::ReadFile(void)
     }
 }
 
-UINT CH264BSAnalyzerDlg::ThreadFuncPaseNal(LPVOID* lpvoid)
+UINT CH264BSAnalyzerDlg::ThreadFuncPaseNal(LPVOID lpvoid)
 {
-    CH264BSAnalyzerDlg* dlg = (CH264BSAnalyzerDlg*)lpvoid;
+    CH264BSAnalyzerDlg* dlg = static_cast<CH264BSAnalyzerDlg*>(lpvoid);
     //dlg->PaseNal();
     return 0;
 }
+
 /*
 void CH264BSAnalyzerDlg::PaseNal(void)
 {

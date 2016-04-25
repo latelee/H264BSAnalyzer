@@ -69,8 +69,8 @@ private:
     CRect m_rectMainWnd;
     videoinfo_t m_cVideoInfo;
 
-    static UINT ThreadFuncReadFile(LPVOID* lpvoid);
-    static UINT ThreadFuncPaseNal(LPVOID* lpvoid);
+    static UINT ThreadFuncReadFile(LPVOID lpvoid);
+    static UINT ThreadFuncPaseNal(LPVOID lpvoid);
 
     void ReadFile(void);
     void PaseNal(void);

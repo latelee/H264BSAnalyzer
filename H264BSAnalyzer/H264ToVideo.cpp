@@ -29,15 +29,78 @@ H264BS2Video::~H264BS2Video()
         free(m_avbuffer.ptr);
         m_avbuffer.ptr = NULL;
     }
+    
+    close();
 }
 
-int H264BS2Video::openBSFile(const char* rawfile)
+int H264BS2Video::openVideoFile(const char* videofile, int width, int height, int fps, int gop, int bitrate)
 {
     int ret = 0;
-    
-    av_register_all();
-    
-    // 从文件判断视频格式
+
+    av_register_all(); // 注册协议，等
+
+    avformat_alloc_output_context2(&m_outfctx, NULL, NULL, videofile);
+
+    m_outstream = avformat_new_stream(m_outfctx, NULL);
+    if (!m_outstream)
+    {
+        debug("avformat_new_stream failed.\n");
+        return -1;
+    }
+
+    // 注：使用以下参数，无法生成正常的mp4
+    if (m_outfctx->oformat->flags & AVFMT_GLOBALHEADER)
+    m_outstream->codec->flags |= CODEC_FLAG_GLOBAL_HEADER;
+
+    m_outstream->codec->codec_id = AV_CODEC_ID_H264;
+    m_outstream->codec->codec_type = AVMEDIA_TYPE_VIDEO;
+    m_outstream->codec->bit_rate = bitrate;
+    m_outstream->codec->width = width;
+    m_outstream->codec->height = height;
+
+    m_outstream->time_base.num = 1;
+    m_outstream->time_base.den = fps;
+    //m_outstream->codec->time_base.num = 1;
+    //m_outstream->codec->time_base.den = fps;
+    m_outstream->codec->gop_size = gop;
+    m_outstream->codec->pix_fmt = AV_PIX_FMT_YUV420P;
+    m_outstream->codec->max_b_frames = 0;
+    m_outstream->r_frame_rate.den = 1;
+    m_outstream->r_frame_rate.num = fps;
+
+    if (!(m_outfctx->flags & AVFMT_NOFILE))
+    {
+        if (avio_open(&m_outfctx->pb,videofile,AVIO_FLAG_WRITE)<0)
+        {
+            debug("avio_open failed.\n");
+            return -1;
+        }
+    }
+    if (!m_outfctx->nb_streams)
+    {
+        debug("nb_streams failed.\n");
+        return -1;
+    }
+
+    ret = avformat_write_header(m_outfctx, NULL);
+    if (ret < 0)
+    {
+        debug("avformat_write_header failed %d\n", ret);
+        return -1;
+    }
+
+    m_isfile = 1;
+
+    return 0;
+}
+
+int H264BS2Video::openVideoFile(const char* rawfile, const char* videofile, int width, int height, int fps, int gop, int bitrate)
+{
+    int ret = 0;
+
+    av_register_all(); // 注册协议，等
+
+	// 从文件判断视频格式
     ret = avformat_open_input(&m_infctx, rawfile, NULL, NULL);
     if (ret != 0)
     {
@@ -67,20 +130,10 @@ int H264BS2Video::openBSFile(const char* rawfile)
         debug("no video stream.\n");
         return -1;
     }
-    
-    debug("video index: %d\n", m_videoidx);
-    return 0;
-}
-
-int H264BS2Video::openVideoFile(const char* videofile, int width, int height, int fps, int gop, int bitrate)
-{
-    int ret = 0;
-
-    av_register_all(); // 注册协议，等
 
     avformat_alloc_output_context2(&m_outfctx, NULL, NULL, videofile);
 
-    m_outstream = avformat_new_stream(m_outfctx, m_instream->codec->codec);
+    m_outstream = avformat_new_stream(m_outfctx, NULL);
     if (!m_outstream)
     {
         debug("avformat_new_stream failed.\n");
@@ -102,7 +155,7 @@ int H264BS2Video::openVideoFile(const char* videofile, int width, int height, in
     m_outstream->r_frame_rate.num = fps;
 #endif
     if (m_outfctx->oformat->flags & AVFMT_GLOBALHEADER)
-    m_outstream->codec->flags |= CODEC_FLAG_GLOBAL_HEADER;
+        m_outstream->codec->flags |= CODEC_FLAG_GLOBAL_HEADER;
 
 #if 0
     m_outstream->codec->codec_id = m_instream->codec->codec_id;
@@ -354,11 +407,14 @@ int H264BS2Video::writeFrame(void)
 #endif
             }
 
-            int ret = av_interleaved_write_frame(m_outfctx, &avpkt);
+            if (av_interleaved_write_frame(m_outfctx, &avpkt) < 0)
+            {
+                debug("write frame failed.\n");
+                break;
+            }
         }
 
         av_packet_unref(&avpkt);
-        //av_init_packet(&avpkt);
 
         avpkt.data = NULL;
         avpkt.size = 0;
@@ -386,7 +442,7 @@ int H264BS2Video::close()
             avio_close(m_outfctx->pb);
         }
 
-        av_free(m_outfctx);
+        avformat_free_context(m_outfctx);
         m_outfctx = NULL;
     }
 

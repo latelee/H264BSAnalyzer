@@ -67,15 +67,25 @@ public:
     ~H264BS2Video();
 
 public:
+
     /**
      * 打开H.264视频文件并初始化
      * 
      * @param rawfile 祼视频文件路径全称(包括目录和视频文件名称)
+     * @param videofile 视频文件路径全称(包括目录和视频文件名称)
+     * @param width 视频宽
+     * @param height 视频高 
+     * @param fps 帧率
+     * @param gop GOP大小，如果视频没有B帧，则GOP大小为I帧间隔
+     * @param bitrate 视频码率，默认为2048kbps
      *
      * @return =< 0 成功：= 0， 失败 = -1
+     *
+     * @note 本函数适应于将h264/h265裸码流文件转换成指定封装的视频文件，已知支持的有：avi、mp4、mov。
+     *       宽、高、码率等参数使用原始裸文件参数，本函数设置的不生效。
      */
-    int openBSFile(const char* rawfile);
-
+    int openVideoFile(const char* rawfile, const char* videofile, int width=1920, int height=1080, int fps = 25, int gop = 10, int bitrate = 2097152);
+    
     /**
      * 打开H.264视频文件并初始化
      *
@@ -88,9 +98,10 @@ public:
      *
      * @return =< 0 成功：= 0， 失败 = -1
      *
-     * @note 当前只测试封装成avi格式的视频文件
+     * @note 本函数适应将内存的一帧帧数据保存为指定封装的视频文件，如从网络而来的帧数据。当前只测试封装成avi格式的视频文件
      */
     int openVideoFile(const char* videofile, int width=1920, int height=1080, int fps = 25, int gop = 10, int bitrate = 2097152);
+
     /**
      * 申请内部缓冲区
      *
@@ -124,7 +135,7 @@ public:
     int writeFrame(char* bitstream, int size, int keyframe);
    
     /**
-     * 保存H.264视频
+     * 保存所有H.264视频
      *
      * @return =< 0 成功：= 0， 失败 = -1
      */

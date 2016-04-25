@@ -383,13 +383,7 @@ int CPlayDlg::SaveVideoFile(const char* pFileName)
     int ret = 0;
     H264BS2Video cSaveVideo;
 
-    ret = cSaveVideo.openBSFile(m_strPathName.GetBuffer());
-    if (ret < 0)
-    {
-        MessageBox("Open bs stream file failed");
-        return -1;
-    }
-    ret = cSaveVideo.openVideoFile(pFileName, m_nWidth, m_nHeight);
+    ret = cSaveVideo.openVideoFile(m_strPathName.GetBuffer(), pFileName, m_nWidth, m_nHeight);
     if (ret < 0)
     {
         MessageBox("Open video file failed");
