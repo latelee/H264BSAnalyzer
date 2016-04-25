@@ -54,6 +54,8 @@ private:
     INT m_nFrameCount;
     float m_fFps;
     BYTE* m_pbBmpData;
+    BYTE* m_pbRgbBuffer;
+    int m_iRgbSize;
     INT m_iBmpSize;
     CString m_strPathName;   // ÊÓÆµÎÄ¼þ
 

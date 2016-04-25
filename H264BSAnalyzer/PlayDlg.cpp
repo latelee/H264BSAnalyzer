@@ -24,6 +24,9 @@ CPlayDlg::CPlayDlg(CWnd* pParent /*=NULL*/)
     m_nFrameCount = 0;
     m_fFps = 0.0;
     m_pbBmpData = NULL;
+    m_pbRgbBuffer = NULL;
+    m_iBmpSize = 0;
+    m_iRgbSize = 0;
     m_strPathName.Empty();
     m_pParentWnd = NULL;
 }
@@ -99,8 +102,8 @@ BOOL CPlayDlg::OnInitDialog()
 void CPlayDlg::OnPaint()
 {
     CPaintDC dc(this); // device context for painting
-    // TODO: 在此处添加消息处理程序代码
-    // 不为绘图消息调用 CDialogEx::OnPaint()
+
+    Show(m_pbRgbBuffer, m_iRgbSize, m_nWidth, m_nHeight);
 }
 
 
@@ -240,36 +243,38 @@ void CPlayDlg::SetBlack()
 
 void CPlayDlg::ShowingFrame()
 {
-    BYTE* pRgbBuffer = NULL;
-    int nSize = 0;
     int ret = 0;
 
     CString strTittle;
-    ret = m_cDecoder.getFrame(NULL, &pRgbBuffer, &nSize);
+    ret = m_cDecoder.getFrame(NULL, &m_pbRgbBuffer, &m_iRgbSize);
     m_nFrameCount++;
     strTittle.Format("%d/%d  %0.2ffps --  %s", m_nFrameCount, m_nTotalFrame, m_fFps, DLG_TITTLE);
     this->SetWindowText(strTittle);
 
+#if 0
     CString strDebugInfo;
-    strDebugInfo.Format("debug: %d ret: %d size: %d", m_nFrameCount, ret,nSize);
+    strDebugInfo.Format("debug: %d ret: %d size: %d", m_nFrameCount, ret,m_iRgbSize);
     GetDlgItem(IDC_S_DEBUG)->SetWindowText(strDebugInfo);
+#endif
 
     if (ret < 0) return;
     else if ( ret > 0)
     {
-        Show(pRgbBuffer, nSize, m_nWidth, m_nHeight);
+        Show(m_pbRgbBuffer, m_iRgbSize, m_nWidth, m_nHeight);
     }
     else
     {
-        ret = m_cDecoder.getSkippedFrame(NULL, &pRgbBuffer, &nSize);
-        nSize = nSize ? nSize: m_nWidth*m_nHeight*3; // 解码缓存的帧时，获取的size为0，所以这样判断
+        ret = m_cDecoder.getSkippedFrame(NULL, &m_pbRgbBuffer, &m_iRgbSize);
+        m_iRgbSize = m_iRgbSize ? m_iRgbSize: m_nWidth*m_nHeight*3; // 解码缓存的帧时，获取的size为0，所以这样判断
 
+#if 0
         CString strDebugInfo;
-        strDebugInfo.Format("skip %d ret: %d size: %d", m_nFrameCount, ret, nSize);
+        strDebugInfo.Format("skip %d ret: %d size: %d", m_nFrameCount, ret, m_iRgbSize);
         GetDlgItem(IDC_S_DEBUG)->SetWindowText(strDebugInfo);
+#endif
         if ( ret > 0)
         {
-            Show(pRgbBuffer, nSize, m_nWidth, m_nHeight);
+            Show(m_pbRgbBuffer, m_iRgbSize, m_nWidth, m_nHeight);
         }
     }
 }
