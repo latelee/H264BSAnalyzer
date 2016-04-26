@@ -1022,8 +1022,9 @@ void CH264BSAnalyzerDlg::OnHowtoUsage()
         "1)使用file菜单打开；2)将文件拖到本界面\r\n"
         "2、程序自动解析，较大文件耗时较大\r\n"
         "3、双击某一项NAL，即可得到详细信息\r\n"
+        "4、打开文件后，使用Play可进行播放、暂停、停止、保存图片/视频等操作\r\n"
         "限制：本程序仅能分析H264/H265码流文件，其它文件无法分析\r\n"
-        "本程序分析大型文件会有问题，能力有限，勿怪\r\n";
+        "本程序分析大型文件较慢，也可能会有问题\r\n";
     MessageBox(help);
 }
 
@@ -1212,7 +1213,7 @@ void CH264BSAnalyzerDlg::OnPlayDlg()
     }
     // 把主窗口打开的文件信息传到子窗口
     int ret = m_pPlayDlg->SetVideoInfo(m_strFileUrl, m_cVideoInfo.width, m_cVideoInfo.height, m_nSliceIndex, m_cVideoInfo.max_framerate);
-    //if (ret < 0) return;
+    if (ret < 0) return;
 
     m_pPlayDlg->ShowWindow(SW_SHOW);
 

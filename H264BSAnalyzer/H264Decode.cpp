@@ -316,7 +316,7 @@ int CH264Decoder::getFrame(unsigned char** yuvBuffer, unsigned char** rgbBuffer,
             }
         } // end of video stream
 
-        av_unref_packet(&avpkt);
+        av_packet_unref(&avpkt);
     } // end of read frame
 
     return 0;
