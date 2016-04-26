@@ -257,9 +257,8 @@ int CH264Decoder::getFrame(unsigned char** yuvBuffer, unsigned char** rgbBuffer,
 {
     int got_picture = 0;    // 找到帧标志
     int len = 0;
-    AVPacket avpkt;
+    AVPacket avpkt = {0};
 
-    memset(&avpkt, '\0', sizeof(AVPacket));
     av_init_packet(&avpkt);
     //int frame = 0;
     // av_read_fram返回下一帧，发生错误或文件结束返回<0
@@ -317,7 +316,7 @@ int CH264Decoder::getFrame(unsigned char** yuvBuffer, unsigned char** rgbBuffer,
             }
         } // end of video stream
 
-        av_free_packet(&avpkt);
+        av_unref_packet(&avpkt);
     } // end of read frame
 
     return 0;
@@ -327,9 +326,8 @@ int CH264Decoder::getSkippedFrame(unsigned char** yuvBuffer, unsigned char** rgb
 {
     int got_picture = 0;    // 找到帧标志
     int len = 0;
-    AVPacket avpkt;
+    AVPacket avpkt = {0};;
 
-    memset(&avpkt, '\0', sizeof(AVPacket));
     av_init_packet(&avpkt);
 
     // 是否还有缓存的帧

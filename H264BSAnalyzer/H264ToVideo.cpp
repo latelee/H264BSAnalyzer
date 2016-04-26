@@ -446,7 +446,7 @@ int H264BS2Video::close()
 #endif
         avformat_free_context(m_outfctx);
         m_outfctx = NULL;
-        avformat_free_context(m_infctx);
+        avformat_close_input(&m_infctx);
         m_infctx = NULL;
     }
 
