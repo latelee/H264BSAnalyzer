@@ -21,7 +21,7 @@ CPlayDlg::CPlayDlg(CWnd* pParent /*=NULL*/)
     m_nWidth = 0;
     m_nHeight = 0;
     m_nTotalFrame = 0;
-    m_nFrameCount = 1;
+    m_nFrameCount = 0;
     m_fFps = 0.0;
     m_pbBmpData = NULL;
     m_pbRgbBuffer = NULL;
@@ -192,8 +192,6 @@ int CPlayDlg::SetVideoInfo(CString strFileName, int nWidth, int nHeight, int nTo
         m_pbBmpData = NULL;
     }
 
-    m_nFrameCount = 1;
-
     this->SetWindowText(DLG_TITTLE);
 
     m_fPlayed = TRUE;
@@ -220,6 +218,7 @@ int CPlayDlg::SetVideoInfo(CString strFileName, int nWidth, int nHeight, int nTo
             return -1;
         }
         m_fClosed = FALSE;
+        m_nFrameCount = 0;
     }
 
     return 0;
@@ -247,10 +246,10 @@ void CPlayDlg::ShowingFrame()
 
     CString strTittle;
     ret = m_cDecoder.getFrame(NULL, &m_pbRgbBuffer, &m_iRgbSize);
-
+    m_nFrameCount++;
     strTittle.Format("%d/%d  %0.2ffps --  %s", m_nFrameCount, m_nTotalFrame, m_fFps, DLG_TITTLE);
     this->SetWindowText(strTittle);
-    m_nFrameCount++;
+
 #if 0
     CString strDebugInfo;
     strDebugInfo.Format("debug: %d ret: %d size: %d", m_nFrameCount, ret,m_iRgbSize);
@@ -428,7 +427,7 @@ void CPlayDlg::CloseVideo()
 {
     if (m_fClosed == TRUE)
     {
-        m_nFrameCount = 1;
+        m_nFrameCount = 0;
         m_cDecoder.closeVideoFile();
     }  
 }
@@ -462,14 +461,14 @@ void CPlayDlg::OnBnClickedBtStop()
     strTittle.Format("%d/%d  %0.2ffps --  %s", m_nFrameCount, m_nTotalFrame, m_fFps, DLG_TITTLE);
     this->SetWindowText(strTittle);
 
-    ShowFirstFrame();
+    SetBlack();
 }
 
 void CPlayDlg::OnTimer(UINT_PTR nIDEvent)
 {
     ShowingFrame();
 
-    if (m_nFrameCount > m_nTotalFrame)
+    if (m_nFrameCount >= m_nTotalFrame)
     {
         Pause();
         m_fClosed = TRUE;
@@ -560,6 +559,12 @@ void CPlayDlg::OnBnClickedBtSave()
 
     CFile cFile;
     CString strFile;
+
+    if (m_nFrameCount < 1)
+    {
+        MessageBox("Sorry, can't save frame.");
+        return;
+    }
 
     Pause();
 
