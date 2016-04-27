@@ -82,4 +82,6 @@ public:
     afx_msg void OnBnClickedBtSave();
     afx_msg void OnBnClickedBtStop();
     afx_msg void OnBnClickedCkLoop();
+w
+    afx_msg BOOL PreTranslateMessage(MSG* pMsg);
 };

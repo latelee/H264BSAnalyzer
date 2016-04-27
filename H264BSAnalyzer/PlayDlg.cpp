@@ -634,3 +634,20 @@ void CPlayDlg::OnBnClickedCkLoop()
     CButton* pBtn = (CButton*)GetDlgItem(IDC_CK_LOOP);
     m_fLoop = pBtn->GetCheck();
 }
+
+BOOL CPlayDlg::PreTranslateMessage(MSG* pMsg) 
+{
+    if(pMsg->message == WM_KEYDOWN)
+    {
+        switch(pMsg->wParam)
+        {
+        // press esc..
+        case VK_ESCAPE:
+            OnBnClickedBtStop();
+            break;
+        default:
+            break;
+        }
+    }
+    return CDialog::PreTranslateMessage(pMsg);
+}
