@@ -37,9 +37,11 @@ private:
     void CloseVideo();
     void ReOpenVideo();
 
+    int SaveJPGFile(const char* pFileName);
     int SaveYUVFile(const char* pFileName);
     int SaveBMPFile(const char* pFileName);
-    int SaveJPGFile(const char* pFileName);
+    int SaveRGBFile(const char* pFileName);
+    int SaveBGRFile(const char* pFileName);
     int SaveVideoFile(const char* pFileName);
     
 private:

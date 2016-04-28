@@ -189,7 +189,7 @@ int H264BS2Video::openVideoFile(const char* rawfile, const char* videofile, int 
 
     if (!(m_outfctx->flags & AVFMT_NOFILE))
     {
-        if (avio_open(&m_outfctx->pb,videofile,AVIO_FLAG_WRITE)<0)
+        if (avio_open(&m_outfctx->pb, videofile, AVIO_FLAG_WRITE)<0)
         {
             debug("avio_open failed.\n");
             return -1;
@@ -431,19 +431,11 @@ int H264BS2Video::close()
     {
         //printf("write trailer....\n");
         av_write_trailer(m_outfctx);
-#if 0
-        for (unsigned int i = 0; i < m_outfctx->nb_streams; ++i)
-        {
-            av_freep(&m_outfctx->streams[i]->codec);
-            av_freep(&m_outfctx->streams[i]);
-        }
         if (m_isfile)
         {
             //printf("close...\n");
-            avio_close(m_outfctx->pb);
+            avio_close(m_outfctx->pb); // ╧ь╠унд╪Ч
         }
-        //av_free(m_outfctx);
-#endif
         avformat_free_context(m_outfctx);
         m_outfctx = NULL;
         avformat_close_input(&m_infctx);

@@ -5,6 +5,7 @@
 #include "H264BSAnalyzer.h"
 #include "PlayDlg.h"
 #include "afxdialogex.h"
+#include "bmp_utils.h"
 
 // CPlayDlg dialog
 
@@ -298,6 +299,34 @@ static bool IsSingleFile(const char* filename)
     return false;
 }
 
+int CPlayDlg::SaveJPGFile(const char* pFileName)
+{
+    int ret = 0;
+    if (IsSingleFile(pFileName))
+    {
+        m_cDecoder.writeJPGFile2(pFileName);
+    }
+    else
+    {
+        CH264Decoder foo;
+        foo.openVideoFile(m_strPathName);
+        char szFileName[256] = {0};
+        int cnt = 1;
+        while (foo.getFrame() > 0)
+        {
+            sprintf(szFileName, pFileName, cnt++);
+            foo.writeJPGFile2(szFileName);
+        }
+        while (foo.getSkippedFrame() > 0)
+        {
+            sprintf(szFileName, pFileName, cnt++);
+            foo.writeJPGFile2(szFileName);
+        }
+    }
+
+    return ret;
+}
+
 int CPlayDlg::SaveYUVFile(const char* pFileName)
 {
     int ret = 0;
@@ -354,12 +383,22 @@ int CPlayDlg::SaveBMPFile(const char* pFileName)
     return ret;
 }
 
-int CPlayDlg::SaveJPGFile(const char* pFileName)
+int CPlayDlg::SaveRGBFile(const char* pFileName)
 {
     int ret = 0;
     if (IsSingleFile(pFileName))
     {
-        m_cDecoder.writeJPGFile2(pFileName);
+        FILE* fp = fopen(pFileName, "wb");
+        if (fp == NULL)
+        {
+            MessageBox("open file failed.\n");
+            return -1;
+        }
+        BYTE* pBuffer = new BYTE[m_iRgbSize];
+        memcpy(pBuffer, m_pbRgbBuffer, m_iRgbSize);
+        swap_rgb(pBuffer, m_iRgbSize);
+        fwrite(pBuffer, m_iRgbSize, 1, fp);
+        fclose(fp);
     }
     else
     {
@@ -367,15 +406,62 @@ int CPlayDlg::SaveJPGFile(const char* pFileName)
         foo.openVideoFile(m_strPathName);
         char szFileName[256] = {0};
         int cnt = 1;
-        while (foo.getFrame() > 0)
+        BYTE* pBuffer = NULL;
+        while (foo.getFrame(NULL, &pBuffer) > 0)
         {
             sprintf(szFileName, pFileName, cnt++);
-            foo.writeJPGFile2(szFileName);
+            swap_rgb(pBuffer, m_iRgbSize);
+            FILE* fp = fopen(szFileName, "wb");
+            fwrite(pBuffer, m_iRgbSize, 1, fp);
+            fclose(fp);;
         }
-        while (foo.getSkippedFrame() > 0)
+        while (foo.getSkippedFrame(NULL, &pBuffer) > 0)
         {
             sprintf(szFileName, pFileName, cnt++);
-            foo.writeJPGFile2(szFileName);
+            swap_rgb(pBuffer, m_iRgbSize);
+            FILE* fp = fopen(szFileName, "wb");
+            fwrite(pBuffer, m_iRgbSize, 1, fp);
+            fclose(fp);;
+        }
+    }
+
+    return ret;
+}
+
+int CPlayDlg::SaveBGRFile(const char* pFileName)
+{
+    int ret = 0;
+    if (IsSingleFile(pFileName))
+    {
+        FILE* fp = fopen(pFileName, "wb");
+        if (fp == NULL)
+        {
+            MessageBox("open file failed.\n");
+            return -1;
+        }
+        fwrite(m_pbRgbBuffer, m_iRgbSize, 1, fp);
+        fclose(fp);
+    }
+    else
+    {
+        CH264Decoder foo;
+        foo.openVideoFile(m_strPathName);
+        char szFileName[256] = {0};
+        int cnt = 1;
+        BYTE* pBuffer = NULL;
+        while (foo.getFrame(NULL, &pBuffer) > 0)
+        {
+            sprintf(szFileName, pFileName, cnt++);
+            FILE* fp = fopen(szFileName, "wb");
+            fwrite(pBuffer, m_iRgbSize, 1, fp);
+            fclose(fp);;
+        }
+        while (foo.getSkippedFrame(NULL, &pBuffer) > 0)
+        {
+            sprintf(szFileName, pFileName, cnt++);
+            FILE* fp = fopen(szFileName, "wb");
+            fwrite(pBuffer, m_iRgbSize, 1, fp);
+            fclose(fp);;
         }
     }
 
@@ -547,15 +633,17 @@ void CPlayDlg::OnBnClickedBtNext()
 
 void CPlayDlg::OnBnClickedBtSave()
 {
-    char szFilter[] = "YUV File(*.yuv)|*.yuv|"
-                         "BMP File(*.bmp)|*.bmp|"
-                         "JPG File(*.jpg)|*.jpg|"
-                         "AVI File(*.avi)|*.avi|"
-                         "MP4 File(*.mp4)|*.mp4|"
-                         "MOV File(*.mov)|*.mov|"
-                         "||";
+    char szFilter[] = "JPG File(*.jpg)|*.jpg|"
+                       "YUV File(*.yuv)|*.yuv|"
+                       "BMP File(*.bmp)|*.bmp|"
+                       "RGB File(*.rgb)|*.rgb|"
+                       "RGB File(*.bgr)|*.bgr|"
+                       "AVI File(*.avi)|*.avi|"
+                       "MP4 File(*.mp4)|*.mp4|"
+                       "MOV File(*.mov)|*.mov|"
+                       "||";
     char szFileName[128] = "foobar";
-    char* pExt = _T("yuv");
+    char* pExt = _T("jpg");
 
     CFile cFile;
     CString strFile;
@@ -599,7 +687,11 @@ void CPlayDlg::OnBnClickedBtSave()
     CString strExt = fileDlg.GetFileExt();
 
     int ret = 0;
-    if (!strExt.CompareNoCase(_T("yuv")))
+    if (!strExt.CompareNoCase(_T("jpg")))
+    {
+        ret = SaveJPGFile(strSaveFile.GetBuffer());
+    }
+    else if (!strExt.CompareNoCase(_T("yuv")))
     {
         ret = SaveYUVFile(strSaveFile.GetBuffer());
     }
@@ -607,9 +699,13 @@ void CPlayDlg::OnBnClickedBtSave()
     {
         ret = SaveBMPFile(strSaveFile.GetBuffer());
     }
-    else if (!strExt.CompareNoCase(_T("jpg")))
+    else if (!strExt.CompareNoCase(_T("rgb")))
     {
-        ret = SaveJPGFile(strSaveFile.GetBuffer());
+        ret = SaveRGBFile(strSaveFile.GetBuffer());
+    }
+    else if (!strExt.CompareNoCase(_T("bgr")))
+    {
+        ret = SaveBGRFile(strSaveFile.GetBuffer());
     }
     else
     {

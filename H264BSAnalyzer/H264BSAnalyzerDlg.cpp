@@ -60,6 +60,7 @@ CH264BSAnalyzerDlg::CH264BSAnalyzerDlg(CWnd* pParent /*=NULL*/)
     m_hNALLock = INVALID_HANDLE_VALUE;
     m_strFileUrl.Empty();
     m_pPlayDlg = NULL;
+    m_fCanPlay = FALSE;
     memset(&m_cVideoInfo, '\0', sizeof(videoinfo_t));
 }
 
@@ -510,10 +511,6 @@ void CH264BSAnalyzerDlg::OnBnClickedH264InputurlOpen()
     SystemClear();
     UpdateData();
 
-    // test
-    //m_strFileUrl.Format("%s", "../foreman_cif.h264");
-    
-
     if(m_strFileUrl.IsEmpty()==TRUE)
     {
         AfxMessageBox(_T("文件路径为空，请打开文件！！"));
@@ -524,6 +521,7 @@ void CH264BSAnalyzerDlg::OnBnClickedH264InputurlOpen()
     this->SetWindowText(strTemp);
     GetDlgItem(IDC_EDIT_SIMINFO)->SetWindowText("");
 
+    m_fCanPlay = FALSE;
     SetEvent(m_hFileLock);
 }
 
@@ -736,6 +734,7 @@ void CH264BSAnalyzerDlg::ReadFile(void)
             m_cVideoInfo.max_framerate, m_nSliceIndex
             );
         GetDlgItem(IDC_EDIT_SIMINFO)->SetWindowText(strSimpleInfo);
+        m_fCanPlay = TRUE;
     }
 }
 
@@ -1205,6 +1204,11 @@ void CH264BSAnalyzerDlg::OnSize(UINT nType, int cx, int cy)
 
 void CH264BSAnalyzerDlg::OnPlayDlg()
 {
+    if (!m_fCanPlay)
+    {
+        MessageBox("Parsing NALU, wait a momnent...");
+        return;
+    }
     // 非模态对话框
     if (m_pPlayDlg == NULL)
     {

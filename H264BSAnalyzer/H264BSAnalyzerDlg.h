@@ -68,6 +68,7 @@ private:
     HANDLE m_hNALLock;
     CRect m_rectMainWnd;
     videoinfo_t m_cVideoInfo;
+    BOOL m_fCanPlay;
 
     static UINT ThreadFuncReadFile(LPVOID lpvoid);
     static UINT ThreadFuncPaseNal(LPVOID lpvoid);
