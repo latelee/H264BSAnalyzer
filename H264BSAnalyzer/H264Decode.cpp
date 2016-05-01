@@ -148,6 +148,7 @@ int CH264Decoder::openVideoFile(const char* avifile)
         return -1;
     }
 
+#if 0
     // for yuv
     m_frameYUV = av_frame_alloc();
     if (!m_frameYUV)
@@ -177,6 +178,7 @@ int CH264Decoder::openVideoFile(const char* avifile)
         sws_freeContext(m_imgctx);
         return -1;
     }
+#endif
     //debug("---%s %d fmt: %d %d\n", __func__, __LINE__, m_avctx->pix_fmt, AV_PIX_FMT_BGR24);
     return 0;
 }

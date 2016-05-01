@@ -198,6 +198,7 @@ int CPlayDlg::SetVideoInfo(CString strFileName, int nWidth, int nHeight, int nTo
     m_fPlayed = TRUE;
     m_bPlay.SetBitmap(LoadBitmap(AfxGetInstanceHandle(), MAKEINTRESOURCE(IDB_BM_PLAY)));
 
+#if 01
     m_iBmpSize = m_nWidth * m_nHeight * 3 + 54;
     m_pbBmpData = new BYTE[m_iBmpSize];
     if (m_pbBmpData == NULL)
@@ -205,6 +206,7 @@ int CPlayDlg::SetVideoInfo(CString strFileName, int nWidth, int nHeight, int nTo
         MessageBox("Malloc buffer for RGB data failed.");
         return -1;
     }
+#endif
     if (m_strPathName.IsEmpty())
     {
         MessageBox("Sorry, you open no file...");
@@ -316,11 +318,13 @@ int CPlayDlg::SaveJPGFile(const char* pFileName)
         {
             sprintf(szFileName, pFileName, cnt++);
             foo.writeJPGFile2(szFileName);
+            Sleep(2);
         }
         while (foo.getSkippedFrame() > 0)
         {
             sprintf(szFileName, pFileName, cnt++);
             foo.writeJPGFile2(szFileName);
+            Sleep(2);
         }
     }
 
@@ -344,11 +348,13 @@ int CPlayDlg::SaveYUVFile(const char* pFileName)
         {
             sprintf(szFileName, pFileName, cnt++);
             foo.writeYUVFile(szFileName);
+            Sleep(2);
         }
         while (foo.getSkippedFrame() > 0)
         {
             sprintf(szFileName, pFileName, cnt++);
             foo.writeYUVFile(szFileName);
+            Sleep(2);
         }
     }
 
@@ -372,11 +378,13 @@ int CPlayDlg::SaveBMPFile(const char* pFileName)
         {
             sprintf(szFileName, pFileName, cnt++);
             foo.writeBMPFile2(szFileName);
+            Sleep(2);
         }
         while (foo.getSkippedFrame() > 0)
         {
             sprintf(szFileName, pFileName, cnt++);
             foo.writeBMPFile2(szFileName);
+            Sleep(2);
         }
     }
 
@@ -413,7 +421,8 @@ int CPlayDlg::SaveRGBFile(const char* pFileName)
             swap_rgb(pBuffer, m_iRgbSize);
             FILE* fp = fopen(szFileName, "wb");
             fwrite(pBuffer, m_iRgbSize, 1, fp);
-            fclose(fp);;
+            fclose(fp);
+            Sleep(2);
         }
         while (foo.getSkippedFrame(NULL, &pBuffer) > 0)
         {
@@ -421,7 +430,8 @@ int CPlayDlg::SaveRGBFile(const char* pFileName)
             swap_rgb(pBuffer, m_iRgbSize);
             FILE* fp = fopen(szFileName, "wb");
             fwrite(pBuffer, m_iRgbSize, 1, fp);
-            fclose(fp);;
+            fclose(fp);
+            Sleep(2);
         }
     }
 
@@ -454,14 +464,16 @@ int CPlayDlg::SaveBGRFile(const char* pFileName)
             sprintf(szFileName, pFileName, cnt++);
             FILE* fp = fopen(szFileName, "wb");
             fwrite(pBuffer, m_iRgbSize, 1, fp);
-            fclose(fp);;
+            fclose(fp);
+            Sleep(2);
         }
         while (foo.getSkippedFrame(NULL, &pBuffer) > 0)
         {
             sprintf(szFileName, pFileName, cnt++);
             FILE* fp = fopen(szFileName, "wb");
             fwrite(pBuffer, m_iRgbSize, 1, fp);
-            fclose(fp);;
+            fclose(fp);
+            Sleep(2);
         }
     }
 
@@ -557,7 +569,9 @@ void CPlayDlg::OnTimer(UINT_PTR nIDEvent)
     if (m_nFrameCount >= m_nTotalFrame)
     {
         Pause();
+        
         m_fClosed = TRUE;
+        CloseVideo();
         if (m_fLoop) 
         {
             m_fPlayed = TRUE;

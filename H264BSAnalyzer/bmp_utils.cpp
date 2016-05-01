@@ -337,12 +337,17 @@ end:
 void swap_rgb(unsigned char* rgb_buffer, int len)
 {
     int i = 0;
-    for (i = 0; i < len; i += 3)
+    for (i = 0; i < len; i += 6)
     {
         unsigned char tmp;
         tmp = rgb_buffer[i];
         rgb_buffer[i] = rgb_buffer[i + 2];
-        rgb_buffer[i + 1] = rgb_buffer[i + 1];
+        //rgb_buffer[i + 1] = rgb_buffer[i + 1];
         rgb_buffer[i + 2] = tmp;
+
+        tmp = rgb_buffer[i + 3];
+        rgb_buffer[i + 3] = rgb_buffer[i + 5];
+        //rgb_buffer[i + 1] = rgb_buffer[i + 1];
+        rgb_buffer[i + 5] = tmp;
     }
 }
