@@ -215,6 +215,7 @@ int read_bmp_file(const char* bmp_file, unsigned char** rgb_buffer,
         ret = -1;
         goto end;
     }
+#if 01
     // 将读取的数据倒着存放到缓冲区(即BMP图像第一行数据放到缓冲区最后一行，等等)，
     // 这样图像才是正常的，否则图像是倒立的
     tmp_buf = *rgb_buffer + rgb_size;
@@ -225,15 +226,14 @@ int read_bmp_file(const char* bmp_file, unsigned char** rgb_buffer,
         if (ret != width_byte)
         {
             free(*rgb_buffer);
-        ret = -1;
-        goto end;
+            ret = -1;
+            goto end;
         }
         fseek(fp, padding, SEEK_CUR);
     }
-
-#if 0
+#else
     // 顺序读文件，读到的图像是倒立的
-    unsigned char* tmp_buf = *rgb_buffer;
+    tmp_buf = *rgb_buffer;
     size_t readByte = 0;
     for (int i = 0; i < tmp_height; i++)
     {

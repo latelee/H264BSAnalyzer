@@ -273,6 +273,7 @@ int CH264Decoder::getFrame(unsigned char** yuvBuffer, unsigned char** rgbBuffer,
             if (len < 0)
             {
                 debug("error while decoding frame.\n");
+                av_packet_unref(&avpkt);
                 return -1;
             }
             if (got_picture)
@@ -308,6 +309,7 @@ int CH264Decoder::getFrame(unsigned char** yuvBuffer, unsigned char** rgbBuffer,
                     *height = m_picHeight;
                 }
                 //printf("bit_rate: %d width: %d height:%d\n", m_avctx->bit_rate, m_avctx->width, m_avctx->height);
+                av_packet_unref(&avpkt);
                 return 1;
             } // end of got picture
             // 这里是否在上面的if中判断len的值？
@@ -343,6 +345,7 @@ int CH264Decoder::getSkippedFrame(unsigned char** yuvBuffer, unsigned char** rgb
         if (len < 0)
         {
             debug("error while decoding frame.\n");
+            av_packet_unref(&avpkt);
             return -1;
         }
         if (got_picture)
@@ -372,6 +375,7 @@ int CH264Decoder::getSkippedFrame(unsigned char** yuvBuffer, unsigned char** rgb
                 *height = m_picHeight;
             }
             //printf("bit_rate: %d width: %d height:%d\n", m_avctx->bit_rate, m_avctx->width, m_avctx->height);
+            av_packet_unref(&avpkt);
             return 1;
         } // end of got picture
 
