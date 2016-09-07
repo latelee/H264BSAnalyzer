@@ -1102,6 +1102,12 @@ void CH264BSAnalyzerDlg::OnSize(UINT nType, int cx, int cy)
     // 非法值，什么也不做
     if (cx <= 0 || cy <= 0) return;
 
+    // 先判断窗口句柄合法法
+    if (!GetDlgItem(IDC_H264_NALLIST) || GetDlgItem(IDC_STATIC) ||
+        GetDlgItem(IDC_EDIT_HEX) || GetDlgItem(IDC_EDIT_SIMINFO) ||
+        GetDlgItem(IDC_TREE1)
+        )
+        return;
     CRect rectList, rectHex, rectTxt, rectInfo, rectTree, rectMainWnd;
     CWnd *pWnd = NULL;
     GetDlgItem(IDC_H264_NALLIST)->GetWindowRect(&rectList);
