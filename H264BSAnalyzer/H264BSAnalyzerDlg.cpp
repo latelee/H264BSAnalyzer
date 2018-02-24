@@ -428,6 +428,11 @@ int CH264BSAnalyzerDlg::ShowNLInfo(NALU_t* nalu)
             strNalInfo.Format(_T("IDR #%d"), m_nSliceIndex);
             m_nSliceIndex++;
             break;
+        case NAL_UNIT_CODED_SLICE_CRA:
+            strNalUnitType.Format(_T("Coded slice segment of a CRA picture"));
+            strNalInfo.Format(_T("CRA #%d"), m_nSliceIndex);
+            m_nSliceIndex++;
+            break;
         case NAL_UNIT_PREFIX_SEI:
         case NAL_UNIT_SUFFIX_SEI:
             strNalUnitType.Format(_T("Supplemental enhancement information"));
