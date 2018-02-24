@@ -67,6 +67,7 @@ void h265_free(h265_stream_t* h)
         free(h->seis);
     }
     free(h->sh);
+    free(h->info);
     free(h);
 }
 

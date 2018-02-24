@@ -111,6 +111,7 @@ void h264_free(h264_stream_t* h)
         free(h->seis);
     }
     free(h->sh);
+    free(h->info);
     free(h);
 }
 
