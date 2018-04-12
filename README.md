@@ -97,7 +97,8 @@ Tanks to [雷霄骅](http://blog.csdn.net/leixiaohua1020) , He's gone, but will las
 ## Author
 CST studio Late Lee<br>
 [CST studio](http://www.latelee.org) <br>
-[Donate the author](http://www.latelee.org/donate)
+Donate the author <br>
+![Donate](https://github.com/latelee/H264BSAnalyzer/blob/master/screenshots/latelee_pay_small.png)
 
 
 # H264BSAnalyzer -- H.264/AVC H.265/HEVC码流分析工具
@@ -197,4 +198,5 @@ H.265保存为AVI格式视频无法播放。注：使用ffmpeg转换，用ffplay也无法正常播放。<br>
 ## 作者
 思堂工作室 李迟<br>
 [迟思堂工作室](http://www.latelee.org) <br>
-[欢迎捐赠支持作者](http://www.latelee.org/donate)
+如果觉得本软件不错，欢迎捐赠支持作者 <br>
+![捐赠](https://github.com/latelee/H264BSAnalyzer/blob/master/screenshots/latelee_pay_small.png)
