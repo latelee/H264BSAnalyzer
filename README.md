@@ -1,5 +1,10 @@
 # H264BSAnalyzer -- H.264/AVC H.265/HEVC bitstream analyze tool
 
+[![GitHub stars](https://img.shields.io/github/stars/latelee/H264BSAnalyzer.svg)](https://github.com/latelee/H264BSAnalyzer)[![GitHub forks](https://img.shields.io/github/forks/latelee/H264BSAnalyzer.svg)](https://github.com/latelee/H264BSAnalyzer)
+
+Stargazers over time  
+[![Stargazers over time](https://starcharts.herokuapp.com/latelee/H264BSAnalyzer.svg)](https://starcharts.herokuapp.com/latelee/H264BSAnalyzer)
+
 ## Project
 VS2010 MFC project, using h264bitstream to implement H.264 bitstream analyze.<br>
 The code for H.265 bitstream analyzing is based on h264bitstream code and HM16.6.
