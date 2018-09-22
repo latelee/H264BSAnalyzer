@@ -10,9 +10,12 @@
 CNalParser::CNalParser()
 {
     m_nType = FILE_H264; // default
+    m_filename = NULL;
     m_hH264 = NULL;
     m_hH265 = NULL;
     m_naluData = NULL;
+    dlg = NULL;
+    m_pTree = NULL;
     m_pFile = NULL;
 
     memset(m_tmpStore, '\0', 1024);

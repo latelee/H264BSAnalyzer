@@ -315,12 +315,12 @@ void CNalParser::h264_debug_pps(pps_t* pps, HTREEITEM root)
                 {
                     if( i < 6 )
                     {
-                        my_printf("ScalingList4x4[%d]: %d  (v bits)", i, pps->ScalingList4x4[i] );
+                        my_printf("ScalingList4x4[%d]: %d  (v bits)", i, *(pps->ScalingList4x4[i]) );
                         AddTreeItem(psmpf);
                     }
                     else
                     {
-                        my_printf("ScalingList4xScalingList8x84[%d]: %d  (v bits)", i, pps->ScalingList8x8[i] );
+                        my_printf("ScalingList4xScalingList8x84[%d]: %d  (v bits)", i, *(pps->ScalingList8x8[i]) );
                         AddTreeItem(psmpf);
                     }
                 }
@@ -950,7 +950,7 @@ void CNalParser::h265_debug_ptl(profile_tier_level_t* ptl, int profilePresentFla
             }
             else
             {
-                my_printf("sub_layer_reserved_zero_43bits: %ul  (43 bits)", ptl->sub_layer_reserved_zero_43bits);AddTreeItem(root);
+                my_printf("sub_layer_reserved_zero_43bits: %ul  (43 bits)", ptl->sub_layer_reserved_zero_43bits[i]);AddTreeItem(root);
             }
             // to check
             if ((ptl->sub_layer_profile_idc[i]>=1 && ptl->sub_layer_profile_idc[i]<=5) ||
@@ -1263,8 +1263,8 @@ void CNalParser::h265_debug_vui_parameters(vui_parameters_t* vui, int maxNumSubL
     HTREEITEM vtipf = AddTreeItem(ivp);
     if (vui->vui_timing_info_present_flag)
     {
-        my_printf("vui_num_units_in_tick: %d  (32 bits)", vui->vui_num_units_in_tick); AddTreeItem(vtipf);
-        my_printf("vui_time_scale: %d  (32 bits)", vui->vui_time_scale); AddTreeItem(vtipf);
+        my_printf("vui_num_units_in_tick: %u  (32 bits)", vui->vui_num_units_in_tick); AddTreeItem(vtipf);
+        my_printf("vui_time_scale: %u  (32 bits)", vui->vui_time_scale); AddTreeItem(vtipf);
         my_printf_flag("vui_poc_proportional_to_timing_flag", vui->vui_poc_proportional_to_timing_flag);
         HTREEITEM vppttf = AddTreeItem(vtipf);
         if (vui->vui_poc_proportional_to_timing_flag)
@@ -1700,13 +1700,13 @@ void CNalParser::h265_debug_ref_pic_lists_modification(h265_slice_header_t* hrd,
     if (hrd->ref_pic_lists_modification.ref_pic_list_modification_flag_l0)
     {
         for (int i = 0; i <= hrd->num_ref_idx_l0_active_minus1; i++)
-            my_printf("list_entry_l0[%d]: %d", i, hrd->ref_pic_lists_modification.list_entry_l0[i]);
+            my_printf("list_entry_l0[%d]: %u", i, hrd->ref_pic_lists_modification.list_entry_l0[i]);
     }
     if (hrd->slice_type == H265_SH_SLICE_TYPE_B)
     {
         my_printf("ref_pic_list_modification_flag_l1: %d", hrd->ref_pic_lists_modification.ref_pic_list_modification_flag_l1);
         for (int i = 0; i <= hrd->num_ref_idx_l1_active_minus1; i++)
-            my_printf("list_entry_l1[%d]: %d", i, hrd->ref_pic_lists_modification.list_entry_l1[i]);
+            my_printf("list_entry_l1[%d]: %u", i, hrd->ref_pic_lists_modification.list_entry_l1[i]);
     }
 }
 void CNalParser::h265_debug_pred_weight_table(h265_stream_t* h, HTREEITEM root)
@@ -1813,8 +1813,11 @@ void CNalParser::h265_debug_slice_header(h265_stream_t* h, HTREEITEM root)
     h265_sps_t* sps = NULL;
     h265_pps_t* pps = NULL;
     int nal_unit_type = h->nal->nal_unit_type;
-    pps = h->pps = h->pps_table[hrd->slice_pic_parameter_set_id];
-    sps = h->sps = h->sps_table[pps->pps_seq_parameter_set_id];
+    h->pps = h->pps_table[hrd->slice_pic_parameter_set_id];
+    pps = h->pps;
+    h->sps = h->sps_table[pps->pps_seq_parameter_set_id];
+    sps = h->sps;
+    if (pps == NULL || sps == NULL) return;
 
     my_printf("slice_segment_layer_rbsp()");
     HTREEITEM islce = AddTreeItem(root);

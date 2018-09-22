@@ -239,9 +239,9 @@ void CNalParser::h264_debug_pps(pps_t* pps)
                 if( pps->pic_scaling_list_present_flag[ i ] )
                 {
                     if( i < 6 )
-                        my_printf("   ScalingList4x4[%d] : %d\r\n", i, pps->ScalingList4x4[i] );
+                        my_printf("   ScalingList4x4[%d] : %d\r\n", i, *(pps->ScalingList4x4[i]) );
                     else
-                        my_printf("   ScalingList4xScalingList8x84[%d] : %d\r\n", i, pps->ScalingList8x8[i] );
+                        my_printf("   ScalingList4xScalingList8x84[%d] : %d\r\n", i, *(pps->ScalingList8x8[i]) );
                 }
             }
         }
@@ -642,11 +642,11 @@ void CNalParser::h265_debug_ptl(profile_tier_level_t* ptl, int profilePresentFla
             my_printf(" general_intra_constraint_flag: %d\r\n", ptl->general_intra_constraint_flag);
             my_printf(" general_one_picture_only_constraint_flag: %d\r\n", ptl->general_one_picture_only_constraint_flag);
             my_printf(" general_lower_bit_rate_constraint_flag: %d\r\n", ptl->general_lower_bit_rate_constraint_flag);
-            my_printf(" general_reserved_zero_34bits: %u\r\n", ptl->general_reserved_zero_34bits);// tocheck
+            my_printf(" general_reserved_zero_34bits: %I64u\r\n", ptl->general_reserved_zero_34bits);// tocheck
         }
         else
         {
-            my_printf(" general_reserved_zero_43bits: %u\r\n", ptl->general_reserved_zero_43bits);// tocheck
+            my_printf(" general_reserved_zero_43bits: %I64u\r\n", ptl->general_reserved_zero_43bits);// tocheck
         }
         if ((ptl->general_profile_idc>=1 && ptl->general_profile_idc<=5) ||
             ptl->general_profile_compatibility_flag[1] || ptl->general_profile_compatibility_flag[2] ||
@@ -703,11 +703,11 @@ void CNalParser::h265_debug_ptl(profile_tier_level_t* ptl, int profilePresentFla
                 my_printf("  sub_layer_intra_constraint_flag[%d]: %d\r\n", i, ptl->sub_layer_intra_constraint_flag[i]);
                 my_printf("  sub_layer_one_picture_only_constraint_flag[%d]: %d\r\n", i, ptl->sub_layer_one_picture_only_constraint_flag[i]);
                 my_printf("  sub_layer_lower_bit_rate_constraint_flag[%d]: %d\r\n", i, ptl->sub_layer_lower_bit_rate_constraint_flag[i]);
-                my_printf("  sub_layer_reserved_zero_34bits[%d]: %ul\r\n", i, ptl->sub_layer_reserved_zero_34bits[i]);
+                my_printf("  sub_layer_reserved_zero_34bits[%d]: %I64u\r\n", i, ptl->sub_layer_reserved_zero_34bits[i]);
             }
             else
             {
-                my_printf("  sub_layer_reserved_zero_43bits: %ul\r\n", ptl->sub_layer_reserved_zero_43bits);
+                my_printf("  sub_layer_reserved_zero_43bits: %I64u\r\n", ptl->sub_layer_reserved_zero_43bits[i]);
             }
             // to check
             if ((ptl->sub_layer_profile_idc[i]>=1 && ptl->sub_layer_profile_idc[i]<=5) ||
@@ -1572,7 +1572,7 @@ void CNalParser::h265_debug_slice_header(h265_stream_t* h)
     {
         my_printf("slice_segment_header_extension_length: %d\r\n", hrd->slice_segment_header_extension_length);
         for (int i = 0; i < hrd->slice_segment_header_extension_length; i++)
-            my_printf("slice_segment_header_extension_data_byte[%d]: %d\r\n", hrd->slice_segment_header_extension_data_byte[i]);
+            my_printf("slice_segment_header_extension_data_byte[%d]: %d\r\n", i, hrd->slice_segment_header_extension_data_byte[i]);
     }
     // no need to debug...
     my_printf("slice_segment_data()\r\n");

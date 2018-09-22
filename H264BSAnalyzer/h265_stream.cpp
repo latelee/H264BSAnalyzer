@@ -982,7 +982,7 @@ void  h265_read_sps_rbsp(h265_stream_t* h, bs_t* b)
         // 注意：手册里加1，实际上不用
         // 参考：https://github.com/mbunkus/mkvtoolnix/issues/1152
         int sub_width_c  = ((1 == sps->chroma_format_idc) || (2 == sps->chroma_format_idc)) && (0 == sps->separate_colour_plane_flag) ? 2 : 1;
-        int sub_height_c =  (1 == sps->chroma_format_idc)                                  && (0 == sps->separate_colour_plane_flag) ? 2 : 1;
+        int sub_height_c =  (1 == sps->chroma_format_idc)                                   && (0 == sps->separate_colour_plane_flag) ? 2 : 1;
         h->info->width  -= (sub_width_c*sps->conf_win_right_offset + sub_width_c*sps->conf_win_left_offset);
         h->info->height -= (sub_height_c*sps->conf_win_bottom_offset + sub_height_c*sps->conf_win_top_offset);
     }
@@ -1604,10 +1604,9 @@ void h265_read_sei_rbsp(h265_stream_t* h, bs_t* b)
 void h265_read_rbsp_slice_trailing_bits(bs_t* b)
 {
     h265_read_rbsp_trailing_bits(b);
-    int cabac_zero_word;
     while( h265_more_rbsp_trailing_data(b) )
     {
-        cabac_zero_word = bs_read_f(b,16); // equal to 0x0000
+        int cabac_zero_word = bs_read_f(b,16); // equal to 0x0000
     }
 }
 
